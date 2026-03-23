@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Menage Manager</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase_config.js"></script>
+<script src="ical_parser.js"></script>
+<script src="api_bridge.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --surface2: #16213e;
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.1);
+    --accent: #e94560;
+    --accent-glow: rgba(233,69,96,0.15);
+    --accent2: #6c63ff;
+    --text: #f0f0f5;
+    --text2: #9ca3af;
+    --text3: #6b7280;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    --transition: all 0.2s ease;
+  }
+  [data-theme="light"] {
+    --bg: #f5f5f5;
+    --surface: #ffffff;
+    --surface2: #e8ecf1;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.12);
+    --accent: #e94560;
+    --accent-glow: rgba(233,69,96,0.1);
+    --accent2: #5a52d5;
+    --text: #1a1a2e;
+    --text2: #4b5563;
+    --text3: #9ca3af;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  [data-theme="light"] .header { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+  [data-theme="light"] .header h1, [data-theme="light"] .header .subtitle { color: #fff; }
+  [data-theme="light"] .btnHelp { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.15); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-x: hidden; width: 100%; scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    background-color: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    line-height: 1.6;
+    width: 100%;
+    max-width: 100vw;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border2);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, #e94560, #c0392b);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: #fff;
+    box-shadow: 0 4px 12px rgba(233,69,96,0.3);
+  }
+  .header h1 { font-size: 17px; color: #fff; font-weight: 700; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 1px; font-weight: 400; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ── Main Content ── */
+  .content { padding: 16px 16px 100px 16px; max-width: 900px; margin: 0 auto; }
+
+  /* ── Notification Banner ── */
+  .notifBanner {
+    background: linear-gradient(135deg, rgba(233,69,96,0.15), rgba(108,99,255,0.1));
+    border: 1px solid rgba(233,69,96,0.25);
+    padding: 14px 16px; margin-bottom: 16px; border-radius: var(--radius);
+    font-size: 13px; color: var(--text); position: relative;
+    backdrop-filter: blur(10px);
+  }
+  .notifBanner .notifItem { margin: 6px 0; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .notifBanner .notifIcon { font-size: 16px; }
+  .notifClose { position: absolute; top: 10px; right: 14px; background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; line-height: 1; }
+  .notifClose:hover { color: #fff; }
+
+  /* ── Cards / Panels ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .panelHeader {
+    padding: 16px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .panelHeader:active { background: rgba(255,255,255,0.02); }
+  .panelLeft { display: flex; align-items: center; gap: 12px; }
+  .panelTitle { font-size: 15px; font-weight: 600; color: var(--text); }
+  .stepBadge {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent), #c0392b);
+    color: #fff; font-size: 13px; font-weight: 700;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .panelChevron {
+    font-size: 14px; color: var(--text3);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+  .panelChevron.open { transform: rotate(180deg); }
+  .panelBody { padding: 0 18px 18px 18px; }
+  .panelBody.collapsed { display: none; }
+
+  /* ── Labels ── */
+  .lbl { color: var(--text2); font-size: 12px; margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── Inputs ── */
+  input[type="text"], input[type="date"] {
+    padding: 10px 14px; border: 1px solid var(--border2);
+    background-color: rgba(255,255,255,0.04); color: var(--text);
+    font-size: 14px; font-family: 'Inter', sans-serif;
+    border-radius: var(--radius-sm); transition: var(--transition);
+    width: 100%;
+  }
+  input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-glow); }
+  select {
+    background-color: rgba(255,255,255,0.04); color: var(--text);
+    border: 1px solid var(--border2);
+    font-size: 13px; padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+  }
+  select option { background: #1a1a2e; color: #f0f0f5; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 10px 18px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600;
+    background-color: rgba(255,255,255,0.06); color: var(--text);
+    border-radius: var(--radius-sm); transition: var(--transition);
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:hover { background-color: rgba(255,255,255,0.1); }
+  .btn:active { transform: scale(0.97); }
+  .btnPrimary {
+    background: linear-gradient(135deg, var(--accent), #c0392b);
+    color: #fff; font-size: 15px; padding: 14px 36px;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(233,69,96,0.25);
+  }
+  .btnPrimary:hover { box-shadow: 0 6px 24px rgba(233,69,96,0.35); transform: translateY(-1px); }
+  .btnPrimary:active { transform: scale(0.98) translateY(0); }
+  .btnSuccess { background: rgba(52,211,153,0.15); color: var(--success); }
+  .btnSuccess:hover { background: rgba(52,211,153,0.25); }
+  .btnDanger { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .btnDanger:hover { background: rgba(248,113,113,0.25); }
+  .btnSmall { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+  .btnIcon {
+    width: 40px; height: 40px; padding: 0;
+    background: rgba(255,255,255,0.05);
+    border: none; cursor: pointer; color: var(--text2); font-size: 16px;
+    border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+  }
+  .btnIcon:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+  .btnHelp {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(233,69,96,0.12); border: none;
+    color: var(--accent); font-size: 16px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+  }
+  .btnHelp:hover { background: var(--accent); color: #fff; }
+  .btnWA { background: rgba(37,211,102,0.15); color: #25D366; }
+  .btnWA:hover { background: rgba(37,211,102,0.25); }
+  .btnOutline {
+    background: transparent; border: 1px solid var(--border2);
+    color: var(--text2); padding: 8px 16px;
+  }
+  .btnOutline:hover { border-color: var(--text3); color: var(--text); }
+
+  /* ── URL Rows ── */
+  .urlRow { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .urlLabel {
+    min-width: 70px; font-weight: 600; font-size: 13px; flex-shrink: 0;
+    padding: 6px 12px; border-radius: 8px; text-align: center;
+  }
+  .urlLabel.airbnb { background: rgba(248,81,73,0.12); color: #f85149; }
+  .urlLabel.booking { background: rgba(88,166,255,0.12); color: #58a6ff; }
+  .urlRow input { flex: 1; min-width: 0; }
+
+  /* ── Provider Table ── */
+  .provTableWrap { width: 100%; overflow-x: auto; margin-top: 10px; -webkit-overflow-scrolling: touch; }
+  .provTable { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 520px; }
+  .provTable th {
+    color: var(--text3); padding: 10px 12px; font-size: 11px;
+    text-align: left; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .provTable td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  .provTable tr:last-child td { border-bottom: none; }
+  .provTable tr:hover td { background: rgba(255,255,255,0.02); }
+  .provInput { width: 100%; padding: 8px 10px; border: 1px solid var(--border2); background: rgba(255,255,255,0.04); color: var(--text); font-size: 13px; border-radius: 8px; font-family: 'Inter', sans-serif; }
+  .pctInput { width: 55px; text-align: center; }
+  .colPct { width: 55px; text-align: center; }
+  .colVac { width: 80px; text-align: center; }
+  .colLink { width: 45px; text-align: center; }
+  .colDel { width: 35px; }
+  .provDot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; flex-shrink: 0; }
+  .pctOk { color: var(--success); font-weight: 600; font-size: 13px; margin-top: 10px; display: flex; align-items: center; gap: 6px; }
+  .pctBad { color: var(--danger); font-weight: 600; font-size: 13px; margin-top: 10px; display: flex; align-items: center; gap: 6px; }
+
+  /* ── Add provider row ── */
+  .addRow {
+    margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.02);
+    border: 1px dashed var(--border2); border-radius: var(--radius-sm);
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .addRow input { flex: 1; min-width: 70px; }
+
+  /* ── Generate button area ── */
+  .generateArea {
+    text-align: center; padding: 24px 18px;
+  }
+  .generateArea .btn { margin: 4px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 8px; }
+  .btnPrimary.loading { opacity: 0.7; pointer-events: none; }
+
+  /* ── Tab Navigation ── */
+  .tabBar {
+    display: flex; gap: 4px; padding: 4px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 14px; margin: 0 18px 0 18px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .tabBtn {
+    flex: 1; padding: 10px 8px; font-size: 12px; font-weight: 600; cursor: pointer;
+    border: none; background: transparent; color: var(--text3);
+    border-radius: var(--radius-sm); transition: var(--transition);
+    white-space: nowrap; text-align: center;
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tabBtn:hover { color: var(--text2); }
+  .tabBtn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(233,69,96,0.25);
+  }
+  .tabContent { padding: 16px 18px 18px 18px; }
+
+  /* ── Results Table ── */
+  .resultScroll { max-height: 600px; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); }
+  .resultTable { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 650px; }
+  .resultTable th {
+    color: var(--text3); padding: 12px 10px; font-size: 11px;
+    text-align: left; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500; position: sticky; top: 0;
+    background: var(--surface);
+  }
+  .resultTable th.sortable { cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .resultTable th.sortable:hover { color: var(--text); }
+  .sortArrow { font-size: 10px; margin-left: 3px; opacity: 0.4; }
+  .sortArrow.active { opacity: 1; color: var(--accent); }
+  .resultTable td { padding: 10px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .resultTable tr:hover td { background: rgba(255,255,255,0.02); }
+  .rowTransmitted td { opacity: 0.35; text-decoration: line-through; }
+  .rowTransmitted td input, .rowTransmitted td select, .rowTransmitted td .provDot { text-decoration: none; }
+  .vacWarning { color: var(--warning); font-size: 11px; margin-left: 4px; }
+
+  /* ── Interval Badges ── */
+  .intervalShort { background-color: rgba(248,113,113,0.06) !important; }
+  .intervalMed { background-color: rgba(251,191,36,0.06) !important; }
+  .intervalLong { background-color: rgba(52,211,153,0.06) !important; }
+  .intervalBadge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .intervalBadge.short { background: rgba(248,113,113,0.2); color: var(--danger); }
+  .intervalBadge.med { background: rgba(251,191,36,0.2); color: var(--warning); }
+  .intervalBadge.long { background: rgba(52,211,153,0.2); color: var(--success); }
+
+  /* ── Summary ── */
+  .summaryBox {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    padding: 16px 18px; margin-top: 14px; border-radius: var(--radius-sm);
+  }
+  .summaryTotal { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 12px; }
+  .summaryLine { margin: 6px 0; display: flex; align-items: center; gap: 6px; font-size: 13px; }
+
+  /* ── Filter Bar ── */
+  .filterBar { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .filterBtn {
+    padding: 7px 16px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--text2); border-radius: 20px;
+    transition: var(--transition); font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .filterBtn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .filterBtn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* ── Action Bar ── */
+  .actionBar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+
+  /* ── Calendar ── */
+  .calView { margin-top: 8px; }
+  .calNav { text-align: center; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 20px; }
+  .calNav button {
+    background: rgba(255,255,255,0.06); border: none;
+    color: var(--text); cursor: pointer; padding: 8px 16px;
+    font-size: 16px; border-radius: var(--radius-sm);
+    transition: var(--transition); font-family: 'Inter', sans-serif;
+  }
+  .calNav button:hover { background: rgba(255,255,255,0.1); }
+  .calNav span { font-weight: 600; color: var(--text); font-size: 16px; min-width: 170px; }
+  .calGrid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .calGrid th { color: var(--text3); font-size: 11px; padding: 8px; text-align: center; font-weight: 500; }
+  .calGrid td {
+    height: 72px; vertical-align: top; padding: 4px;
+    border: 1px solid var(--border); font-size: 10px;
+    background: rgba(255,255,255,0.01); color: var(--text);
+  }
+  .calGrid td:hover { background: rgba(255,255,255,0.03); }
+  .calDayNum { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .calToday { background: rgba(233,69,96,0.06) !important; }
+  .calToday .calDayNum { color: var(--accent); }
+  .calEvent { padding: 2px 5px; margin: 1px 0; font-size: 9px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .calCleaning { background: var(--accent); color: #fff; }
+  .calReserv { background: var(--surface2); color: var(--text2); }
+  .calEmpty { background: transparent; }
+
+  /* ── Statistics ── */
+  .statsGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; }
+  .statsCard {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px;
+  }
+  .statsCard h3 { font-size: 13px; color: var(--text2); margin-bottom: 14px; font-weight: 500; }
+  .statsToggle { cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+  .statsToggle:after { content: '\25B2'; font-size: 10px; color: var(--text3); transition: transform 0.2s; }
+  .statsToggle.collapsed:after { transform: rotate(180deg); }
+  .statsBody { transition: max-height 0.3s ease; overflow: hidden; }
+  .statsBody.collapsed { max-height: 0 !important; margin: 0; }
+
+  /* ── History ── */
+  .histTable { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .histTable th {
+    color: var(--text3); padding: 10px 12px; font-size: 11px;
+    text-align: left; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border); font-weight: 500;
+  }
+  .histTable td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text2); }
+
+  /* ── Modals ── */
+  .overlay {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+    z-index: 5000; backdrop-filter: blur(8px);
+  }
+  .modal {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--surface); border: 1px solid var(--border2);
+    z-index: 5001; width: 90vw; max-width: 480px;
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+  }
+  .modalHeader {
+    background: linear-gradient(135deg, var(--surface2), var(--surface));
+    padding: 18px 22px; font-size: 16px; font-weight: 600; color: #fff;
+    border-bottom: 1px solid var(--border);
+  }
+  .modalBody { padding: 22px 24px; color: var(--text); font-size: 14px; line-height: 1.7; max-height: 60vh; overflow-y: auto; }
+  .modalBtns { padding: 14px 24px 20px; text-align: center; }
+
+  /* ── Vacations ── */
+  .vacPeriod { padding: 8px 0; display: flex; align-items: center; gap: 8px; }
+  .vacDot { color: var(--warning); }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; padding: 3px 10px; font-size: 11px; font-weight: 600; border-radius: 20px; }
+  .badge-source { background: var(--accent-glow); color: var(--accent); }
+  .badge-new { background: rgba(52,211,153,0.2); color: var(--success); margin-left: 4px; }
+  .badge-locked { background: rgba(108,99,255,0.2); color: var(--accent2); font-size: 10px; margin-left: 4px; }
+
+  /* ── Toast ── */
+  .toast {
+    display: none; position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+    background: var(--surface2); color: var(--text); padding: 14px 28px;
+    font-size: 14px; font-weight: 600; z-index: 9999;
+    border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    border: 1px solid var(--border2);
+    transition: opacity 0.3s;
+  }
+
+  /* ── Status Bar ── */
+  .statusBar {
+    background: var(--surface); padding: 10px 20px; font-size: 12px;
+    color: var(--text3); text-align: center;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    border-top: 1px solid var(--border); z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+
+  /* ── Utilities ── */
+  .hidden { display: none !important; }
+  .center { text-align: center; }
+  .mt10 { margin-top: 10px; }
+
+  /* ── Checkbox styling ── */
+  input[type="checkbox"] {
+    width: 18px; height: 18px; accent-color: var(--accent);
+    cursor: pointer; border-radius: 4px;
+  }
+
+  /* ── Empty states ── */
+  .emptyState { padding: 40px 20px; text-align: center; color: var(--text3); font-size: 14px; }
+
+  /* ── RESPONSIVE: Tablet ── */
+  @media (max-width: 768px) {
+    body { font-size: 14px; -webkit-text-size-adjust: 100%; }
+    .header { padding: 12px 14px; }
+    .header h1 { font-size: 16px; }
+    .header .subtitle { font-size: 10px; }
+    .content { padding: 12px 10px 90px 10px; }
+    .panelHeader { padding: 14px 14px; }
+    .panelBody { padding: 0 14px 14px 14px; }
+    .urlRow { flex-direction: column; gap: 6px; }
+    .urlLabel { width: 100%; text-align: left; }
+    .urlRow input { width: 100%; min-width: 0; }
+    .addRow { flex-wrap: wrap; }
+    .addRow input { min-width: 70px; }
+    .resultScroll { max-height: none; }
+    .resultTable { font-size: 11px; min-width: 500px; }
+    .resultTable th, .resultTable td { padding: 8px 6px; }
+    .calGrid td { height: 54px; }
+    .calEvent { font-size: 8px; }
+    .statusBar { position: relative; }
+    .tabBar { margin: 0 14px; }
+    .tabBtn { padding: 9px 6px; font-size: 11px; }
+    .tabContent { padding: 12px 14px 14px 14px; }
+    .provTable { font-size: 13px; min-width: 620px; }
+    .provTable th, .provTable td { padding: 8px 8px; }
+    .pctInput { width: 55px; }
+    .statsGrid { grid-template-columns: 1fr; }
+    .filterBar { gap: 4px; }
+    .filterBtn { padding: 6px 12px; font-size: 11px; }
+    .modal { width: 94vw; max-width: 94vw; }
+    .generateArea { padding: 18px 14px; }
+  }
+
+  /* ── RESPONSIVE: Mobile ── */
+  @media (max-width: 480px) {
+    .header { padding: 10px 12px; }
+    .header h1 { font-size: 15px; }
+    .header .subtitle { display: none; }
+    .header-logo { width: 34px; height: 34px; font-size: 16px; border-radius: 10px; }
+    .content { padding: 8px 4px 90px 4px; }
+    .panel { border-radius: 12px; margin-bottom: 8px; }
+    .panelHeader { padding: 12px 10px; }
+    .panelBody { padding: 0 10px 10px 10px; }
+    .tabBar { margin: 0 8px; padding: 3px; border-radius: 12px; }
+    .tabBtn { padding: 8px 4px; font-size: 10px; border-radius: 8px; }
+    .tabContent { padding: 8px 8px 10px 8px; }
+    /* Hide: # (1), Source (2), Depart (4), Intervalle (5), Cloche (9) */
+    .resultTable th:nth-child(1), .resultTable td:nth-child(1) { display: none; }
+    .resultTable th:nth-child(2), .resultTable td:nth-child(2) { display: none; }
+    .resultTable th:nth-child(4), .resultTable td:nth-child(4) { display: none; }
+    .resultTable th:nth-child(5), .resultTable td:nth-child(5) { display: none; }
+    .resultTable th:nth-child(9), .resultTable td:nth-child(9) { display: none; }
+    .resultTable { min-width: 0; width: 100%; font-size: 11px; }
+    .resultTable th, .resultTable td { padding: 6px 4px; }
+    .resultScroll { overflow-x: hidden; }
+    .btn { padding: 8px 14px; font-size: 12px; }
+    .btnPrimary { padding: 12px 28px; font-size: 14px; border-radius: 12px; }
+    .panelTitle { font-size: 14px; }
+    .stepBadge { width: 24px; height: 24px; font-size: 11px; border-radius: 6px; }
+    .summaryBox { font-size: 12px; }
+    .calGrid th { font-size: 10px; padding: 4px; }
+    .calGrid td { height: 48px; padding: 2px; }
+    .calDayNum { font-size: 10px; }
+    .filterBar { gap: 3px; }
+    .filterBtn { padding: 5px 8px; font-size: 10px; }
+    /* Provider table: keep big inputs, horizontal scroll */
+    .provTable { min-width: 800px; font-size: 14px; }
+    .provTable th, .provTable td { padding: 10px 10px; }
+    .provInput { padding: 12px 10px; font-size: 15px; }
+    .pctInput { width: 80px; }
+    .colPct { width: 90px; }
+    .colVac { width: 90px; }
+    .provTable select { font-size: 14px !important; padding: 10px 6px !important; }
+  }
+
+  /* ── Pressing ── */
+  .pressingGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:16px; }
+  .linenCard { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; position:relative; }
+  .linenCard .linenName { font-weight:600; font-size:14px; margin-bottom:8px; }
+  .linenCard .linenStatus { display:inline-block; padding:3px 10px; border-radius:8px; font-size:11px; font-weight:600; }
+  .linenStatus.available { background:rgba(52,211,153,0.15); color:var(--success); }
+  .linenStatus.used { background:rgba(251,191,36,0.15); color:var(--warning); }
+  .linenStatus.pressing { background:rgba(108,99,255,0.15); color:var(--accent2); }
+  .linenCard .linenInfo { font-size:11px; color:var(--text3); margin-top:8px; }
+  .linenCard .linenActions { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .linenCard .linenActions .btn { padding:5px 10px; font-size:11px; }
+  .linenCard .btnDelete { position:absolute; top:8px; right:8px; background:none; border:none; color:var(--text3); cursor:pointer; font-size:14px; }
+  .linenCard .btnDelete:hover { color:var(--danger); }
+  .pressingHistory { margin-top:16px; }
+  .pressingHistory table { width:100%; }
+  .addLinenRow { display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .addLinenRow input { padding:8px 12px; font-size:13px; background:var(--surface); border:1px solid var(--border2); color:var(--text); border-radius:10px; font-family:'Inter',sans-serif; }
+
+  /* ── PWA Install Banner ── */
+  .installBanner { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; background:linear-gradient(135deg,#0f3460,#16213e); border:1px solid var(--border2); border-radius:14px; margin-bottom:10px; }
+  .installBanner .installText { font-size:13px; color:var(--text); }
+  .installBanner .installText small { display:block; color:var(--text2); font-size:11px; margin-top:2px; }
+  .installBanner .btnInstall { background:var(--accent); color:#fff; border:none; padding:8px 16px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .installBanner .btnDismiss { background:none; border:none; color:var(--text3); font-size:18px; cursor:pointer; padding:4px; }
+</style>
+</head>
+<body>
+
+<!-- Auth Screen -->
+<div id="authScreen" style="display:none;justify-content:center;align-items:center;min-height:100vh;padding:20px;">
+  <div style="background:var(--surface);padding:36px;border-radius:16px;width:360px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="width:60px;height:60px;background:linear-gradient(135deg,#e94560,#6c63ff);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;margin-bottom:12px;">M</div>
+      <h1 style="color:#fff;font-size:22px;margin-bottom:4px;">Menage Manager</h1>
+      <p style="color:var(--text3);font-size:12px;">Gestion des menages locatifs</p>
+    </div>
+    <div id="authError" style="color:#e94560;font-size:13px;text-align:center;margin-bottom:12px;min-height:18px;"></div>
+    <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Email</label>
+    <input id="authEmail" type="email" placeholder="votre@email.com" style="width:100%;padding:12px 14px;font-size:14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;margin-bottom:14px;outline:none;" onkeydown="if(event.key==='Enter')authLogin()">
+    <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Mot de passe</label>
+    <input id="authPass" type="password" placeholder="6 caracteres minimum" style="width:100%;padding:12px 14px;font-size:14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;margin-bottom:20px;outline:none;" onkeydown="if(event.key==='Enter')authLogin()">
+    <button onclick="authLogin()" style="width:100%;padding:12px;background:linear-gradient(135deg,#e94560,#c73e54);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;border-radius:8px;margin-bottom:10px;">Se connecter</button>
+    <button onclick="authRegister()" style="width:100%;padding:12px;background:rgba(108,99,255,0.15);color:#6c63ff;border:1px solid rgba(108,99,255,0.3);font-size:14px;font-weight:600;cursor:pointer;border-radius:8px;">Creer un compte</button>
+  </div>
+</div>
+
+<!-- App Main (hidden until auth) -->
+<div id="appMain">
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 21V8l9-5 9 5v13H3z" stroke="#fff" stroke-width="1.5" fill="none"/><path d="M9 21v-6h6v6" stroke="#fff" stroke-width="1.5"/><path d="M7 11h2v2H7zM15 11h2v2h-2z" fill="#e94560"/></svg></div>
+    <div>
+      <h1>Menage Manager <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v2.00</span></h1>
+      <div class="subtitle">Gestion des menages</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btnHelp" onclick="shareReadonly()" title="Partager en lecture seule" style="font-size:14px;">&#128279;</button>
+    <button class="btnHelp" onclick="showChangelog()" title="Historique modifications" style="font-size:13px;">&#128221;</button>
+    <button class="btnHelp" onclick="toggleTheme()" title="Theme clair/sombre" id="themeBtn" style="font-size:15px;">&#9788;</button>
+    <button class="btnHelp" onclick="showHelp()" title="Aide">?</button>
+    <button class="btnHelp" onclick="if(confirm('Se deconnecter ?'))authLogout()" title="Deconnexion" style="font-size:13px;">&#9211;</button>
+  </div>
+</div>
+
+<div class="content">
+  <div id="notifBanner" class="notifBanner hidden"></div>
+  <div id="installBanner" class="installBanner" style="display:none;">
+    <div class="installText">Installer Menage Manager<small>Acces rapide depuis l'ecran d'accueil</small></div>
+    <button class="btnInstall" onclick="installPWA()">Installer</button>
+    <button class="btnDismiss" onclick="dismissInstall()">&times;</button>
+  </div>
+
+  <!-- Panel 1: Configuration -->
+  <div class="panel">
+    <div class="panelHeader" onclick="togglePanel('config')">
+      <div class="panelLeft">
+        <div class="stepBadge">1</div>
+        <div class="panelTitle">Configuration</div>
+      </div>
+      <span class="panelChevron open" id="chevConfig">&#9660;</span>
+    </div>
+    <div class="panelBody" id="bodyConfig">
+      <div class="lbl">Calendriers iCal</div>
+      <div class="urlRow">
+        <span class="urlLabel airbnb">Airbnb</span>
+        <input type="text" id="txtAirbnb" placeholder="URL iCal Airbnb...">
+        <button class="btnIcon" onclick="pasteField('txtAirbnb')" title="Coller">&#128203;</button>
+      </div>
+      <div class="urlRow">
+        <span class="urlLabel booking">Booking</span>
+        <input type="text" id="txtBooking" placeholder="URL iCal Booking...">
+        <button class="btnIcon" onclick="pasteField('txtBooking')" title="Coller">&#128203;</button>
+      </div>
+      <div class="lbl" style="margin-top:14px;">Prestataires</div>
+      <div class="provTableWrap"><div id="providerList"></div></div>
+      <div class="addRow">
+        <input type="text" class="provInput" id="txtNewName" placeholder="Nom">
+        <input type="text" class="provInput" id="txtNewPhone" placeholder="Telephone">
+        <input type="text" class="provInput pctInput" id="txtNewPct" placeholder="%">
+        <input type="text" class="provInput pctInput" id="txtNewPrice" placeholder="Tarif">
+        <button class="btn btnSmall btnSuccess" onclick="addProvider()">+ Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 2: Generate -->
+  <div class="panel">
+    <div class="generateArea">
+      <button class="btn btnPrimary" onclick="generatePlanning()" id="btnGenerate">GENERER LE PLANNING</button>
+      <br><br>
+      <button class="btn btnOutline btnSmall" onclick="saveConfig()">Sauvegarder config</button>
+    </div>
+  </div>
+
+  <!-- Panel 3: Results -->
+  <div class="panel">
+    <div class="panelHeader" onclick="togglePanel('results')">
+      <div class="panelLeft">
+        <div class="stepBadge">3</div>
+        <div class="panelTitle">Resultats</div>
+      </div>
+      <span class="panelChevron open" id="chevResults">&#9660;</span>
+    </div>
+    <div id="bodyResults">
+      <div id="filterBar" class="filterBar" style="padding: 0 18px; margin-top: 4px;"></div>
+      <div class="tabBar">
+        <button class="tabBtn active" id="tabList" onclick="switchTab('list')">&#128203; Liste</button>
+        <button class="tabBtn" id="tabCal" onclick="switchTab('calendar')">&#128197; Calendrier</button>
+        <button class="tabBtn" id="tabStats" onclick="switchTab('stats')">&#128200; Stats</button>
+        <button class="tabBtn" id="tabHist" onclick="switchTab('history')">&#128214; Historique</button>
+        <button class="tabBtn" id="tabPressing" onclick="switchTab('pressing')">&#128084; Pressing</button>
+      </div>
+      <div class="tabContent">
+        <div id="tabListContent">
+          <div id="resultDiv" class="resultScroll">
+            <div class="emptyState">Cliquez sur GENERER LE PLANNING pour afficher les menages</div>
+          </div>
+          <div id="summaryDiv" class="summaryBox hidden"></div>
+          <div class="actionBar">
+            <button class="btn btnOutline" onclick="exportCSV()">&#128196; CSV</button>
+            <button class="btn btnOutline" onclick="exportPDF()">&#128462; PDF</button>
+            <button class="btn btnOutline" onclick="copyPlanning()">&#128203; Copier</button>
+            <button class="btn btnWA" onclick="sendWhatsAppAll()">&#128172; WhatsApp</button>
+          </div>
+        </div>
+        <div id="tabCalContent" class="hidden"><div class="calView" id="calView"></div></div>
+        <div id="tabStatsContent" class="hidden"><div id="statsDiv"><div class="emptyState">Generez un planning pour voir les statistiques.</div></div></div>
+        <div id="tabHistContent" class="hidden">
+          <div id="historyDiv" style="max-height:500px;overflow-y:auto;"></div>
+          <div class="center mt10"><button class="btn btnDanger btnSmall" onclick="clearHistory()">Effacer l'historique</button></div>
+        </div>
+        <div id="tabPressingContent" class="hidden">
+          <div id="pressingDiv"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeAllModals()"></div>
+<div class="modal" id="msgModal">
+  <div class="modalHeader" id="msgTitle">Menage Manager</div>
+  <div class="modalBody" id="msgBody"></div>
+  <div class="modalBtns"><button class="btn btnPrimary" style="padding:12px 32px;font-size:14px;" onclick="closeMsg()">OK</button></div>
+</div>
+<div class="modal" id="vacModal">
+  <div class="modalHeader">Vacances prestataire</div>
+  <div class="modalBody" id="vacBody"></div>
+  <div class="modalBtns"><button class="btn btnPrimary" style="padding:12px 32px;font-size:14px;" onclick="closeVacModal()">Fermer</button></div>
+</div>
+<div class="modal" id="helpModal">
+  <div class="modalHeader">Aide</div>
+  <div class="modalBody">
+    <div style="margin-bottom:16px;">
+      <div style="color:var(--accent);font-weight:600;font-size:14px;margin-bottom:6px;">1. Configuration</div>
+      <div style="color:var(--text2);font-size:13px;">Collez les URLs iCal depuis Airbnb et Booking. Ajoutez vos prestataires avec leur pourcentage (total = 100%).</div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="color:var(--accent);font-weight:600;font-size:14px;margin-bottom:6px;">2. Planning</div>
+      <div style="color:var(--text2);font-size:13px;">Cliquez GENERER pour telecharger les calendriers et attribuer les menages automatiquement.</div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="color:var(--accent);font-weight:600;font-size:14px;margin-bottom:6px;">3. Resultats</div>
+      <div style="color:var(--text2);font-size:13px;">Changez les prestataires, filtrez, cochez "Transmis" pour les dates envoyees.</div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
+      <div style="color:var(--accent);font-weight:600;font-size:14px;margin-bottom:8px;">Fonctionnalites</div>
+      <div style="color:var(--text2);font-size:13px;line-height:2;">
+        <b>Persistance</b> : modifications sauvegardees automatiquement.<br>
+        <b>WhatsApp</b> : envoyez le planning a chaque prestataire.<br>
+        <b>Calendrier</b> : vue mensuelle avec menages et reservations.<br>
+        <b>Statistiques</b> : graphiques de repartition par prestataire.<br>
+        <b>Historique</b> : les menages passes sont archives.<br>
+        <b>Notifications</b> : alertes 2 jours avant arrivee/depart.<br>
+        <b>Lien prestataire</b> : partagez un lien read-only.
+      </div>
+    </div>
+  </div>
+  <div class="modalBtns"><button class="btn btnPrimary" style="padding:12px 32px;font-size:14px;" onclick="closeHelp()">Fermer</button></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="statusBar"><span id="statusText">Pret</span></div>
+
+<script>
+// Theme
+function toggleTheme(){const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('mm_theme',t);document.getElementById('themeBtn').innerHTML=t==='light'?'&#9790;':'&#9788;';}
+(function(){const t=localStorage.getItem('mm_theme');if(t==='light'){document.documentElement.setAttribute('data-theme','light');}})();
+
+const COLORS = ['#3fb950','#58a6ff','#d29922','#f85149','#bc8cff','#79c0ff','#f778ba'];
+let config = {airbnbIcalUrl:'',bookingIcalUrl:'',providers:[],property:'Mon logement'};
+let transmittedDates = [];
+let cleanings = [];
+let currentFilter = '';
+let vacPopupIdx = -1;
+let currentTab = 'list';
+let calYear, calMonth;
+let history = [];
+let reservations = [];
+let linens = []; // Jeux de linge: [{id, name, status:'available'|'used'|'pressing', lastUsed:'', history:[]}]
+
+/* ── Panel Collapse ── */
+function togglePanel(id) {
+  const bodyId = id === 'config' ? 'bodyConfig' : 'bodyResults';
+  const chevId = id === 'config' ? 'chevConfig' : 'chevResults';
+  const body = document.getElementById(bodyId);
+  const chev = document.getElementById(chevId);
+  if (id === 'config') {
+    body.classList.toggle('collapsed');
+  } else {
+    // results panel: toggle everything after panelHeader
+    const panel = body.closest ? body : document.getElementById(bodyId);
+    if (panel.style.display === 'none') { panel.style.display = ''; }
+    else if (id === 'results') {
+      const content = document.getElementById('bodyResults');
+      const items = content.querySelectorAll('.filterBar, .tabBar, .tabContent');
+      const hidden = items[0] && items[0].style.display === 'none';
+      items.forEach(el => { el.style.display = hidden ? '' : 'none'; });
+    }
+  }
+  chev.classList.toggle('open');
+}
+
+/* ── Init ── */
+async function init() {
+  // Init theme button icon
+  if(document.documentElement.getAttribute('data-theme')==='light'&&document.getElementById('themeBtn'))document.getElementById('themeBtn').innerHTML='&#9790;';
+  config = await API.load_config();
+  transmittedDates = await API.load_transmitted();
+  history = await API.load_history();
+  linens = await API.load_linens();
+  document.getElementById('txtAirbnb').value = config.airbnbIcalUrl || '';
+  document.getElementById('txtBooking').value = config.bookingIcalUrl || '';
+  renderProviders();
+  const saved = await API.load_planning();
+  if (saved && saved.length > 0) {
+    cleanings = saved;
+    currentFilter = '';
+    renderResults();
+    renderFilterBar();
+    setStatus('Planning restaure');
+  } else {
+    setStatus('Pret');
+  }
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  checkRentalNotifications();
+  checkReminders();
+}
+/* ── Auth ── */
+async function checkAuth() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appMain').style.display = '';
+    const emailEl = document.getElementById('userEmail');
+    if (emailEl) emailEl.textContent = user.email;
+    init();
+  } else {
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('appMain').style.display = 'none';
+  }
+}
+async function authLogin() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Remplissez tous les champs'; return; }
+  const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+  if (error) { errEl.textContent = error.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect' : error.message; return; }
+  checkAuth();
+}
+async function authRegister() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Remplissez tous les champs'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Le mot de passe doit faire au moins 6 caracteres'; return; }
+  const { error } = await supabase.auth.signUp({ email, password: pass });
+  if (error) { errEl.textContent = error.message; return; }
+  errEl.style.color = '#34d399';
+  errEl.textContent = 'Compte cree ! Verifiez votre email puis connectez-vous.';
+}
+async function authLogout() {
+  await supabase.auth.signOut();
+  localStorage.clear();
+  checkAuth();
+}
+document.addEventListener('DOMContentLoaded', checkAuth);
+
+/* ── PWA Install ── */
+let deferredPrompt = null;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!localStorage.getItem('mm_install_dismissed')) document.getElementById('installBanner').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => { document.getElementById('installBanner').style.display = 'none'; });
+// On iOS, show manual instructions since beforeinstallprompt doesn't exist
+if (isIOS && !isStandalone && !localStorage.getItem('mm_install_dismissed')) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const b = document.getElementById('installBanner');
+    if (b) {
+      b.querySelector('.installText').innerHTML = 'Installer Menage Manager<small>Appuyez sur <b>Partager</b> puis <b>Sur l\'ecran d\'accueil</b></small>';
+      b.querySelector('.btnInstall').style.display = 'none';
+      b.style.display = 'flex';
+    }
+  });
+}
+function installPWA() {
+  if (!deferredPrompt) { showToast('Utilisez le menu du navigateur > "Installer l\'application"'); return; }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => { deferredPrompt = null; document.getElementById('installBanner').style.display = 'none'; });
+}
+function dismissInstall() { document.getElementById('installBanner').style.display = 'none'; localStorage.setItem('mm_install_dismissed', '1'); }
+
+/* ── Share Readonly ── */
+function shareReadonly() {
+  const token = config.readonlyToken;
+  if (!token) { showMsg('Sauvegardez la configuration d\'abord pour generer le lien.'); return; }
+  const url = location.origin + '/readonly/' + token;
+  if (navigator.share) {
+    navigator.share({ title: 'Planning Menage Manager', url: url });
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('Lien lecture seule copie !'));
+  }
+}
+
+/* ── Pressing (Linen Management) ── */
+async function saveLinens() { await API.save_linens(linens); }
+function addLinen() {
+  const input = document.getElementById('newLinenName');
+  const name = input.value.trim();
+  if (!name) { showMsg('Saisissez un nom pour le jeu de linge.'); return; }
+  if (linens.find(l => l.name.toLowerCase() === name.toLowerCase())) { showMsg('Ce jeu existe deja.'); return; }
+  linens.push({ id: Date.now().toString(), name, status: 'available', lastUsed: '', usageHistory: [] });
+  input.value = '';
+  saveLinens(); renderPressing();
+}
+function removeLinen(id) {
+  linens = linens.filter(l => l.id !== id);
+  saveLinens(); renderPressing();
+}
+function setLinenStatus(id, status) {
+  const l = linens.find(l => l.id === id);
+  if (!l) return;
+  const now = new Date().toISOString().split('T')[0];
+  if (status === 'used' && l.status === 'available') {
+    l.usageHistory = l.usageHistory || [];
+    l.usageHistory.push({ date: now, action: 'used' });
+    l.lastUsed = now;
+  } else if (status === 'pressing' && l.status === 'used') {
+    l.usageHistory = l.usageHistory || [];
+    l.usageHistory.push({ date: now, action: 'pressing' });
+  } else if (status === 'available' && l.status === 'pressing') {
+    l.usageHistory = l.usageHistory || [];
+    l.usageHistory.push({ date: now, action: 'returned' });
+  }
+  l.status = status;
+  saveLinens(); renderPressing();
+}
+function getNextAvailableLinen() {
+  // Round-robin: pick the available linen least recently used
+  const avail = linens.filter(l => l.status === 'available');
+  if (!avail.length) return null;
+  avail.sort((a, b) => (a.lastUsed || '').localeCompare(b.lastUsed || ''));
+  return avail[0];
+}
+function renderPressing() {
+  const div = document.getElementById('pressingDiv');
+  if (!div) return;
+  const statusLabels = { available: 'Disponible', used: 'Utilise', pressing: 'Au pressing' };
+  const statusIcons = { available: '&#10003;', used: '&#128716;', pressing: '&#128084;' };
+
+  let html = '<div class="addLinenRow"><input type="text" id="newLinenName" placeholder="Nom du jeu (ex: Jeu A)" onkeydown="if(event.key===\'Enter\')addLinen()"><button class="btn btnSmall btnSuccess" onclick="addLinen()">+ Ajouter</button></div>';
+
+  if (!linens.length) {
+    html += '<div class="emptyState">Aucun jeu de linge. Ajoutez-en un ci-dessus.</div>';
+  } else {
+    // Summary
+    const counts = { available: 0, used: 0, pressing: 0 };
+    linens.forEach(l => counts[l.status] = (counts[l.status] || 0) + 1);
+    html += `<div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;">`;
+    html += `<div class="linenStatus available" style="padding:6px 14px;font-size:12px;">${statusIcons.available} ${counts.available} disponible(s)</div>`;
+    html += `<div class="linenStatus used" style="padding:6px 14px;font-size:12px;">${statusIcons.used} ${counts.used} utilise(s)</div>`;
+    html += `<div class="linenStatus pressing" style="padding:6px 14px;font-size:12px;">${statusIcons.pressing} ${counts.pressing} au pressing</div>`;
+    html += `</div>`;
+
+    // Cards
+    html += '<div class="pressingGrid">';
+    linens.forEach(l => {
+      const nextActions = [];
+      if (l.status === 'available') nextActions.push(`<button class="btn btnSmall" style="background:var(--warning);color:#000;" onclick="setLinenStatus('${l.id}','used')">Marquer utilise</button>`);
+      if (l.status === 'used') nextActions.push(`<button class="btn btnSmall" style="background:var(--accent2);color:#fff;" onclick="setLinenStatus('${l.id}','pressing')">Envoyer au pressing</button>`);
+      if (l.status === 'pressing') nextActions.push(`<button class="btn btnSmall btnSuccess" onclick="setLinenStatus('${l.id}','available')">Retour du pressing</button>`);
+
+      const lastInfo = l.lastUsed ? `Dernier usage : ${fmtDate(l.lastUsed)}` : 'Jamais utilise';
+      const usageCount = (l.usageHistory || []).filter(h => h.action === 'used').length;
+
+      html += `<div class="linenCard">
+        <button class="btnDelete" onclick="removeLinen('${l.id}')" title="Supprimer">&times;</button>
+        <div class="linenName">${esc(l.name)}</div>
+        <div class="linenStatus ${l.status}">${statusIcons[l.status]} ${statusLabels[l.status]}</div>
+        <div class="linenInfo">${lastInfo} | ${usageCount} utilisation(s)</div>
+        <div class="linenActions">${nextActions.join('')}</div>
+      </div>`;
+    });
+    html += '</div>';
+
+    // Recent history
+    const allHistory = [];
+    linens.forEach(l => {
+      (l.usageHistory || []).forEach(h => allHistory.push({ name: l.name, ...h }));
+    });
+    allHistory.sort((a, b) => b.date.localeCompare(a.date));
+    if (allHistory.length) {
+      const actionLabels = { used: 'Utilise', pressing: 'Envoye au pressing', returned: 'Retour pressing' };
+      html += '<div class="pressingHistory"><div style="font-weight:600;margin-bottom:8px;font-size:13px;">Historique recent</div>';
+      html += '<table class="resultTable"><tr><th>Date</th><th>Jeu</th><th>Action</th></tr>';
+      allHistory.slice(0, 20).forEach(h => {
+        html += `<tr><td>${fmtDate(h.date)}</td><td>${esc(h.name)}</td><td>${actionLabels[h.action] || h.action}</td></tr>`;
+      });
+      html += '</table></div>';
+    }
+  }
+  div.innerHTML = html;
+}
+
+/* ── Notifications ── */
+function checkRentalNotifications() {
+  if (!cleanings.length) return;
+  const today = new Date();
+  const todayStr = toISO(today);
+  const notifications = [];
+  cleanings.forEach(c => {
+    const checkin = c.date || c.cleaningDate;
+    const checkout = c.checkoutDate;
+    if (!checkin) return;
+    // Check 1 day and 2 days before
+    for (const daysB of [1, 2]) {
+      const d1 = new Date(checkin); d1.setDate(d1.getDate() - daysB);
+      if (toISO(d1) === todayStr) notifications.push({type:'checkin',date:c.dateFR||fmtDate(checkin),source:c.source,provider:c.provider,days:daysB});
+      if (checkout) { const d2 = new Date(checkout); d2.setDate(d2.getDate() - daysB); if (toISO(d2) === todayStr) notifications.push({type:'checkout',date:c.checkoutDateFR||fmtDate(checkout),source:c.source,provider:c.provider,days:daysB}); }
+    }
+    // Check today
+    if (checkin === todayStr) notifications.push({type:'checkin',date:c.dateFR||fmtDate(checkin),source:c.source,provider:c.provider,days:0});
+    if (c.checkoutDate === todayStr) notifications.push({type:'checkout',date:c.checkoutDateFR||fmtDate(c.checkoutDate),source:c.source,provider:c.provider,days:0});
+  });
+  if (notifications.length > 0) {
+    let html = '<button class="notifClose" onclick="dismissNotif()">&times;</button>';
+    html += '<div style="font-weight:600;margin-bottom:8px;">&#128276; Rappels locations</div>';
+    notifications.forEach(n => {
+      const icon = n.type === 'checkin' ? '&#10140;' : '&#10550;';
+      const label = n.type === 'checkin' ? 'Arrivee' : 'Depart';
+      const when = n.days === 0 ? "aujourd'hui" : n.days === 1 ? 'demain' : 'dans 2 jours';
+      html += `<div class="notifItem"><span class="notifIcon">${icon}</span> <b>${label}</b> ${when} : ${n.date} (${n.source}) - ${n.provider}</div>`;
+    });
+    const banner = document.getElementById('notifBanner');
+    banner.innerHTML = html;
+    banner.classList.remove('hidden');
+    if ('Notification' in window && Notification.permission === 'granted') {
+      notifications.forEach(n => {
+        const when2 = n.days === 0 ? "aujourd'hui" : n.days === 1 ? 'demain' : 'dans 2 jours';
+        const title = (n.type === 'checkin' ? 'Arrivee ' : 'Depart ') + when2;
+        new Notification(title, {body:`${n.date} - ${n.source} (${n.provider})`,icon:'/icons/icon-192.png'});
+      });
+    }
+  }
+}
+function dismissNotif() { document.getElementById('notifBanner').classList.add('hidden'); }
+function toISO(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+/* ── Providers ── */
+function renderProviders() {
+  const providers = config.providers || [];
+  let html = '<table class="provTable">';
+  html += '<tr><th></th><th>Nom</th><th>Tel</th><th class="colPct">%</th><th class="colPct">Tarif</th><th class="colVac">Vacances</th><th class="colLink">Lien</th><th class="colDel"></th></tr>';
+  let totalPct = 0;
+  providers.forEach((p, i) => {
+    const color = COLORS[i] || '#888';
+    const vacCount = p.vacations ? p.vacations.split('|').filter(v => v).length : 0;
+    html += `<tr>
+      <td><span class="provDot" style="background:${color}"></span></td>
+      <td><input type="text" class="provInput" id="pn_${i}" value="${esc(p.name)}"></td>
+      <td><input type="text" class="provInput" id="pp_${i}" value="${esc(p.phone)}"></td>
+      <td><input type="text" class="provInput pctInput" id="ppct_${i}" value="${p.percentage}"></td>
+      <td><input type="text" class="provInput pctInput" id="pprice_${i}" value="${p.price||''}" placeholder="0"></td>
+      <td class="center"><button class="btn btnSmall" onclick="showVacModal(${i})">${vacCount > 0 ? vacCount+' per.' : 'Aucune'}</button></td>
+      <td class="center">${p.token ? `<button class="btn btnSmall" style="padding:4px 8px;" onclick="copyViewLink('${esc(p.token)}')" title="Copier le lien prestataire">&#128279;</button>` : ''}</td>
+      <td class="center"><button class="btn btnSmall btnDanger" style="padding:4px 8px;" onclick="removeProvider(${i})">&#10005;</button></td>
+    </tr>`;
+    totalPct += parseInt(p.percentage) || 0;
+  });
+  html += '</table>';
+  if (providers.length > 0) {
+    html += totalPct === 100
+      ? `<div class="pctOk">&#10003; Total : ${totalPct}%</div>`
+      : `<div class="pctBad">&#10007; Total : ${totalPct}% (doit etre 100%)</div>`;
+  }
+  document.getElementById('providerList').innerHTML = html;
+}
+function copyViewLink(token) { navigator.clipboard.writeText(`${window.location.origin}/view/${token}`).then(() => showToast('Lien prestataire copie !')); }
+function syncProviders() {
+  config.providers.forEach((p, i) => {
+    const n=document.getElementById('pn_'+i), ph=document.getElementById('pp_'+i), pct=document.getElementById('ppct_'+i), pr=document.getElementById('pprice_'+i);
+    if(n)p.name=n.value; if(ph)p.phone=ph.value; if(pct)p.percentage=parseInt(pct.value)||0; if(pr)p.price=parseFloat(pr.value)||0;
+  });
+}
+function addProvider() {
+  const name=document.getElementById('txtNewName').value.trim(), phone=document.getElementById('txtNewPhone').value.trim(), pct=parseInt(document.getElementById('txtNewPct').value)||0, price=parseFloat(document.getElementById('txtNewPrice').value)||0;
+  if(!name){showMsg('Veuillez saisir un nom.');return;}
+  syncProviders();
+  config.providers.push({name,phone,percentage:pct,price,vacations:''});
+  document.getElementById('txtNewName').value='';document.getElementById('txtNewPhone').value='';document.getElementById('txtNewPct').value='';document.getElementById('txtNewPrice').value='';
+  renderProviders();
+}
+function removeProvider(i) { const name=config.providers[i]?.name||''; if(!confirm('Supprimer le prestataire "'+name+'" ?'))return; syncProviders(); config.providers.splice(i,1); renderProviders(); }
+
+/* ── Vacations ── */
+function showVacModal(i) { syncProviders(); vacPopupIdx=i; renderVacContent(); document.getElementById('overlay').style.display='block'; document.getElementById('vacModal').style.display='block'; }
+function closeVacModal() { document.getElementById('overlay').style.display='none'; document.getElementById('vacModal').style.display='none'; renderProviders(); }
+function renderVacContent() {
+  const p = config.providers[vacPopupIdx];
+  let html = `<div style="font-size:15px;font-weight:600;color:var(--accent);margin-bottom:12px;">Vacances de ${esc(p.name)}</div>`;
+  const periods = (p.vacations||'').split('|').filter(v=>v);
+  if (periods.length > 0) {
+    periods.forEach((per,i) => { const [from,to]=per.split('/'); html+=`<div class="vacPeriod"><span class="vacDot">&#9679;</span> ${fmtDate(from)} au ${fmtDate(to)} <button class="btn btnSmall btnDanger" style="padding:3px 8px;font-size:11px;margin-left:auto" onclick="removeVac(${i})">&#10005;</button></div>`; });
+  } else { html += '<div style="color:var(--text3);margin-bottom:12px;">Aucune periode de vacances.</div>'; }
+  html += `<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;"><div class="lbl">Nouvelle periode</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;"><span style="font-size:12px;color:var(--text2);">Du</span><input type="date" id="vacFrom" style="font-size:13px;padding:8px;"><span style="font-size:12px;color:var(--text2);">au</span><input type="date" id="vacTo" style="font-size:13px;padding:8px;"><button class="btn btnSmall btnSuccess" onclick="addVac()">Ajouter</button></div></div>`;
+  document.getElementById('vacBody').innerHTML = html;
+}
+function addVac() { const from=document.getElementById('vacFrom').value,to=document.getElementById('vacTo').value; if(!from||!to){showMsg('Selectionnez les deux dates.');return;} if(from>to){showMsg('La date de debut doit etre avant la fin.');return;} const p=config.providers[vacPopupIdx]; p.vacations=p.vacations?p.vacations+'|'+from+'/'+to:from+'/'+to; renderVacContent(); }
+function removeVac(i) { const p=config.providers[vacPopupIdx]; const periods=p.vacations.split('|').filter(v=>v); periods.splice(i,1); p.vacations=periods.join('|'); renderVacContent(); }
+function isOnVacation(provName,dateISO) { const p=config.providers.find(pr=>pr.name===provName); if(!p||!p.vacations)return false; return p.vacations.split('|').filter(v=>v).some(per=>{const[from,to]=per.split('/');return dateISO>=from&&dateISO<=to;}); }
+
+/* ── Config ── */
+function logAction(action, detail='') {
+  const log = JSON.parse(localStorage.getItem('mm_changelog') || '[]');
+  log.unshift({date: new Date().toLocaleString('fr-FR'), action, detail});
+  if (log.length > 100) log.length = 100;
+  localStorage.setItem('mm_changelog', JSON.stringify(log));
+}
+async function saveConfig() { syncProviders(); config.airbnbIcalUrl=document.getElementById('txtAirbnb').value.trim(); config.bookingIcalUrl=document.getElementById('txtBooking').value.trim(); const res=await API.save_config(config); if(res&&res.config) config=res.config; logAction('Config sauvegardee', config.providers.map(p=>p.name).join(', ')); showToast('Configuration sauvegardee'); }
+async function savePlanning() { if(cleanings.length>0) { await API.save_planning(cleanings); logAction('Planning sauvegarde', cleanings.length+' menage(s)'); } }
+
+/* ── Generate Planning ── */
+async function generatePlanning() {
+  syncProviders();
+  config.airbnbIcalUrl=document.getElementById('txtAirbnb').value.trim();
+  config.bookingIcalUrl=document.getElementById('txtBooking').value.trim();
+  if(!config.airbnbIcalUrl&&!config.bookingIcalUrl){showMsg('Saisissez au moins une URL iCal.');return;}
+  if(!config.providers.length){showMsg('Ajoutez au moins un prestataire.');return;}
+  const totalPct=config.providers.reduce((s,p)=>s+(parseInt(p.percentage)||0),0);
+  if(totalPct!==100){showMsg('Le total des pourcentages doit etre 100% (actuellement '+totalPct+'%).');return;}
+  await API.save_config(config);
+  const btn=document.getElementById('btnGenerate');
+  btn.classList.add('loading');
+  btn.innerHTML='<span class="spinner"></span>Generation en cours...';
+  setStatus('<span style="color:var(--accent);font-weight:bold;">Generation en cours...</span>');
+  document.getElementById('resultDiv').innerHTML='<div class="emptyState"><span class="spinner"></span> Chargement en cours...</div>';
+  try {
+    const data = await API.generate_planning();
+    if(data.error){showMsg('Erreur: '+data.error);setStatus('Erreur');return;}
+    reservations = data.reservations || [];
+    cleanings = (data.cleanings||[]).map(c=>({...c,dateFR:fmtDate(c.date),cleaningDate:c.cleaningDate||c.date,cleaningDateFR:fmtDate(c.cleaningDate||c.date),checkoutDateFR:fmtDate(c.checkoutDate),prevCheckout:c.prevCheckout||''}));
+    currentFilter=''; renderResults(); renderFilterBar(); await savePlanning(); await archivePastCleanings(); checkRentalNotifications();
+    logAction('Planning genere', cleanings.length+' menage(s)');
+    setStatus('<span style="color:var(--success);font-weight:bold;">Planning genere avec succes</span>');
+  } finally {
+    btn.classList.remove('loading');
+    btn.innerHTML='GENERER LE PLANNING';
+  }
+}
+
+/* ── Results ── */
+function getIntervalDays(prevCheckout,checkinDate) { if(!prevCheckout||!checkinDate)return -1; return Math.round((new Date(checkinDate)-new Date(prevCheckout))/86400000); }
+let sortCol = '', sortAsc = true;
+function sortArrowHtml(col) {
+  if(sortCol !== col) return `<span class="sortArrow">&#9650;</span>`;
+  return `<span class="sortArrow active">${sortAsc ? '&#9650;' : '&#9660;'}</span>`;
+}
+function doSort(col) {
+  if(sortCol === col) { sortAsc = !sortAsc; } else { sortCol = col; sortAsc = true; }
+  renderResults();
+}
+function getSortedCleanings() {
+  let list = currentFilter ? cleanings.filter(c => c.provider === currentFilter) : [...cleanings];
+  if(!sortCol) return list;
+  list.sort((a,b) => {
+    let va, vb;
+    switch(sortCol) {
+      case 'source': va = (a.source||'').toLowerCase(); vb = (b.source||'').toLowerCase(); break;
+      case 'arrivee': va = a.date || a.cleaningDate || ''; vb = b.date || b.cleaningDate || ''; break;
+      case 'depart': va = a.checkoutDate || ''; vb = b.checkoutDate || ''; break;
+      case 'intervalle':
+        va = getIntervalDays(a.prevCheckout, a.date); vb = getIntervalDays(b.prevCheckout, b.date);
+        if(va < 0) va = 9999; if(vb < 0) vb = 9999;
+        break;
+      case 'menage': va = a.cleaningDate || ''; vb = b.cleaningDate || ''; break;
+      case 'prestataire': va = (a.provider||'').toLowerCase(); vb = (b.provider||'').toLowerCase(); break;
+      default: return 0;
+    }
+    if(va < vb) return sortAsc ? -1 : 1;
+    if(va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+  return list;
+}
+function renderResults() {
+  if(!cleanings.length){document.getElementById('resultDiv').innerHTML='<div class="emptyState">Aucun menage a venir.</div>';document.getElementById('summaryDiv').classList.add('hidden');return;}
+  let html='<table class="resultTable"><tr><th style="width:30px">#</th><th class="sortable" onclick="doSort(\'source\')">Source '+sortArrowHtml('source')+'</th><th class="sortable" onclick="doSort(\'arrivee\')">Arrivee '+sortArrowHtml('arrivee')+'</th><th class="sortable" onclick="doSort(\'depart\')">Depart '+sortArrowHtml('depart')+'</th><th class="sortable" onclick="doSort(\'intervalle\')">Intervalle '+sortArrowHtml('intervalle')+'</th><th class="sortable" onclick="doSort(\'menage\')">Menage le '+sortArrowHtml('menage')+'</th><th class="sortable" onclick="doSort(\'prestataire\')">Prestataire '+sortArrowHtml('prestataire')+'</th><th style="width:55px;text-align:center">OK</th><th style="width:30px"></th></tr>';
+  const sorted = getSortedCleanings();
+  sorted.forEach((c,num)=>{
+    const i = cleanings.indexOf(c);
+    const isT=transmittedDates.includes(c.cleaningDate), rowCls=isT?'rowTransmitted':'', checked=isT?' checked':'';
+    const onVac=isOnVacation(c.provider,c.cleaningDate), vacHtml=onVac?'<span class="vacWarning" title="En vacances">&#9888;</span>':'';
+    const newBadge=c.isNew?'<span class="badge badge-new">NEW</span>':'';
+    const lockedBadge=c.isLocked?'<span class="badge badge-locked" title="Transmis - prestataire verrouille">&#128274;</span>':'';
+    const minDate=c.prevCheckout||c.date, maxDate=c.date;
+    const days=getIntervalDays(c.prevCheckout,c.date);
+    let intervalCls='',intervalBadge='';
+    if(days>=0){if(days===0){intervalCls='intervalShort';intervalBadge=`<span class="intervalBadge short">${days}j</span>`;}else if(days<=2){intervalCls='intervalMed';intervalBadge=`<span class="intervalBadge med">${days}j</span>`;}else{intervalCls='intervalLong';intervalBadge=`<span class="intervalBadge long">${days}j</span>`;}}
+    html+=`<tr class="${rowCls} ${intervalCls}"><td style="color:var(--text3);font-size:12px">${num+1}</td><td><span class="badge badge-source">${esc(c.source)}</span>${newBadge}</td><td style="font-weight:600">${c.dayName} ${c.dateFR}</td><td style="color:var(--text2)">${c.checkoutDateFR}</td><td class="center">${intervalBadge}</td><td><input type="date" value="${c.cleaningDate}" min="${minDate}" max="${maxDate}" onchange="changeCleaningDate(${i},this.value)" style="background:rgba(255,255,255,0.04);color:var(--success);border:1px solid var(--border2);font-size:12px;padding:6px;font-weight:600;border-radius:8px;font-family:'Inter',sans-serif;"></td><td>${buildProvSelect(i,c.provider)}${vacHtml}${lockedBadge}</td><td class="center"><input type="checkbox"${checked} onchange="toggleTransmit(${i})" title="Marquer comme transmis"></td><td class="center"><button class="btn btnSmall" style="padding:4px 6px;" onclick="setReminder(${i})" title="Rappel">&#128276;</button></td></tr>`;
+  });
+  html+='</table>'; document.getElementById('resultDiv').innerHTML=html; renderSummary();
+  if(currentTab==='calendar')renderCalendar();
+}
+function buildProvSelect(idx,selected) {
+  const color=getProvColor(selected);
+  let s=`<span class="provDot" style="background:${color}"></span><select onchange="reassign(${idx},this.value)" style="background:rgba(255,255,255,0.04);color:var(--text);border:1px solid var(--border2);font-size:12px;padding:5px 8px;border-radius:8px;font-family:'Inter',sans-serif;">`;
+  config.providers.forEach(p=>{s+=`<option value="${esc(p.name)}"${p.name===selected?' selected':''}>${esc(p.name)}</option>`;});
+  return s+'</select>';
+}
+function reassign(idx,newProv) { cleanings[idx].provider=newProv; const p=config.providers.find(pr=>pr.name===newProv); if(p)cleanings[idx].providerPhone=p.phone; renderResults(); savePlanning(); }
+function changeCleaningDate(idx,newDate) { cleanings[idx].cleaningDate=newDate; cleanings[idx].cleaningDateFR=fmtDate(newDate); renderResults(); savePlanning(); }
+async function toggleTransmit(idx) { const d=cleanings[idx].cleaningDate,pos=transmittedDates.indexOf(d); if(pos>=0)transmittedDates.splice(pos,1);else transmittedDates.push(d); await API.save_transmitted(transmittedDates); renderResults(); }
+
+/* ── Filter Bar ── */
+function renderFilterBar() {
+  if(!cleanings.length){document.getElementById('filterBar').innerHTML='';return;}
+  let html=`<button class="filterBtn${currentFilter===''?' active':''}" onclick="setFilter('')">Tous</button>`;
+  config.providers.forEach((p,i)=>{const color=COLORS[i]||'#888';const count=cleanings.filter(c=>c.provider===p.name).length;html+=`<button class="filterBtn${currentFilter===p.name?' active':''}" onclick="setFilter('${esc(p.name)}')"><span class="provDot" style="background:${color}"></span>${esc(p.name)} (${count})</button>`;});
+  document.getElementById('filterBar').innerHTML=html;
+}
+function setFilter(name){currentFilter=name;renderResults();renderFilterBar();}
+
+/* ── Summary ── */
+function renderSummary() {
+  if(!cleanings.length){document.getElementById('summaryDiv').classList.add('hidden');return;}
+  document.getElementById('summaryDiv').classList.remove('hidden');
+  let html=`<div class="summaryTotal">${cleanings.length} menage(s) a venir</div>`;
+  config.providers.forEach((p,i)=>{const count=cleanings.filter(c=>c.provider===p.name).length;const pct=cleanings.length>0?Math.round((count/cleanings.length)*1000)/10:0;const color=COLORS[i]||'#888';const icon=pct==p.percentage?' <span style="color:var(--success)">&#10003;</span>':' <span style="color:var(--warning)">&#8776;</span>';html+=`<div class="summaryLine"><span class="provDot" style="background:${color}"></span><b>${esc(p.name)}</b> : ${count}/${cleanings.length} (${pct}%) - cible ${p.percentage}%${icon}</div>`;});
+  document.getElementById('summaryDiv').innerHTML=html;
+}
+
+/* ── Export / Copy / WhatsApp ── */
+async function exportCSV() { if(!cleanings.length){showMsg('Aucun planning a exporter.');return;} const filtered=currentFilter?cleanings.filter(c=>c.provider===currentFilter):cleanings; if(!filtered.length){showMsg('Aucun menage avec ce filtre.');return;} const fname=currentFilter?`planning_${currentFilter}.csv`:'planning.csv'; await API.export_csv(filtered,fname); showToast('CSV exporte : '+filtered.length+' menage(s)'); }
+function exportPDF() {
+  if(!cleanings.length){showMsg('Aucun planning a exporter.');return;}
+  const filtered=currentFilter?cleanings.filter(c=>c.provider===currentFilter):cleanings;
+  if(!filtered.length){showMsg('Aucun menage avec ce filtre.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const title=currentFilter?'Planning - '+currentFilter:'Planning Menages';
+  doc.setFontSize(18);doc.setTextColor(233,69,96);doc.text(title,14,20);
+  doc.setFontSize(10);doc.setTextColor(150);doc.text('Genere le '+new Date().toLocaleDateString('fr-FR'),14,27);
+  const rows=filtered.map(c=>[c.cleaningDateFR||c.dateFR,c.dayName||'',c.dateFR||'',c.checkoutDateFR||'',c.provider||'',c.source||'']);
+  doc.autoTable({startY:32,head:[['Menage','Jour','Arrivee','Depart','Prestataire','Source']],body:rows,
+    styles:{fontSize:10,cellPadding:3},headStyles:{fillColor:[233,69,96],textColor:255},
+    alternateRowStyles:{fillColor:[245,245,250]}});
+  const fname=currentFilter?'planning_'+currentFilter+'.pdf':'planning.pdf';
+  doc.save(fname);showToast('PDF exporte : '+filtered.length+' menage(s)');
+}
+function copyPlanning() { if(!cleanings.length){showMsg('Aucun planning a copier.');return;} const filtered=currentFilter?cleanings.filter(c=>c.provider===currentFilter):cleanings; if(!filtered.length){showMsg('Aucun menage avec ce filtre.');return;} let txt=currentFilter?`PLANNING MENAGES - ${currentFilter.toUpperCase()}\n`:'PLANNING MENAGES\n'; txt+='='.repeat(txt.trim().length)+'\n\n'; filtered.forEach(c=>{txt+=`Menage: ${c.cleaningDateFR} (arrivee: ${c.dateFR})`;if(!currentFilter)txt+=` | ${c.provider}`;txt+='\n';}); navigator.clipboard.writeText(txt).then(()=>{showToast(currentFilter?`Liste de ${currentFilter} copiee (${filtered.length})`:`Planning copie (${filtered.length})`);}); }
+
+function buildWhatsAppText(provName) {
+  const pc = cleanings.filter(c => c.provider === provName);
+  if (!pc.length) return '';
+  let txt = '';
+  pc.forEach(c => { txt += `${c.dayName} ${c.cleaningDateFR}\n`; });
+  return txt;
+}
+async function sendWhatsApp(provName) { const p=config.providers.find(pr=>pr.name===provName);const txt=buildWhatsAppText(provName);if(!txt){showMsg('Aucun menage pour '+provName);return;} await navigator.clipboard.writeText(txt).catch(()=>{}); if(p&&p.phone){await API.open_whatsapp(p.phone,txt);showToast('Copie + WhatsApp ouvert pour '+provName);}else{showToast('Planning copie dans le presse-papier !');} }
+function sendWhatsAppAll() {
+  if(!cleanings.length){showMsg('Aucun planning a envoyer.');return;}
+  const provsWithWork=config.providers.filter(p=>cleanings.some(c=>c.provider===p.name));
+  if(!provsWithWork.length){showMsg('Aucun prestataire avec des menages.');return;}
+  let html='<div style="font-size:16px;font-weight:600;color:var(--accent);margin-bottom:14px;">Envoyer par WhatsApp</div>';
+  html+='<div style="margin-bottom:12px;color:var(--text2);font-size:13px;">Cliquez sur un prestataire :</div>';
+  provsWithWork.forEach(p=>{const count=cleanings.filter(c=>c.provider===p.name).length;const color=COLORS[config.providers.indexOf(p)]||'#888';html+=`<div style="margin:10px 0;display:flex;align-items:center;gap:10px;"><button class="btn btnWA" style="padding:12px 20px;" onclick="sendWhatsApp('${esc(p.name)}')"><span class="provDot" style="background:${color}"></span>${esc(p.name)} (${count})</button><span style="color:var(--text3);font-size:12px;">${esc(p.phone||'pas de tel')}</span></div>`;});
+  document.getElementById('msgBody').innerHTML=html;document.getElementById('overlay').style.display='block';document.getElementById('msgModal').style.display='block';
+}
+async function setReminder(idx) {
+  const c = cleanings[idx];
+  // Use browser Notification API (works on mobile PWA too)
+  if (!('Notification' in window)) { showMsg('Notifications non supportees par ce navigateur.'); return; }
+  let perm = Notification.permission;
+  if (perm === 'denied') { showMsg('Notifications bloquees. Autorisez-les dans les parametres du navigateur.'); return; }
+  if (perm !== 'granted') { perm = await Notification.requestPermission(); if (perm !== 'granted') { showMsg('Permission de notification refusee.'); return; } }
+  // Store reminder in localStorage
+  const reminders = JSON.parse(localStorage.getItem('mm_reminders') || '[]');
+  const key = c.cleaningDate + '_' + c.provider;
+  if (reminders.find(r => r.key === key)) { showToast('Rappel deja programme pour ' + c.provider + ' le ' + c.cleaningDateFR); return; }
+  const reminderDate = new Date(c.cleaningDate);
+  reminderDate.setDate(reminderDate.getDate() - 2);
+  reminders.push({ key, provider: c.provider, cleaningDate: c.cleaningDate, cleaningDateFR: c.cleaningDateFR, remindAt: reminderDate.toISOString() });
+  localStorage.setItem('mm_reminders', JSON.stringify(reminders));
+  showToast('Rappel programme J-2 pour ' + c.provider + ' (' + c.cleaningDateFR + ')');
+  // If reminder is already due, fire it now
+  checkReminders();
+}
+function checkReminders() {
+  const reminders = JSON.parse(localStorage.getItem('mm_reminders') || '[]');
+  const now = new Date();
+  const remaining = [];
+  reminders.forEach(r => {
+    if (new Date(r.remindAt) <= now) {
+      new Notification('Menage Manager', { body: 'Menage dans 2 jours : ' + r.provider + ' le ' + r.cleaningDateFR, icon: 'icons/icon-192.png' });
+    } else { remaining.push(r); }
+  });
+  localStorage.setItem('mm_reminders', JSON.stringify(remaining));
+}
+
+/* ── Tabs ── */
+function switchTab(tab) {
+  currentTab=tab;
+  const tabs={list:'tabList',calendar:'tabCal',stats:'tabStats',history:'tabHist',pressing:'tabPressing'};
+  const contents={list:'tabListContent',calendar:'tabCalContent',stats:'tabStatsContent',history:'tabHistContent',pressing:'tabPressingContent'};
+  Object.keys(tabs).forEach(t=>{
+    document.getElementById(tabs[t]).classList.toggle('active',tab===t);
+    document.getElementById(contents[t]).classList.toggle('hidden',tab!==t);
+  });
+  if(tab==='calendar')renderCalendar(); if(tab==='history')renderHistory(); if(tab==='stats')renderStats(); if(tab==='pressing')renderPressing();
+}
+
+/* ── Statistics ── */
+let chartDistrib=null, chartCompare=null, chartMonthly=null;
+function buildMonthlyData() {
+  // Combine history (past) + cleanings (current/future) into monthly counts per provider
+  const MONTH_NAMES=['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'];
+  const allEntries = [];
+  // From history
+  history.forEach(h => {
+    const d = h.cleaningDate || h.date;
+    if(d && d.length >= 7) allEntries.push({month: d.substring(0,7), provider: h.provider});
+  });
+  // From current cleanings
+  cleanings.forEach(c => {
+    const d = c.cleaningDate || c.date;
+    if(d && d.length >= 7) allEntries.push({month: d.substring(0,7), provider: c.provider});
+  });
+  // Deduplicate (same date+provider appears in both history and cleanings)
+  const seen = new Set();
+  const unique = [];
+  allEntries.forEach(e => {
+    const key = e.month + '|' + e.provider;
+    // Use full date for dedup if possible, but month granularity is fine for counting
+  });
+  // Actually dedup by full cleaningDate+provider
+  const seenFull = new Set();
+  const allFull = [];
+  history.forEach(h => {
+    const d = h.cleaningDate || h.date;
+    if(!d) return;
+    const key = d + '|' + h.provider;
+    if(!seenFull.has(key)) { seenFull.add(key); allFull.push({date:d, month:d.substring(0,7), provider:h.provider}); }
+  });
+  cleanings.forEach(c => {
+    const d = c.cleaningDate || c.date;
+    if(!d) return;
+    const key = d + '|' + c.provider;
+    if(!seenFull.has(key)) { seenFull.add(key); allFull.push({date:d, month:d.substring(0,7), provider:c.provider}); }
+  });
+  // Get sorted unique months
+  const monthsSet = new Set(allFull.map(e => e.month));
+  const months = [...monthsSet].sort();
+  // Get provider names
+  const provNames = config.providers.map(p => p.name);
+  const colors = provNames.map(name => { const i = config.providers.findIndex(p => p.name === name); return COLORS[i] || '#888'; });
+  // Build count matrix: provNames x months
+  const datasets = provNames.map((name, pi) => {
+    const data = months.map(m => allFull.filter(e => e.month === m && e.provider === name).length);
+    return { label: name, data, backgroundColor: colors[pi] + 'cc', borderColor: colors[pi], borderWidth: 1, borderRadius: 4 };
+  });
+  // Format month labels
+  const labels = months.map(m => {
+    const [y, mo] = m.split('-');
+    return MONTH_NAMES[parseInt(mo)-1] + ' ' + y.substring(2);
+  });
+  // Build monthly totals table
+  let tableHtml = '<div style="overflow-x:auto;"><table class="resultTable" style="font-size:12px;"><tr><th>Mois</th>';
+  provNames.forEach((name,i) => { tableHtml += `<th><span class="provDot" style="background:${colors[i]}"></span>${esc(name)}</th>`; });
+  tableHtml += '<th style="font-weight:700">Total</th></tr>';
+  months.forEach((m, mi) => {
+    const [y, mo] = m.split('-');
+    const label = MONTH_NAMES[parseInt(mo)-1] + ' ' + y;
+    tableHtml += `<tr><td style="font-weight:600">${label}</td>`;
+    let rowTotal = 0;
+    provNames.forEach((name, pi) => {
+      const count = datasets[pi].data[mi];
+      rowTotal += count;
+      tableHtml += `<td style="text-align:center;${count > 0 ? 'font-weight:600' : 'color:var(--text3)'}">${count}</td>`;
+    });
+    tableHtml += `<td style="text-align:center;font-weight:700">${rowTotal}</td></tr>`;
+  });
+  // Totals row
+  tableHtml += '<tr style="border-top:2px solid var(--border2);"><td style="font-weight:700">TOTAL</td>';
+  let grandTotal = 0;
+  provNames.forEach((name, pi) => {
+    const total = datasets[pi].data.reduce((s,v) => s+v, 0);
+    grandTotal += total;
+    tableHtml += `<td style="text-align:center;font-weight:700;color:${colors[pi]}">${total}</td>`;
+  });
+  tableHtml += `<td style="text-align:center;font-weight:700;color:var(--accent)">${grandTotal}</td></tr></table></div>`;
+  return { labels, datasets, tableHtml, hasData: allFull.length > 0 };
+}
+
+function buildFinanceHtml() {
+  const allProvs = (config.providers || []).map(p => p.name);
+  const allColors = (config.providers || []).map((_, i) => COLORS[i] || '#888');
+  const prices = allProvs.map(name => { const p = config.providers.find(pr => pr.name === name); return parseFloat(p.price) || 0; });
+  const counts = allProvs.map(name => cleanings.filter(c => c.provider === name).length);
+  const costs = allProvs.map((_, i) => counts[i] * prices[i]);
+  const total = costs.reduce((s, c) => s + c, 0);
+  // Monthly breakdown per provider
+  const monthCosts = {};
+  const monthProvCosts = {};
+  cleanings.forEach(c => {
+    const d = c.cleaningDate || c.date;
+    if (!d) return;
+    const month = d.substring(0, 7);
+    const p = config.providers.find(pr => pr.name === c.provider);
+    const price = parseFloat(p && p.price) || 0;
+    monthCosts[month] = (monthCosts[month] || 0) + price;
+    if (!monthProvCosts[month]) monthProvCosts[month] = {};
+    monthProvCosts[month][c.provider] = (monthProvCosts[month][c.provider] || 0) + price;
+  });
+  const months = Object.keys(monthCosts).sort();
+  let html = '<table class="resultTable" style="font-size:13px;">';
+  html += '<tr><th>Prestataire</th><th>Menages</th><th>Tarif/menage</th><th>Cout total</th></tr>';
+  allProvs.forEach((name, i) => {
+    html += `<tr><td><span class="provDot" style="background:${allColors[i]}"></span>${esc(name)}</td><td>${counts[i]}</td><td>${prices[i] > 0 ? prices[i].toFixed(0) + ' EUR' : '<span style="color:var(--text3)">non defini</span>'}</td><td style="font-weight:600">${costs[i] > 0 ? costs[i].toFixed(0) + ' EUR' : '-'}</td></tr>`;
+  });
+  html += `<tr style="border-top:2px solid var(--border2);"><td colspan="3" style="font-weight:600;">TOTAL</td><td style="font-weight:700;color:var(--accent);font-size:15px;">${total.toFixed(0)} EUR</td></tr>`;
+  html += '</table>';
+  if (months.length > 0) {
+    html += '<div style="margin-top:14px;font-weight:600;font-size:13px;margin-bottom:8px;">Cout par mois</div>';
+    const monthNames = ['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'];
+    months.forEach(m => {
+      const [y, mo] = m.split('-');
+      const label = monthNames[parseInt(mo)-1] + ' ' + y;
+      html += `<div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;">`;
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">`;
+      html += `<span style="font-weight:600;font-size:14px;">${label}</span>`;
+      html += `<span style="font-weight:700;color:var(--accent);font-size:14px;">${monthCosts[m].toFixed(0)} EUR</span>`;
+      html += `</div>`;
+      allProvs.forEach((name, i) => {
+        const val = (monthProvCosts[m] && monthProvCosts[m][name]) || 0;
+        html += `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">`;
+        html += `<span><span class="provDot" style="background:${allColors[i]}"></span>${name}</span>`;
+        html += `<span style="color:${val > 0 ? 'var(--text)' : 'var(--text3)'}">${val > 0 ? val.toFixed(0) + ' EUR' : '-'}</span>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    });
+  }
+  return html;
+}
+
+function toggleStats(el) {
+  el.classList.toggle('collapsed');
+  const body = el.nextElementSibling;
+  if (body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    body.style.maxHeight = body.scrollHeight + 'px';
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => { body.classList.add('collapsed'); });
+  }
+}
+
+function renderStats() {
+  const hasPlanning = cleanings.length > 0;
+  const monthly = buildMonthlyData();
+  if(!hasPlanning && !monthly.hasData){document.getElementById('statsDiv').innerHTML='<div class="emptyState">Generez un planning pour voir les statistiques.</div>';return;}
+  const provNames=(config.providers||[]).map(p=>p.name);
+  const counts=provNames.map(name=>cleanings.filter(c=>c.provider===name).length);
+  const targets=provNames.map(name=>{const p=config.providers.find(pr=>pr.name===name);return parseInt(p.percentage)||0;});
+  const actuals=provNames.map((_,i)=>cleanings.length>0?Math.round((counts[i]/cleanings.length)*1000)/10:0);
+  const colors=(config.providers||[]).map((_,i)=>COLORS[i]||'#888');
+  document.getElementById('statsDiv').innerHTML=`
+    ${hasPlanning ? `<div class="statsCard" style="margin-top:8px;">
+      <h3 class="statsToggle" onclick="toggleStats(this)">Repartition des menages</h3>
+      <div class="statsBody"><div class="statsGrid">
+        <div><canvas id="chartDistribution" height="250"></canvas></div>
+        <div><canvas id="chartComparison" height="250"></canvas></div>
+      </div></div>
+    </div>
+    <div class="statsCard" style="margin-top:8px;">
+      <h3 class="statsToggle" onclick="toggleStats(this)">Detail par prestataire</h3>
+      <div class="statsBody">
+      <table class="resultTable" style="font-size:13px;">
+        <tr><th>Prestataire</th><th>Menages</th><th>Cible %</th><th>Reel %</th><th>Ecart</th></tr>
+        ${provNames.map((name,i)=>{
+          const diff=actuals[i]-targets[i];
+          const diffColor=Math.abs(diff)<2?'var(--success)':diff>0?'var(--warning)':'var(--danger)';
+          return`<tr><td><span class="provDot" style="background:${colors[i]}"></span>${esc(name)}</td><td style="font-weight:600">${counts[i]}</td><td>${targets[i]}%</td><td>${actuals[i]}%</td><td style="color:${diffColor};font-weight:600">${diff>0?'+':''}${diff.toFixed(1)}%</td></tr>`;
+        }).join('')}
+      </table>
+      </div>
+    </div>
+    <div class="statsCard" style="margin-top:8px;">
+      <h3 class="statsToggle" onclick="toggleStats(this)">Cout previsionnel</h3>
+      <div class="statsBody">
+      ${buildFinanceHtml()}
+      </div>
+    </div>` : ''}
+    ${monthly.hasData ? `<div class="statsCard" style="margin-top:8px;">
+      <h3 class="statsToggle" onclick="toggleStats(this)">Historique mensuel</h3>
+      <div class="statsBody"><canvas id="chartMonthly" height="300"></canvas></div>
+    </div>
+    <div class="statsCard" style="margin-top:8px;">
+      <h3 class="statsToggle" onclick="toggleStats(this)">Detail mensuel</h3>
+      <div class="statsBody">${monthly.tableHtml}</div>
+    </div>` : ''}`;
+  if(hasPlanning) {
+    if(chartDistrib)chartDistrib.destroy();
+    chartDistrib=new Chart(document.getElementById('chartDistribution').getContext('2d'),{type:'doughnut',data:{labels:provNames,datasets:[{data:counts,backgroundColor:colors,borderColor:'var(--surface)',borderWidth:3}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#9ca3af',font:{size:12,family:'Inter'},padding:16}}},cutout:'65%'}});
+    if(chartCompare)chartCompare.destroy();
+    chartCompare=new Chart(document.getElementById('chartComparison').getContext('2d'),{type:'bar',data:{labels:provNames,datasets:[{label:'Cible %',data:targets,backgroundColor:'rgba(108,99,255,0.4)',borderColor:'#6c63ff',borderWidth:1,borderRadius:6},{label:'Reel %',data:actuals,backgroundColor:colors.map(c=>c+'aa'),borderColor:colors,borderWidth:1,borderRadius:6}]},options:{scales:{x:{ticks:{color:'#9ca3af',font:{family:'Inter'}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#9ca3af',font:{family:'Inter'}},grid:{color:'rgba(255,255,255,0.04)'},max:100}},plugins:{legend:{labels:{color:'#9ca3af',font:{size:12,family:'Inter'}}}}}});
+  }
+  if(monthly.hasData) {
+    if(chartMonthly)chartMonthly.destroy();
+    chartMonthly=new Chart(document.getElementById('chartMonthly').getContext('2d'),{
+      type:'bar',
+      data:{labels:monthly.labels, datasets:monthly.datasets},
+      options:{
+        responsive:true,
+        scales:{
+          x:{stacked:true, ticks:{color:'#9ca3af',font:{family:'Inter',size:11}}, grid:{color:'rgba(255,255,255,0.04)'}},
+          y:{stacked:true, beginAtZero:true, ticks:{color:'#9ca3af',font:{family:'Inter'},stepSize:1}, grid:{color:'rgba(255,255,255,0.04)'}}
+        },
+        plugins:{
+          legend:{position:'bottom',labels:{color:'#9ca3af',font:{size:12,family:'Inter'},padding:14}},
+          tooltip:{mode:'index',intersect:false}
+        }
+      }
+    });
+  }
+  // Init max-height for collapsible sections
+  document.querySelectorAll('#statsDiv .statsBody').forEach(el => { el.style.maxHeight = el.scrollHeight + 'px'; });
+}
+
+/* ── Calendar ── */
+function renderCalendar() {
+  const MONTHS=['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre'];
+  const DAYS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  let html='<div class="calNav"><button onclick="calPrev()">&laquo;</button><span>'+MONTHS[calMonth]+' '+calYear+'</span><button onclick="calNext()">&raquo;</button></div>';
+  const firstDate=new Date(calYear,calMonth,1);let firstDay=firstDate.getDay();firstDay=firstDay===0?6:firstDay-1;
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const today=new Date();const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  html+='<table class="calGrid"><tr>';DAYS.forEach(d=>{html+=`<th>${d}</th>`;});html+='</tr><tr>';
+  for(let i=0;i<firstDay;i++)html+='<td class="calEmpty"></td>';
+  let col=firstDay;
+  for(let day=1;day<=daysInMonth;day++){
+    const dateStr=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    let events='';
+    cleanings.forEach(c=>{if(c.cleaningDate===dateStr){const color=getProvColor(c.provider);events+=`<div class="calEvent calCleaning" style="background:${color}" title="Menage: ${esc(c.provider)}">${esc(c.provider)}</div>`;}});
+    reservations.forEach(r=>{if(dateStr>=r.start&&dateStr<r.end)events+=`<div class="calEvent calReserv" title="${esc(r.summary)}">${esc(r.source)}</div>`;});
+    html+=`<td${dateStr===todayStr?' class="calToday"':''}><div class="calDayNum">${day}</div>${events}</td>`;
+    col++;if(col>=7&&day<daysInMonth){html+='</tr><tr>';col=0;}
+  }
+  while(col>0&&col<7){html+='<td class="calEmpty"></td>';col++;}
+  html+='</tr></table>';
+  html+='<div style="margin-top:12px;font-size:11px;color:var(--text3);display:flex;gap:14px;align-items:center;flex-wrap:wrap;"><span class="calEvent calCleaning" style="display:inline-block;padding:3px 10px;">Menage</span><span class="calEvent calReserv" style="display:inline-block;padding:3px 10px;">Reservation</span><span style="color:var(--accent);font-weight:600;">Aujourd\'hui</span></div>';
+  document.getElementById('calView').innerHTML=html;
+}
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+
+/* ── History ── */
+async function archivePastCleanings() {
+  const today=new Date().toISOString().substring(0,10);const saved=await API.load_planning();if(!saved||!saved.length)return;let changed=false;
+  saved.forEach(c=>{const d=c.cleaningDate||c.date;if(d<today){const exists=history.some(h=>h.cleaningDate===d&&h.provider===c.provider);if(!exists){history.push({cleaningDate:d,cleaningDateFR:fmtDate(d),date:c.date,dateFR:fmtDate(c.date),checkoutDate:c.checkoutDate,checkoutDateFR:fmtDate(c.checkoutDate),provider:c.provider,source:c.source,dayName:c.dayName,archivedOn:today});changed=true;}}});
+  if(changed){history.sort((a,b)=>b.cleaningDate.localeCompare(a.cleaningDate));await API.save_history(history);}
+}
+function renderHistory() {
+  if(!history.length){document.getElementById('historyDiv').innerHTML='<div class="emptyState">Aucun historique disponible.</div>';return;}
+  let html='<table class="histTable"><tr><th>#</th><th>Date menage</th><th>Arrivee</th><th>Depart</th><th>Prestataire</th><th>Source</th></tr>';
+  history.forEach((h,i)=>{const color=getProvColor(h.provider);html+=`<tr><td style="color:var(--text3)">${i+1}</td><td style="font-weight:600;color:var(--accent);">${h.cleaningDateFR||fmtDate(h.cleaningDate)}</td><td>${h.dayName||''} ${h.dateFR||fmtDate(h.date)}</td><td style="color:var(--text2)">${h.checkoutDateFR||fmtDate(h.checkoutDate)}</td><td><span class="provDot" style="background:${color}"></span>${esc(h.provider)}</td><td><span class="badge badge-source">${esc(h.source)}</span></td></tr>`;});
+  html+='</table>';document.getElementById('historyDiv').innerHTML=html;
+}
+async function clearHistory(){history=[];await API.save_history([]);renderHistory();showToast('Historique efface');}
+
+/* ── Utilities ── */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function fmtDate(iso){if(!iso||iso.length<10)return iso||'';return iso.substring(8,10)+'/'+iso.substring(5,7)+'/'+iso.substring(0,4);}
+function getProvColor(name){const i=config.providers.findIndex(p=>p.name===name);return COLORS[i]||'#888';}
+function setStatus(html){document.getElementById('statusText').innerHTML=html;}
+function pasteField(id){navigator.clipboard.readText().then(t=>{document.getElementById(id).value=t.trim();});}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';t.style.opacity='1';setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.style.display='none';t.style.opacity='1';},300);},2500);}
+function showMsg(msg){document.getElementById('msgBody').innerHTML=msg;document.getElementById('overlay').style.display='block';document.getElementById('msgModal').style.display='block';}
+function closeMsg(){document.getElementById('overlay').style.display='none';document.getElementById('msgModal').style.display='none';}
+function showHelp(){document.getElementById('overlay').style.display='block';document.getElementById('helpModal').style.display='block';}
+function showChangelog(){
+  const log=JSON.parse(localStorage.getItem('mm_changelog')||'[]');
+  let html='<div style="font-size:16px;font-weight:600;color:var(--accent);margin-bottom:14px;">Historique des modifications</div>';
+  if(!log.length){html+='<p style="color:var(--text3)">Aucune modification enregistree.</p>';}
+  else{html+='<div style="max-height:400px;overflow-y:auto;">';log.forEach(e=>{html+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text3)">${e.date}</span> <strong>${e.action}</strong>${e.detail?' — <span style="color:var(--text2)">'+e.detail+'</span>':''}</div>`;});html+='</div>';}
+  html+='<button class="btn btnSmall" style="margin-top:12px;" onclick="localStorage.removeItem(\'mm_changelog\');closeMsg();showToast(\'Historique efface\');">Effacer l\'historique</button>';
+  document.getElementById('msgBody').innerHTML=html;document.getElementById('overlay').style.display='block';document.getElementById('msgModal').style.display='block';
+}
+function closeHelp(){document.getElementById('overlay').style.display='none';document.getElementById('helpModal').style.display='none';}
+function closeAllModals(){closeMsg();closeVacModal();closeHelp();}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(err=>console.log('SW:',err));}
+</script>
+</div><!-- /appMain -->
+</body>
+</html>

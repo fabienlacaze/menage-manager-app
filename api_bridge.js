@@ -1,0 +1,123 @@
+/**
+ * api_bridge.js - Full client-side API bridge using Supabase.
+ * All data stored in Supabase PostgreSQL + localStorage cache.
+ */
+const API = (function() {
+
+  async function getUserId() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Non authentifie');
+    return user.id;
+  }
+
+  async function load(column, defaultVal) {
+    try {
+      const userId = await getUserId();
+      const { data, error } = await supabase
+        .from('user_data')
+        .select(column)
+        .eq('user_id', userId)
+        .single();
+      if (error || !data) return defaultVal;
+      const val = data[column];
+      if (val !== null && val !== undefined) {
+        localStorage.setItem('mm_cache_' + column, JSON.stringify(val));
+        return val;
+      }
+      return defaultVal;
+    } catch (e) {
+      // Fallback to cache
+      const cached = localStorage.getItem('mm_cache_' + column);
+      if (cached) return JSON.parse(cached);
+      return defaultVal;
+    }
+  }
+
+  async function save(column, data) {
+    localStorage.setItem('mm_cache_' + column, JSON.stringify(data));
+    const userId = await getUserId();
+    const { error } = await supabase
+      .from('user_data')
+      .update({ [column]: data, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+    if (error) console.error('Save error:', error);
+    return { ok: !error };
+  }
+
+  return {
+    async load_config() {
+      return await load('config', { airbnbIcalUrl: '', bookingIcalUrl: '', providers: [], property: 'Mon logement' });
+    },
+
+    async save_config(config) {
+      for (const p of (config.providers || [])) {
+        if (!p.token) p.token = Math.random().toString(36).substring(2, 10);
+      }
+      if (!config.readonlyToken) config.readonlyToken = Math.random().toString(36).substring(2, 18);
+      await save('config', config);
+      return { ok: true, config };
+    },
+
+    async load_transmitted() { return await load('transmitted', []); },
+    async save_transmitted(dates) { return await save('transmitted', dates); },
+
+    async load_planning() { return await load('planning', null); },
+    async save_planning(cleanings) { return await save('planning', cleanings); },
+
+    async load_history() { return await load('history', []); },
+    async save_history(history) { return await save('history', history); },
+
+    async load_linens() { return await load('linens', []); },
+    async save_linens(linens) { return await save('linens', linens); },
+
+    async generate_planning() {
+      const log = typeof dbg === 'function' ? dbg : console.log;
+      log('Chargement config...');
+      const config = await this.load_config();
+      log('Config: ' + (config.providers||[]).length + ' prestataires, airbnb=' + (config.airbnbIcalUrl?'oui':'non') + ', booking=' + (config.bookingIcalUrl?'oui':'non'), 'ok');
+      const previousPlanning = (await this.load_planning()) || [];
+      log('Planning precedent: ' + previousPlanning.length + ' entree(s)', 'ok');
+      const transmittedDates = await this.load_transmitted();
+      log('Dates transmises: ' + transmittedDates.length, 'ok');
+      log('Lancement generatePlanning()...');
+      return await generatePlanning(config, previousPlanning, transmittedDates);
+    },
+
+    async export_csv(cleanings, filename) {
+      let csv = 'Date menage;Jour;Arrivee;Depart;Prestataire;Telephone;Source\n';
+      for (const c of cleanings) {
+        csv += `${c.cleaningDateFR || c.dateFR || ''};${c.dayName || ''};${c.dateFR || ''};${c.checkoutDateFR || ''};${c.provider || ''};${c.providerPhone || ''};${c.source || ''}\n`;
+      }
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+      return filename;
+    },
+
+    async open_whatsapp(phone, message) {
+      let clean = phone.replace(/[\s.\-]/g, '');
+      if (clean.startsWith('0') && clean.length === 10) clean = '+33' + clean.substring(1);
+      const url = `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+      return true;
+    },
+
+    async copy_whatsapp(provName, message) {
+      try { await navigator.clipboard.writeText(message); }
+      catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = message; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+      }
+      return true;
+    },
+
+    async setup_reminder() {
+      return { ok: false, msg: 'Rappels non disponibles en mode web.' };
+    },
+
+    isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+  };
+})();
