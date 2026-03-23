@@ -614,7 +614,6 @@
   <div class="header-actions">
     <span class="lang-flag" data-lang="fr" onclick="setLang('fr')" style="cursor:pointer;font-size:16px;opacity:1;" title="Francais"><img src="https://flagcdn.com/w20/fr.png" width="20" height="15" alt="FR" style="vertical-align:middle;"></span>
     <span class="lang-flag" data-lang="en" onclick="setLang('en')" style="cursor:pointer;font-size:16px;opacity:0.4;" title="English"><img src="https://flagcdn.com/w20/gb.png" width="20" height="15" alt="EN" style="vertical-align:middle;"></span>
-    <button class="btnHelp" onclick="shareReadonly()" data-i18n-attr="title" data-i18n="header.share" title="Partager en lecture seule" style="font-size:14px;">&#128279;</button>
     <button class="btnHelp" onclick="showChangelog()" data-i18n-attr="title" data-i18n="header.changelog" title="Historique modifications" style="font-size:13px;">&#128221;</button>
     <button class="btnHelp" onclick="toggleTheme()" data-i18n-attr="title" data-i18n="header.theme" title="Theme clair/sombre" id="themeBtn" style="font-size:15px;">&#9788;</button>
     <button class="btnHelp" onclick="showHelp()" data-i18n-attr="title" data-i18n="header.help" title="Aide">?</button>
@@ -696,12 +695,7 @@
             <div class="emptyState" data-i18n="results.empty">Cliquez sur GENERER LE PLANNING pour afficher les menages</div>
           </div>
           <div id="summaryDiv" class="summaryBox hidden"></div>
-          <div class="actionBar">
-            <button class="btn btnOutline" onclick="exportCSV()">&#128196; <span data-i18n="results.csv">CSV</span></button>
-            <button class="btn btnOutline" onclick="exportPDF()">&#128462; <span data-i18n="results.pdf">PDF</span></button>
-            <button class="btn btnOutline" onclick="copyPlanning()">&#128203; <span data-i18n="results.copy">Copier</span></button>
-            <button class="btn btnWA" onclick="sendWhatsAppAll()">&#128172; <span data-i18n="results.whatsapp">WhatsApp</span></button>
-          </div>
+          <div id="summaryActions"></div>
         </div>
         <div id="tabCalContent" class="hidden"><div class="calView" id="calView"></div></div>
         <div id="tabStatsContent" class="hidden"><div id="statsDiv"><div class="emptyState" data-i18n="stats.empty">Generez un planning pour voir les statistiques.</div></div></div>
@@ -712,6 +706,29 @@
         <div id="tabPressingContent" class="hidden">
           <div id="pressingDiv"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 4: Communication & Export -->
+  <div class="panel">
+    <div class="panelHeader" onclick="togglePanel('comm')">
+      <div class="panelLeft">
+        <div class="stepBadge" style="background:linear-gradient(135deg,#34d399,#059669);">4</div>
+        <div class="panelTitle" data-i18n="comm.title">Communication & Export</div>
+      </div>
+      <span class="panelChevron open" id="chevComm">&#9660;</span>
+    </div>
+    <div class="panelBody" id="bodyComm">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <button class="btn btnWA" onclick="sendWhatsAppAll()" style="padding:14px;font-size:14px;">&#128172; <span data-i18n="results.whatsapp">WhatsApp</span></button>
+        <button class="btn btnOutline" onclick="shareReadonly()" style="padding:14px;font-size:14px;">&#128279; <span data-i18n="comm.share">Partager (lecture seule)</span></button>
+      </div>
+      <div class="lbl" data-i18n="comm.export" style="margin-bottom:10px;">Exporter</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <button class="btn btnOutline" onclick="exportCSV()" style="padding:12px;">&#128196; <span data-i18n="results.csv">CSV</span></button>
+        <button class="btn btnOutline" onclick="exportPDF()" style="padding:12px;">&#128462; <span data-i18n="results.pdf">PDF</span></button>
+        <button class="btn btnOutline" onclick="copyPlanning()" style="padding:12px;">&#128203; <span data-i18n="results.copy">Copier</span></button>
       </div>
     </div>
   </div>
@@ -780,22 +797,18 @@ let linens = []; // Jeux de linge: [{id, name, status:'available'|'used'|'pressi
 
 /* ── Panel Collapse ── */
 function togglePanel(id) {
-  const bodyId = id === 'config' ? 'bodyConfig' : 'bodyResults';
-  const chevId = id === 'config' ? 'chevConfig' : 'chevResults';
+  const map = { config: ['bodyConfig','chevConfig'], results: ['bodyResults','chevResults'], comm: ['bodyComm','chevComm'] };
+  const [bodyId, chevId] = map[id] || [null, null];
+  if (!bodyId) return;
   const body = document.getElementById(bodyId);
   const chev = document.getElementById(chevId);
-  if (id === 'config') {
+  if (id === 'config' || id === 'comm') {
     body.classList.toggle('collapsed');
-  } else {
-    // results panel: toggle everything after panelHeader
-    const panel = body.closest ? body : document.getElementById(bodyId);
-    if (panel.style.display === 'none') { panel.style.display = ''; }
-    else if (id === 'results') {
-      const content = document.getElementById('bodyResults');
-      const items = content.querySelectorAll('.filterBar, .tabBar, .tabContent');
-      const hidden = items[0] && items[0].style.display === 'none';
-      items.forEach(el => { el.style.display = hidden ? '' : 'none'; });
-    }
+  } else if (id === 'results') {
+    const content = document.getElementById('bodyResults');
+    const items = content.querySelectorAll('.filterBar, .tabBar, .tabContent');
+    const hidden = items[0] && items[0].style.display === 'none';
+    items.forEach(el => { el.style.display = hidden ? '' : 'none'; });
   }
   chev.classList.toggle('open');
 }

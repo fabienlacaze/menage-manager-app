@@ -57,6 +57,11 @@ const I18N = {
     'generate.btn': 'GENERER LE PLANNING',
     'generate.save': 'Sauvegarder config',
 
+    // Communication & Export
+    'comm.title': 'Communication & Export',
+    'comm.share': 'Partager (lecture seule)',
+    'comm.export': 'Exporter',
+
     // Results panel
     'results.title': 'Resultats',
     'results.tab.list': 'Liste',
@@ -156,6 +161,11 @@ const I18N = {
     'generate.save': 'Save config',
 
     // Results panel
+    // Communication & Export
+    'comm.title': 'Communication & Export',
+    'comm.share': 'Share (read-only)',
+    'comm.export': 'Export',
+
     'results.title': 'Results',
     'results.tab.list': 'List',
     'results.tab.calendar': 'Calendar',
