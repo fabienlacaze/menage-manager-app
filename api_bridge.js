@@ -80,7 +80,7 @@ const API = (function() {
       const transmittedDates = await this.load_transmitted();
       log('Dates transmises: ' + transmittedDates.length, 'ok');
       log('Lancement generatePlanning()...');
-      return await generatePlanning(config, previousPlanning, transmittedDates);
+      return await generatePlanningFromICal(config, previousPlanning, transmittedDates);
     },
 
     async export_csv(cleanings, filename) {

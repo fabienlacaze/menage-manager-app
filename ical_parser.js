@@ -97,7 +97,7 @@ function toISO(d) {
   return `${y}-${m}-${day}`;
 }
 
-async function generatePlanning(config, previousPlanning, transmittedDates) {
+async function generatePlanningFromICal(config, previousPlanning, transmittedDates) {
   const log = typeof dbg === 'function' ? dbg : console.log;
   previousPlanning = previousPlanning || [];
   transmittedDates = transmittedDates || [];
