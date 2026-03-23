@@ -900,7 +900,8 @@ async function authRegister() {
     }
     if (data.user && !data.user.confirmed_at) {
       errEl.style.color = '#34d399';
-      errEl.textContent = 'Compte cree ! Verifiez votre boite mail pour confirmer.';
+      errEl.innerHTML = '&#10003; Compte cree !<br><span style="font-size:12px;color:var(--text3);">Un email de confirmation a ete envoye a <b>' + email + '</b>.<br>Cliquez sur le lien dans l\'email puis revenez vous connecter.</span>';
+      submitBtn.style.display = 'none';
       return;
     }
     errEl.style.color = '#34d399';
