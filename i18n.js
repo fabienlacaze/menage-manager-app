@@ -102,6 +102,13 @@ const I18N = {
     'help.feature.notif': 'alertes 2 jours avant arrivee/depart.',
     'help.feature.link': 'partagez un lien read-only.',
 
+    // Bottom nav
+    'nav.config': 'Config',
+    'nav.generate': 'Generer',
+    'nav.results': 'Planning',
+    'nav.stats': 'Stats',
+    'nav.more': 'Plus',
+
     // Properties
     'property.label': 'Propriete :',
     'property.add': '+ Ajouter',
@@ -236,6 +243,13 @@ const I18N = {
 
     // Status
     // Premium
+    // Bottom nav
+    'nav.config': 'Config',
+    'nav.generate': 'Generate',
+    'nav.results': 'Planning',
+    'nav.stats': 'Stats',
+    'nav.more': 'More',
+
     // Properties
     'property.label': 'Property:',
     'property.add': '+ Add',
