@@ -587,6 +587,107 @@
   .btnUpgrade { background:linear-gradient(135deg,#6c63ff,#5a52d5); color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; width:100%; }
   .btnUpgrade:hover { opacity:0.9; transform:translateY(-1px); }
 
+  /* ══ PRO UI POLISH ══ */
+
+  /* Aurora animated header */
+  .header {
+    background: linear-gradient(-45deg, #0f3460, #1a1a2e, #16213e, #0f2847, #1a1040);
+    background-size: 400% 400%;
+    animation: aurora 15s ease infinite;
+  }
+  @keyframes aurora { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+
+  /* Header logo pulse */
+  .header-logo { animation: logoPulse 3s ease-in-out infinite; }
+  @keyframes logoPulse { 0%,100%{box-shadow:0 4px 12px rgba(233,69,96,0.3)} 50%{box-shadow:0 4px 24px rgba(233,69,96,0.6)} }
+
+  /* Gradient border panels */
+  .panel { position:relative; border:none; }
+  .panel::before {
+    content:''; position:absolute; inset:-1px; border-radius:calc(var(--radius) + 1px); padding:1px;
+    background:linear-gradient(135deg, rgba(108,99,255,0.2), rgba(233,69,96,0.1), rgba(52,211,153,0.1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    pointer-events:none; z-index:0;
+  }
+
+  /* Section number badges with gradient */
+  .panelHeader .panelNum {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:8px; font-size:12px; font-weight:700; color:#fff; margin-right:8px;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 2px 8px rgba(233,69,96,0.3);
+  }
+
+  /* Colored shadows on cards */
+  .panel:hover { box-shadow: 0 8px 32px rgba(108,99,255,0.08); }
+
+  /* Better provider dots with pulse */
+  .provDot { width:12px; height:12px; box-shadow: 0 0 6px currentColor; transition: all 0.3s ease; }
+  .provDot:hover { transform:scale(1.4); }
+
+  /* Source badges with icons */
+  .srcBadge { padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:0.3px; text-transform:uppercase; }
+  .srcBadge.airbnb { background:linear-gradient(135deg,#FF5A5F,#e94560); color:#fff; box-shadow:0 2px 8px rgba(233,69,96,0.3); }
+  .srcBadge.booking { background:linear-gradient(135deg,#003580,#0057b8); color:#fff; box-shadow:0 2px 8px rgba(0,53,128,0.3); }
+
+  /* Result rows as mini-cards */
+  .resultRow { border-radius:10px; margin:2px 0; transition: all 0.2s ease; border-left:3px solid transparent; }
+  .resultRow:hover { border-left-color:var(--accent2); background:rgba(108,99,255,0.06) !important; transform:translateX(4px); box-shadow:0 2px 12px rgba(0,0,0,0.1); }
+
+  /* Better typography hierarchy */
+  .panelHeader h2, .panelHeader span[style*="font-weight"] { font-size:15px; letter-spacing:-0.3px; }
+  .summaryBox { font-size:14px; }
+  .summaryBox strong { font-size:20px; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+  /* Empty state illustration */
+  .emptyState { padding:40px 20px; text-align:center; color:var(--text3); }
+  .emptyState::before { content:"📋"; display:block; font-size:48px; margin-bottom:12px; opacity:0.4; filter:grayscale(0.5); }
+
+  /* Smooth theme transition */
+  *, *::before, *::after { transition: background-color 0.4s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+  /* Exclude animations from theme transition */
+  .spinner, .fab, [class*="animation"] { transition: none !important; }
+
+  /* Filter buttons active glow */
+  .filterBtn.active { box-shadow:0 0 12px rgba(233,69,96,0.3); }
+
+  /* Stats cards */
+  .statsGrid > div { transition: all 0.3s ease; }
+  .statsGrid > div:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.15); }
+
+  /* Better tab buttons */
+  .tabBtn { transition: all 0.2s ease; border-radius:10px !important; }
+  .tabBtn.active { box-shadow:0 2px 12px rgba(233,69,96,0.2); }
+  .tabBtn:hover:not(.active) { background:rgba(255,255,255,0.04); transform:translateY(-1px); }
+
+  /* Confetti container */
+  .confetti-container { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9999; overflow:hidden; }
+  .confetti-piece { position:absolute; top:-10px; width:10px; height:10px; border-radius:2px; animation:confettiFall 3s ease-out forwards; }
+  @keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg);opacity:1;} 100%{transform:translateY(100vh) rotate(720deg);opacity:0;} }
+
+  /* Particles background */
+  .particles { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:-1; overflow:hidden; }
+  .particle { position:absolute; border-radius:50%; background:var(--accent2); opacity:0.03; animation:particleFloat linear infinite; }
+  @keyframes particleFloat { 0%{transform:translateY(100vh) rotate(0deg)} 100%{transform:translateY(-100px) rotate(360deg)} }
+
+  /* Pricing card hover */
+  .pricingCard { transition:all 0.3s ease; }
+  .pricingCard:hover { transform:translateY(-4px); box-shadow:0 12px 32px rgba(0,0,0,0.2); }
+  .pricingCard.featured { animation: featuredGlow 3s ease-in-out infinite; }
+  @keyframes featuredGlow { 0%,100%{box-shadow:0 0 20px rgba(108,99,255,0.15)} 50%{box-shadow:0 0 30px rgba(108,99,255,0.3)} }
+
+  /* Generate button shimmer */
+  #btnGenerate { position:relative; overflow:hidden; }
+  #btnGenerate::after { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transition:left 0.5s; }
+  #btnGenerate:hover::after { left:100%; }
+
+  /* Property selector polish */
+  #propSelect { background-image:none; appearance:auto; }
+
+  /* Toast animation */
+  .toast.show { animation: slideUp 0.3s var(--bounce); }
+
   /* ══ UI OVERHAUL ══ */
 
   /* Animations */
@@ -1578,6 +1679,9 @@ async function generatePlanning() {
     logAction('Planning genere', cleanings.length+' menage(s)');
     setStatus('<span style="color:var(--success);font-weight:bold;">Planning genere avec succes</span>');
     scrollToResults();
+    // Confetti on first successful generation
+    if (!localStorage.getItem('mm_first_gen')) { showConfetti(); localStorage.setItem('mm_first_gen','1'); }
+    else if (Math.random() < 0.2) showConfetti(); // 20% chance on subsequent generates
   } finally {
     btn.classList.remove('loading');
     btn.innerHTML='GENERER LE PLANNING';
@@ -1721,6 +1825,46 @@ async function setReminder(idx) {
   // If reminder is already due, fire it now
   checkReminders();
 }
+/* ── Confetti Effect ── */
+function showConfetti() {
+  const container = document.createElement('div');
+  container.className = 'confetti-container';
+  document.body.appendChild(container);
+  const colors = ['#e94560','#6c63ff','#34d399','#fbbf24','#f87171','#60a5fa','#a78bfa'];
+  for (let i = 0; i < 50; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = Math.random() * 1.5 + 's';
+    piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+    piece.style.width = (6 + Math.random() * 8) + 'px';
+    piece.style.height = (6 + Math.random() * 8) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    container.appendChild(piece);
+  }
+  setTimeout(() => container.remove(), 4000);
+}
+
+/* ── Background Particles ── */
+function initParticles() {
+  const container = document.createElement('div');
+  container.className = 'particles';
+  document.body.appendChild(container);
+  for (let i = 0; i < 15; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 20 + Math.random() * 80;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (15 + Math.random() * 25) + 's';
+    p.style.animationDelay = Math.random() * 15 + 's';
+    container.appendChild(p);
+  }
+}
+document.addEventListener('DOMContentLoaded', initParticles);
+
 /* ── Bottom Navigation ── */
 function navTo(section) {
   // Update active state
