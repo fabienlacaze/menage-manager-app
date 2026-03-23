@@ -861,7 +861,7 @@ async function authSubmit() {
 }
 async function checkAuth() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await sb.auth.getUser();
     if (user) {
       document.getElementById('authScreen').style.display = 'none';
       document.getElementById('appMain').style.display = '';
@@ -884,7 +884,7 @@ async function authLogin() {
   const errEl = document.getElementById('authError');
   errEl.textContent = ''; errEl.style.color = '#e94560';
   if (!email || !pass) { errEl.textContent = t('auth.fill.all'); return; }
-  const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (error) { errEl.textContent = error.message === 'Invalid login credentials' ? t('auth.login.invalid') : error.message; return; }
   checkAuth();
 }
@@ -900,7 +900,7 @@ async function authRegister() {
   if (pass !== passConfirm) { errEl.textContent = t('auth.pass.mismatch'); return; }
   try {
     submitBtn.disabled = true; submitBtn.textContent = t('auth.register.loading');
-    const { data, error } = await supabase.auth.signUp({ email, password: pass });
+    const { data, error } = await sb.auth.signUp({ email, password: pass });
     submitBtn.disabled = false; submitBtn.textContent = t('auth.register.btn');
     if (error) { errEl.textContent = error.message; return; }
     if (data.user && data.user.identities && data.user.identities.length === 0) {
@@ -922,7 +922,7 @@ async function authRegister() {
   }
 }
 async function authLogout() {
-  await supabase.auth.signOut();
+  await sb.auth.signOut();
   localStorage.clear();
   checkAuth();
 }

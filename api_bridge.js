@@ -5,7 +5,7 @@
 const API = (function() {
 
   async function getUserId() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await sb.auth.getUser();
     if (!user) throw new Error('Non authentifie');
     return user.id;
   }
@@ -13,7 +13,7 @@ const API = (function() {
   async function load(column, defaultVal) {
     try {
       const userId = await getUserId();
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('user_data')
         .select(column)
         .eq('user_id', userId)
@@ -36,7 +36,7 @@ const API = (function() {
   async function save(column, data) {
     localStorage.setItem('mm_cache_' + column, JSON.stringify(data));
     const userId = await getUserId();
-    const { error } = await supabase
+    const { error } = await sb
       .from('user_data')
       .update({ [column]: data, updated_at: new Date().toISOString() })
       .eq('user_id', userId);
