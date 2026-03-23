@@ -102,6 +102,12 @@ const I18N = {
     'help.feature.notif': 'alertes 2 jours avant arrivee/depart.',
     'help.feature.link': 'partagez un lien read-only.',
 
+    // Properties
+    'property.label': 'Propriete :',
+    'property.add': '+ Ajouter',
+    'property.name_prompt': 'Nom de la propriete :',
+    'property.remove_confirm': 'Supprimer',
+
     // Premium
     'premium.title': 'Passez a Premium',
     'premium.subtitle': 'Prestataires illimites, pas de publicite',
@@ -226,6 +232,12 @@ const I18N = {
 
     // Status
     // Premium
+    // Properties
+    'property.label': 'Property:',
+    'property.add': '+ Add',
+    'property.name_prompt': 'Property name:',
+    'property.remove_confirm': 'Delete',
+
     'premium.title': 'Upgrade to Premium',
     'premium.subtitle': 'Unlimited providers, no ads',
     'premium.btn': 'See plans',

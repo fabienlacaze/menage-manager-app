@@ -671,6 +671,14 @@
     <button class="btnDismiss" onclick="dismissInstall()">&times;</button>
   </div>
 
+  <!-- Property Selector -->
+  <div id="propertySelector" class="panel" style="padding:12px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <span style="font-size:13px;color:var(--text2);font-weight:600;" data-i18n="property.label">Propriete :</span>
+    <select id="propSelect" onchange="switchProperty(this.value)" style="flex:1;min-width:150px;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;"></select>
+    <button class="btn btnSmall btnSuccess" onclick="addNewProperty()" style="padding:6px 14px;font-size:12px;" data-i18n="property.add">+ Ajouter</button>
+    <button class="btn btnSmall btnDanger" id="btnRemoveProp" onclick="removeCurrentProperty()" style="padding:6px 10px;font-size:12px;display:none;">&#128465;</button>
+  </div>
+
   <!-- Panel 1: Configuration -->
   <div class="panel">
     <div class="panelHeader" onclick="togglePanel('config')">
@@ -864,7 +872,8 @@ function toggleTheme(){const t=document.documentElement.getAttribute('data-theme
 (function(){const t=localStorage.getItem('mm_theme');if(t==='light'){document.documentElement.setAttribute('data-theme','light');}})();
 
 const COLORS = ['#3fb950','#58a6ff','#d29922','#f85149','#bc8cff','#79c0ff','#f778ba'];
-let config = {airbnbIcalUrl:'',bookingIcalUrl:'',providers:[],property:'Mon logement'};
+let fullConfig = { properties: [], activeProperty: null };
+let config = { airbnbIcalUrl:'',bookingIcalUrl:'',providers:[],property:'Mon logement' }; // active property shortcut
 let transmittedDates = [];
 let cleanings = [];
 let currentFilter = '';
@@ -874,6 +883,99 @@ let calYear, calMonth;
 let history = [];
 let reservations = [];
 let linens = []; // Jeux de linge: [{id, name, status:'available'|'used'|'pressing', lastUsed:'', history:[]}]
+
+/* ── Property Management ── */
+function renderPropertySelector() {
+  const sel = document.getElementById('propSelect');
+  const btnRemove = document.getElementById('btnRemoveProp');
+  if (!sel) return;
+  sel.innerHTML = '';
+  const props = fullConfig.properties || [];
+  for (const p of props) {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name;
+    if (p.id === API.getActivePropertyId()) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  if (btnRemove) btnRemove.style.display = props.length > 1 ? '' : 'none';
+}
+
+async function loadActiveProperty() {
+  const prop = API.getActiveProperty(fullConfig);
+  if (!prop) return;
+  // Shortcut for compatibility
+  config = {
+    airbnbIcalUrl: prop.airbnbIcalUrl || '',
+    bookingIcalUrl: prop.bookingIcalUrl || '',
+    providers: prop.providers || [],
+    property: prop.name || '',
+    readonlyToken: prop.readonlyToken || '',
+  };
+  transmittedDates = await API.load_transmitted();
+  history = await API.load_history();
+  linens = await API.load_linens();
+  document.getElementById('txtAirbnb').value = config.airbnbIcalUrl;
+  document.getElementById('txtBooking').value = config.bookingIcalUrl;
+  renderProviders();
+  const saved = await API.load_planning();
+  if (saved && saved.length > 0) {
+    cleanings = saved;
+    currentFilter = '';
+    renderResults();
+    renderFilterBar();
+    setStatus(t('status.restored'));
+  } else {
+    cleanings = [];
+    document.getElementById('resultDiv').innerHTML = '<div class="emptyState" data-i18n="results.empty">' + t('results.empty') + '</div>';
+    setStatus(t('status.ready'));
+  }
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+}
+
+async function switchProperty(propId) {
+  // Save current property first
+  await syncAndSaveConfig();
+  API.setActiveProperty(propId);
+  fullConfig.activeProperty = propId;
+  await loadActiveProperty();
+}
+
+function addNewProperty() {
+  const limits = API.getLimits();
+  if ((fullConfig.properties || []).length >= limits.maxProperties) {
+    showPremiumModal();
+    return;
+  }
+  const name = prompt(t('property.name_prompt') || 'Nom de la propriete :');
+  if (!name) return;
+  fullConfig = API.addProperty(fullConfig, name);
+  renderPropertySelector();
+  switchProperty(API.getActivePropertyId());
+}
+
+async function removeCurrentProperty() {
+  if ((fullConfig.properties || []).length <= 1) return;
+  const prop = API.getActiveProperty(fullConfig);
+  if (!confirm((t('property.remove_confirm') || 'Supprimer') + ' "' + (prop ? prop.name : '') + '" ?')) return;
+  fullConfig = API.removeProperty(fullConfig, prop.id);
+  await API.save_config(fullConfig);
+  renderPropertySelector();
+  await loadActiveProperty();
+}
+
+function syncAndSaveConfig() {
+  syncProviders();
+  const prop = API.getActiveProperty(fullConfig);
+  if (prop) {
+    prop.airbnbIcalUrl = document.getElementById('txtAirbnb').value.trim();
+    prop.bookingIcalUrl = document.getElementById('txtBooking').value.trim();
+    prop.providers = config.providers;
+  }
+  return API.save_config(fullConfig);
+}
 
 /* ── Panel Collapse ── */
 function togglePanel(id) {
@@ -900,26 +1002,9 @@ async function init() {
   // Load plan
   await API.load_plan();
   updatePlanUI();
-  config = await API.load_config();
-  transmittedDates = await API.load_transmitted();
-  history = await API.load_history();
-  linens = await API.load_linens();
-  document.getElementById('txtAirbnb').value = config.airbnbIcalUrl || '';
-  document.getElementById('txtBooking').value = config.bookingIcalUrl || '';
-  renderProviders();
-  const saved = await API.load_planning();
-  if (saved && saved.length > 0) {
-    cleanings = saved;
-    currentFilter = '';
-    renderResults();
-    renderFilterBar();
-    setStatus('Planning restaure');
-  } else {
-    setStatus('Pret');
-  }
-  const now = new Date();
-  calYear = now.getFullYear();
-  calMonth = now.getMonth();
+  fullConfig = await API.load_config();
+  renderPropertySelector();
+  await loadActiveProperty();
   if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
   checkRentalNotifications();
   checkReminders();
@@ -1112,7 +1197,8 @@ function dismissInstall() { document.getElementById('installBanner').style.displ
 
 /* ── Share Readonly ── */
 function shareReadonly() {
-  const token = config.readonlyToken;
+  const prop = API.getActiveProperty(fullConfig);
+  const token = prop ? prop.readonlyToken : config.readonlyToken;
   if (!token) { showMsg('Sauvegardez la configuration d\'abord pour generer le lien.'); return; }
   const base = location.href.replace(/\/[^\/]*$/, '');
   const url = base + '/view.html?readonly=' + token;
@@ -1338,7 +1424,7 @@ function logAction(action, detail='') {
   if (log.length > 100) log.length = 100;
   localStorage.setItem('mm_changelog', JSON.stringify(log));
 }
-async function saveConfig() { syncProviders(); config.airbnbIcalUrl=document.getElementById('txtAirbnb').value.trim(); config.bookingIcalUrl=document.getElementById('txtBooking').value.trim(); const res=await API.save_config(config); if(res&&res.config) config=res.config; logAction('Config sauvegardee', config.providers.map(p=>p.name).join(', ')); showToast('Configuration sauvegardee'); }
+async function saveConfig() { const res = await syncAndSaveConfig(); if(res&&res.config) fullConfig=res.config; logAction('Config sauvegardee', (config.providers||[]).map(p=>p.name).join(', ')); showToast('Configuration sauvegardee'); }
 async function savePlanning() { if(cleanings.length>0) { await API.save_planning(cleanings); logAction('Planning sauvegarde', cleanings.length+' menage(s)'); } }
 
 /* ── Generate Planning ── */
@@ -1347,10 +1433,10 @@ async function generatePlanning() {
   config.airbnbIcalUrl=document.getElementById('txtAirbnb').value.trim();
   config.bookingIcalUrl=document.getElementById('txtBooking').value.trim();
   if(!config.airbnbIcalUrl&&!config.bookingIcalUrl){showMsg('Saisissez au moins une URL iCal.');return;}
-  if(!config.providers.length){showMsg('Ajoutez au moins un prestataire.');return;}
-  const totalPct=config.providers.reduce((s,p)=>s+(parseInt(p.percentage)||0),0);
+  if(!(config.providers||[]).length){showMsg('Ajoutez au moins un prestataire.');return;}
+  const totalPct=(config.providers||[]).reduce((s,p)=>s+(parseInt(p.percentage)||0),0);
   if(totalPct!==100){showMsg('Le total des pourcentages doit etre 100% (actuellement '+totalPct+'%).');return;}
-  await API.save_config(config);
+  await syncAndSaveConfig();
   const btn=document.getElementById('btnGenerate');
   btn.classList.add('loading');
   btn.innerHTML='<span class="spinner"></span>Generation en cours...';

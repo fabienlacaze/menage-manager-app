@@ -1,16 +1,15 @@
 /**
  * api_bridge.js - Full client-side API bridge using Supabase.
- * All data stored in Supabase PostgreSQL + localStorage cache.
- * Includes freemium plan management.
+ * Supports multiple properties per user (freemium: 1 free, unlimited premium).
  */
 
-// Plan limits
 const PLAN_LIMITS = {
   free: { maxProviders: 2, maxProperties: 1, ads: true },
   premium: { maxProviders: Infinity, maxProperties: Infinity, ads: false },
 };
 
 let currentPlan = 'free';
+let activePropertyId = null;
 
 const API = (function() {
 
@@ -20,7 +19,7 @@ const API = (function() {
     return user.id;
   }
 
-  async function load(column, defaultVal) {
+  async function loadRaw(column, defaultVal) {
     try {
       const userId = await getUserId();
       const { data, error } = await sb
@@ -42,7 +41,7 @@ const API = (function() {
     }
   }
 
-  async function save(column, data) {
+  async function saveRaw(column, data) {
     localStorage.setItem('mm_cache_' + column, JSON.stringify(data));
     const userId = await getUserId();
     const { error } = await sb
@@ -51,6 +50,50 @@ const API = (function() {
       .eq('user_id', userId);
     if (error) console.error('Save error:', error);
     return { ok: !error };
+  }
+
+  // Ensure config has multi-property structure
+  function migrateConfig(config) {
+    if (config && config.properties && Array.isArray(config.properties)) {
+      return config; // Already migrated
+    }
+    // Migrate from single-property format
+    const secureToken = (len) => { const a = new Uint8Array(len); crypto.getRandomValues(a); return Array.from(a, b => b.toString(16).padStart(2,'0')).join(''); };
+    const propId = secureToken(4);
+    const newConfig = {
+      properties: [{
+        id: propId,
+        name: (config && config.property) || 'Mon logement',
+        airbnbIcalUrl: (config && config.airbnbIcalUrl) || '',
+        bookingIcalUrl: (config && config.bookingIcalUrl) || '',
+        providers: (config && config.providers) || [],
+        readonlyToken: (config && config.readonlyToken) || secureToken(8),
+      }],
+      activeProperty: propId,
+    };
+    // Copy provider tokens
+    for (const p of newConfig.properties[0].providers) {
+      if (!p.token) p.token = secureToken(4);
+    }
+    return newConfig;
+  }
+
+  // Migrate planning/transmitted to per-property format
+  function migratePlanning(data, propId) {
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      return data; // Already per-property object
+    }
+    // Migrate from array to { propId: [...] }
+    if (Array.isArray(data)) {
+      return { [propId]: data };
+    }
+    return {};
+  }
+
+  function getActiveProp(config) {
+    if (!config || !config.properties || !config.properties.length) return null;
+    const id = activePropertyId || config.activeProperty || config.properties[0].id;
+    return config.properties.find(p => p.id === id) || config.properties[0];
   }
 
   return {
@@ -64,67 +107,154 @@ const API = (function() {
           .eq('user_id', userId)
           .single();
         if (error || !data) { currentPlan = 'free'; return 'free'; }
-        // Check if premium has expired
         if (data.plan === 'premium' && data.current_period_end) {
           const expiry = new Date(data.current_period_end);
           if (expiry < new Date()) { currentPlan = 'free'; return 'free'; }
         }
         currentPlan = data.plan || 'free';
         return currentPlan;
-      } catch (e) {
-        currentPlan = 'free';
-        return 'free';
-      }
+      } catch (e) { currentPlan = 'free'; return 'free'; }
     },
-
     getPlan() { return currentPlan; },
     getLimits() { return PLAN_LIMITS[currentPlan] || PLAN_LIMITS.free; },
     isPremium() { return currentPlan === 'premium'; },
 
+    // Config (multi-property)
     async load_config() {
-      return await load('config', { airbnbIcalUrl: '', bookingIcalUrl: '', providers: [], property: 'Mon logement' });
+      const raw = await loadRaw('config', {});
+      const config = migrateConfig(raw);
+      // Set active property
+      const prop = getActiveProp(config);
+      if (prop) activePropertyId = prop.id;
+      return config;
     },
 
     async save_config(config) {
       const secureToken = (len) => { const a = new Uint8Array(len); crypto.getRandomValues(a); return Array.from(a, b => b.toString(16).padStart(2,'0')).join(''); };
-      for (const p of (config.providers || [])) {
-        if (!p.token) p.token = secureToken(4);
+      // Ensure tokens for all properties
+      for (const prop of (config.properties || [])) {
+        if (!prop.readonlyToken) prop.readonlyToken = secureToken(8);
+        for (const p of (prop.providers || [])) {
+          if (!p.token) p.token = secureToken(4);
+        }
       }
-      if (!config.readonlyToken) config.readonlyToken = secureToken(8);
-
       // Enforce plan limits
       const limits = this.getLimits();
-      if ((config.providers || []).length > limits.maxProviders) {
-        return { ok: false, error: 'limit', maxProviders: limits.maxProviders };
+      if ((config.properties || []).length > limits.maxProperties) {
+        return { ok: false, error: 'limit_properties', max: limits.maxProperties };
       }
-
-      await save('config', config);
+      const activeProp = getActiveProp(config);
+      if (activeProp && (activeProp.providers || []).length > limits.maxProviders) {
+        return { ok: false, error: 'limit_providers', max: limits.maxProviders };
+      }
+      await saveRaw('config', config);
       return { ok: true, config };
     },
 
-    async load_transmitted() { return await load('transmitted', []); },
-    async save_transmitted(dates) { return await save('transmitted', dates); },
+    // Property helpers
+    getActiveProperty(config) { return getActiveProp(config); },
+    setActiveProperty(propId) { activePropertyId = propId; },
+    getActivePropertyId() { return activePropertyId; },
 
-    async load_planning() { return await load('planning', null); },
-    async save_planning(cleanings) { return await save('planning', cleanings); },
+    addProperty(config, name) {
+      const secureToken = (len) => { const a = new Uint8Array(len); crypto.getRandomValues(a); return Array.from(a, b => b.toString(16).padStart(2,'0')).join(''); };
+      const id = secureToken(4);
+      config.properties.push({
+        id, name: name || 'Nouvelle propriete',
+        airbnbIcalUrl: '', bookingIcalUrl: '',
+        providers: [], readonlyToken: secureToken(8),
+      });
+      config.activeProperty = id;
+      activePropertyId = id;
+      return config;
+    },
 
-    async load_history() { return await load('history', []); },
-    async save_history(history) { return await save('history', history); },
+    removeProperty(config, propId) {
+      config.properties = config.properties.filter(p => p.id !== propId);
+      if (config.activeProperty === propId && config.properties.length > 0) {
+        config.activeProperty = config.properties[0].id;
+        activePropertyId = config.properties[0].id;
+      }
+      return config;
+    },
 
-    async load_linens() { return await load('linens', []); },
-    async save_linens(linens) { return await save('linens', linens); },
+    // Planning (per-property)
+    async load_planning() {
+      const raw = await loadRaw('planning', {});
+      if (!activePropertyId) return [];
+      const data = migratePlanning(raw, activePropertyId);
+      return data[activePropertyId] || [];
+    },
+    async save_planning(cleanings) {
+      const raw = await loadRaw('planning', {});
+      const data = migratePlanning(raw, activePropertyId);
+      data[activePropertyId] = cleanings;
+      return await saveRaw('planning', data);
+    },
 
+    // Transmitted (per-property)
+    async load_transmitted() {
+      const raw = await loadRaw('transmitted', {});
+      if (!activePropertyId) return [];
+      const data = (typeof raw === 'object' && !Array.isArray(raw)) ? raw : { [activePropertyId]: raw || [] };
+      return data[activePropertyId] || [];
+    },
+    async save_transmitted(dates) {
+      const raw = await loadRaw('transmitted', {});
+      const data = (typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+      data[activePropertyId] = dates;
+      return await saveRaw('transmitted', data);
+    },
+
+    // History (per-property)
+    async load_history() {
+      const raw = await loadRaw('history', {});
+      if (!activePropertyId) return [];
+      const data = (typeof raw === 'object' && !Array.isArray(raw)) ? raw : { [activePropertyId]: raw || [] };
+      return data[activePropertyId] || [];
+    },
+    async save_history(history) {
+      const raw = await loadRaw('history', {});
+      const data = (typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+      data[activePropertyId] = history;
+      return await saveRaw('history', data);
+    },
+
+    // Linens (per-property)
+    async load_linens() {
+      const raw = await loadRaw('linens', {});
+      if (!activePropertyId) return [];
+      const data = (typeof raw === 'object' && !Array.isArray(raw)) ? raw : { [activePropertyId]: raw || [] };
+      return data[activePropertyId] || [];
+    },
+    async save_linens(linens) {
+      const raw = await loadRaw('linens', {});
+      const data = (typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+      data[activePropertyId] = linens;
+      return await saveRaw('linens', data);
+    },
+
+    // Generate planning (uses active property)
     async generate_planning() {
       const log = typeof dbg === 'function' ? dbg : console.log;
       log('Chargement config...');
-      const config = await this.load_config();
-      log('Config: ' + (config.providers||[]).length + ' prestataires, airbnb=' + (config.airbnbIcalUrl?'oui':'non') + ', booking=' + (config.bookingIcalUrl?'oui':'non'), 'ok');
+      const fullConfig = await this.load_config();
+      const prop = getActiveProp(fullConfig);
+      if (!prop) return { error: 'Aucune propriete configuree' };
+      // Build single-property config for generator
+      const genConfig = {
+        airbnbIcalUrl: prop.airbnbIcalUrl,
+        bookingIcalUrl: prop.bookingIcalUrl,
+        providers: prop.providers,
+        property: prop.name,
+      };
+      log('Config: ' + (genConfig.providers||[]).length + ' prestataires, airbnb=' + (genConfig.airbnbIcalUrl?'oui':'non') + ', booking=' + (genConfig.bookingIcalUrl?'oui':'non'), 'ok');
       const previousPlanning = (await this.load_planning()) || [];
       log('Planning precedent: ' + previousPlanning.length + ' entree(s)', 'ok');
       const transmittedDates = await this.load_transmitted();
       log('Dates transmises: ' + transmittedDates.length, 'ok');
       log('Lancement generatePlanning()...');
-      return await generatePlanningFromICal(config, previousPlanning, transmittedDates);
+      return await generatePlanningFromICal(genConfig, previousPlanning, transmittedDates);
     },
 
     async export_csv(cleanings, filename) {
