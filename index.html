@@ -591,25 +591,27 @@
 
   /* Aurora animated header */
   .header {
-    background: linear-gradient(-45deg, #0f3460, #1a1a2e, #16213e, #0f2847, #1a1040);
-    background-size: 400% 400%;
-    animation: aurora 15s ease infinite;
+    background: linear-gradient(-45deg, #e94560, #6c63ff, #0f3460, #16213e, #34d399, #1a1a2e) !important;
+    background-size: 600% 600% !important;
+    animation: aurora 8s ease infinite !important;
   }
-  @keyframes aurora { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  @keyframes aurora { 0%{background-position:0% 50%} 25%{background-position:50% 0%} 50%{background-position:100% 50%} 75%{background-position:50% 100%} 100%{background-position:0% 50%} }
 
   /* Header logo pulse */
-  .header-logo { animation: logoPulse 3s ease-in-out infinite; }
-  @keyframes logoPulse { 0%,100%{box-shadow:0 4px 12px rgba(233,69,96,0.3)} 50%{box-shadow:0 4px 24px rgba(233,69,96,0.6)} }
+  .header-logo { animation: logoPulse 2s ease-in-out infinite !important; }
+  @keyframes logoPulse { 0%,100%{box-shadow:0 4px 12px rgba(233,69,96,0.3);transform:scale(1)} 50%{box-shadow:0 4px 30px rgba(233,69,96,0.8);transform:scale(1.05)} }
 
   /* Gradient border panels */
   .panel { position:relative; border:none; }
   .panel::before {
-    content:''; position:absolute; inset:-1px; border-radius:calc(var(--radius) + 1px); padding:1px;
-    background:linear-gradient(135deg, rgba(108,99,255,0.2), rgba(233,69,96,0.1), rgba(52,211,153,0.1));
+    content:''; position:absolute; inset:-1px; border-radius:calc(var(--radius) + 1px); padding:1.5px;
+    background:linear-gradient(135deg, rgba(108,99,255,0.5), rgba(233,69,96,0.3), rgba(52,211,153,0.4), rgba(108,99,255,0.5));
+    background-size:300% 300%; animation:borderGlow 6s ease infinite;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor; mask-composite: exclude;
     pointer-events:none; z-index:0;
   }
+  @keyframes borderGlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
   /* Section number badges with gradient */
   .panelHeader .panelNum {
@@ -668,8 +670,10 @@
 
   /* Particles background */
   .particles { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:-1; overflow:hidden; }
-  .particle { position:absolute; border-radius:50%; background:var(--accent2); opacity:0.03; animation:particleFloat linear infinite; }
-  @keyframes particleFloat { 0%{transform:translateY(100vh) rotate(0deg)} 100%{transform:translateY(-100px) rotate(360deg)} }
+  .particle { position:absolute; border-radius:50%; opacity:0.08; animation:particleFloat linear infinite; }
+  .particle:nth-child(odd) { background:var(--accent2); }
+  .particle:nth-child(even) { background:var(--accent); }
+  @keyframes particleFloat { 0%{transform:translateY(100vh) rotate(0deg);opacity:0} 10%{opacity:0.08} 90%{opacity:0.08} 100%{transform:translateY(-100px) rotate(360deg);opacity:0} }
 
   /* Pricing card hover */
   .pricingCard { transition:all 0.3s ease; }
@@ -1679,9 +1683,8 @@ async function generatePlanning() {
     logAction('Planning genere', cleanings.length+' menage(s)');
     setStatus('<span style="color:var(--success);font-weight:bold;">Planning genere avec succes</span>');
     scrollToResults();
-    // Confetti on first successful generation
-    if (!localStorage.getItem('mm_first_gen')) { showConfetti(); localStorage.setItem('mm_first_gen','1'); }
-    else if (Math.random() < 0.2) showConfetti(); // 20% chance on subsequent generates
+    // Confetti on successful generation
+    showConfetti();
   } finally {
     btn.classList.remove('loading');
     btn.innerHTML='GENERER LE PLANNING';
@@ -1851,15 +1854,15 @@ function initParticles() {
   const container = document.createElement('div');
   container.className = 'particles';
   document.body.appendChild(container);
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 25; i++) {
     const p = document.createElement('div');
     p.className = 'particle';
-    const size = 20 + Math.random() * 80;
+    const size = 30 + Math.random() * 120;
     p.style.width = size + 'px';
     p.style.height = size + 'px';
     p.style.left = Math.random() * 100 + '%';
-    p.style.animationDuration = (15 + Math.random() * 25) + 's';
-    p.style.animationDelay = Math.random() * 15 + 's';
+    p.style.animationDuration = (10 + Math.random() * 20) + 's';
+    p.style.animationDelay = Math.random() * 10 + 's';
     container.appendChild(p);
   }
 }
