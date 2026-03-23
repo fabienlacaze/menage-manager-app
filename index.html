@@ -885,18 +885,32 @@ async function authRegister() {
   const pass = document.getElementById('authPass').value;
   const passConfirm = document.getElementById('authPassConfirm').value;
   const errEl = document.getElementById('authError');
+  const submitBtn = document.getElementById('authSubmitBtn');
   errEl.textContent = ''; errEl.style.color = '#e94560';
   if (!email || !pass) { errEl.textContent = 'Remplissez tous les champs'; return; }
   if (pass.length < 6) { errEl.textContent = 'Le mot de passe doit faire au moins 6 caracteres'; return; }
   if (pass !== passConfirm) { errEl.textContent = 'Les mots de passe ne correspondent pas'; return; }
-  const { data, error } = await supabase.auth.signUp({ email, password: pass });
-  if (error) { errEl.textContent = error.message; return; }
-  if (data.user && !data.user.confirmed_at && data.user.identities && data.user.identities.length === 0) {
-    errEl.textContent = 'Cet email est deja utilise'; return;
+  try {
+    submitBtn.disabled = true; submitBtn.textContent = 'Creation en cours...';
+    const { data, error } = await supabase.auth.signUp({ email, password: pass });
+    submitBtn.disabled = false; submitBtn.textContent = 'Creer mon compte';
+    if (error) { errEl.textContent = error.message; return; }
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      errEl.textContent = 'Cet email est deja utilise'; return;
+    }
+    if (data.user && !data.user.confirmed_at) {
+      errEl.style.color = '#34d399';
+      errEl.textContent = 'Compte cree ! Verifiez votre boite mail pour confirmer.';
+      return;
+    }
+    errEl.style.color = '#34d399';
+    errEl.textContent = 'Compte cree ! Connexion...';
+    setTimeout(() => checkAuth(), 1000);
+  } catch (e) {
+    submitBtn.disabled = false; submitBtn.textContent = 'Creer mon compte';
+    errEl.textContent = 'Erreur: ' + e.message;
+    console.error('Register error:', e);
   }
-  errEl.style.color = '#34d399';
-  errEl.textContent = 'Compte cree ! Connexion en cours...';
-  setTimeout(() => checkAuth(), 1000);
 }
 async function authLogout() {
   await supabase.auth.signOut();
