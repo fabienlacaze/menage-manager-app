@@ -99,6 +99,7 @@ const I18N = {
     // Communication & Export
     'comm.title': 'Communication & Export',
     'comm.share': 'Partager (lecture seule)',
+    'comm.provlinks': 'Liens prestataires',
     'comm.export': 'Exporter',
 
     // Results panel
@@ -408,6 +409,7 @@ const I18N = {
     // Communication & Export
     'comm.title': 'Communication & Export',
     'comm.share': 'Share (read-only)',
+    'comm.provlinks': 'Provider links',
     'comm.export': 'Export',
 
     'results.title': 'Results',
