@@ -1034,8 +1034,9 @@
             <button class="btn btnPrimary" onclick="showSendModal()" style="padding:14px;font-size:14px;background:linear-gradient(135deg,#6c63ff,#5a52d5);">&#128228; <span data-i18n="send.btn">Envoyer</span></button>
             <button class="btn btnOutline" onclick="shareReadonly()" style="padding:14px;font-size:14px;">&#128279; <span data-i18n="comm.share">Partager</span></button>
           </div>
-          <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <button class="btn btnOutline" onclick="exportPDF()" style="padding:12px;">&#128462; <span data-i18n="results.pdf">PDF</span></button>
+            <button class="btn btnOutline" onclick="showProviderLinks()" style="padding:12px;">&#128279; Liens prestataires</button>
           </div>
         </div>
       </div>
@@ -2351,7 +2352,7 @@ function toISO(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2
 function renderProviders() {
   const providers = config.providers || [];
   let html = '<table class="provTable">';
-  html += '<tr><th></th><th>Nom</th><th>Tel</th><th class="colPct">%</th><th class="colPct">Tarif</th><th class="colVac">Vacances</th><th class="colLink">Lien</th><th class="colDel"></th></tr>';
+  html += '<tr><th></th><th>Nom</th><th>Tel</th><th class="colPct">%</th><th class="colPct">Tarif</th><th class="colVac">Vacances</th><th></th><th></th><th></th></tr>';
   let totalPct = 0;
   providers.forEach((p, i) => {
     const color = COLORS[i] || '#888';
@@ -2365,7 +2366,6 @@ function renderProviders() {
       <td class="center"><button class="btn btnSmall" onclick="showVacModal(${i})">${vacCount > 0 ? vacCount+' per.' : 'Aucune'}</button></td>
       <td class="center"><button class="btnLocation" onclick="editProvider(${i})" title="Modifier" style="font-size:14px;">&#9998;</button></td>
       <td class="center"><button class="btnLocation ${p.lat ? 'hasLocation' : ''}" onclick="openMapForProvider(${i})" title="${p.address || 'Definir la zone'}">&#128205;</button></td>
-      <td class="center">${p.token ? `<button class="btn btnSmall" style="padding:4px 8px;" onclick="copyViewLink('${esc(p.token)}')" title="Copier le lien prestataire">&#128279;</button>` : ''}</td>
       <td class="center"><button class="btn btnSmall btnDanger" style="padding:4px 8px;" onclick="removeProvider(${i})">&#10005;</button></td>
     </tr>`;
     totalPct += parseInt(p.percentage) || 0;
@@ -2695,6 +2695,27 @@ function buildWhatsAppText(provName) {
   pc.forEach(c => { txt += `${c.dayName} ${c.cleaningDateFR}\n`; });
   return txt;
 }
+/* ── Provider Links ── */
+function showProviderLinks() {
+  const providers = config.providers || [];
+  if (!providers.length) { showMsg(t('config.provider.required')); return; }
+  let html = '<div style="font-size:15px;font-weight:600;color:var(--accent);margin-bottom:14px;">&#128279; Liens prestataires</div>';
+  html += '<div style="color:var(--text2);font-size:12px;margin-bottom:12px;">Chaque prestataire a un lien unique pour voir ses menages en lecture seule.</div>';
+  providers.forEach((p, i) => {
+    const color = COLORS[i] || '#888';
+    const link = p.token ? window.location.origin + window.location.pathname.replace('index.html','') + 'view.html?provider=' + p.token : '';
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span class="provDot" style="background:${color}"></span>
+      <span style="font-weight:600;min-width:80px;">${esc(p.name)}</span>
+      <input type="text" value="${esc(link)}" readonly style="flex:1;padding:6px 10px;background:var(--surface2);color:var(--text3);border:1px solid var(--border2);border-radius:6px;font-size:11px;">
+      <button class="btn btnSmall" onclick="navigator.clipboard.writeText('${esc(link)}');showToast('${esc(p.name)} - lien copie !')" style="padding:6px 10px;">&#128203;</button>
+    </div>`;
+  });
+  document.getElementById('msgBody').innerHTML = html;
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('msgModal').style.display = 'block';
+}
+
 /* ── Send Modal (multi-channel) ── */
 let sendSelectedProvider = null;
 
