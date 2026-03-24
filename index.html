@@ -911,11 +911,14 @@
       <span class="panelChevron" id="chevConfig">&#9660;</span>
     </div>
     <div class="panelBody" id="bodyConfig">
-      <!-- Property actions -->
+      <!-- Property name + actions -->
       <select id="propSelect" style="display:none;"></select>
-      <div id="propertySelector" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <input type="text" id="propNameInput" placeholder="Nom du logement" onchange="updatePropName(this.value)" style="flex:1;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:15px;font-weight:600;">
         <button class="btnLocation" onclick="openPropDetail()" title="Details" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#9998;</button>
         <button class="btnLocation" onclick="openMapForProperty()" id="btnPropLocation" title="Position" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#128205;</button>
+      </div>
+      <div id="propertySelector" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
         <button class="btn btnSmall btnSuccess" onclick="addNewProperty()" style="padding:6px 14px;font-size:12px;" data-i18n="property.add">+ Ajouter</button>
         <button class="btn btnSmall btnDanger" id="btnRemoveProp" onclick="removeCurrentProperty()" style="padding:6px 10px;font-size:12px;display:none;">&#128465;</button>
       </div>
@@ -1313,6 +1316,8 @@ async function loadActiveProperty() {
   transmittedDates = await API.load_transmitted();
   history = await API.load_history();
   linens = await API.load_linens();
+  const nameInput = document.getElementById('propNameInput');
+  if (nameInput) nameInput.value = prop.name || '';
   renderIcalList();
   renderPropQuickInfo();
   renderProviders();
@@ -1741,6 +1746,11 @@ function renderPressing() {
     }
   }
   div.innerHTML = html;
+}
+
+function updatePropName(name) {
+  const prop = API.getActiveProperty(fullConfig);
+  if (prop) { prop.name = name; renderPropertySelector(); syncAndSaveConfig(); }
 }
 
 /* ── iCal Platform Management ── */
@@ -2806,19 +2816,18 @@ function setStatus(html){document.getElementById('statusText').innerHTML=html;}
 function pasteField(id){navigator.clipboard.readText().then(t=>{document.getElementById(id).value=t.trim();});}
 function showToast(msg){
   const t=document.getElementById('toast');
-  t.innerHTML=msg+'<span class="toast-broom" style="position:absolute;right:-30px;top:50%;transform:translateY(-50%);font-size:22px;opacity:0;">🧹</span>';
-  t.style.display='block';t.style.opacity='1';t.style.position='relative';t.style.overflow='hidden';
+  t.innerHTML='<span class="toast-text">'+msg+'</span><span class="toast-broom" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:22px;opacity:0;">🧹</span>';
+  t.style.display='block';t.style.opacity='1';t.style.position='relative';t.style.overflow='visible';
   setTimeout(()=>{
     // Broom sweep animation
     const broom=t.querySelector('.toast-broom');
     if(broom){
-      broom.style.transition='all 0.8s ease-in-out';
       broom.style.opacity='1';
-      broom.style.right='calc(100% + 30px)';
+      broom.style.transition='right 1s ease-in-out';
+      setTimeout(()=>{ broom.style.right='calc(100% + 40px)'; },50);
     }
-    t.style.transition='opacity 0.3s 0.6s';
-    t.style.opacity='0';
-    setTimeout(()=>{t.style.display='none';t.style.opacity='1';t.style.transition='';},1200);
+    setTimeout(()=>{t.style.transition='opacity 0.4s';t.style.opacity='0';},800);
+    setTimeout(()=>{t.style.display='none';t.style.opacity='1';t.style.transition='';},1300);
   },4000);
 }
 function showMsg(msg){document.getElementById('msgBody').innerHTML=msg;document.getElementById('overlay').style.display='block';document.getElementById('msgModal').style.display='block';}
