@@ -2995,31 +2995,31 @@ function buildMonthlyData() {
     const [y, mo] = m.split('-');
     return MONTH_NAMES[parseInt(mo)-1] + ' ' + y.substring(2);
   });
-  // Build monthly totals table
-  let tableHtml = '<div style="overflow-x:auto;"><table class="resultTable" style="font-size:12px;"><tr><th>Mois</th>';
-  provNames.forEach((name,i) => { tableHtml += `<th><span class="provDot" style="background:${colors[i]}"></span>${esc(name)}</th>`; });
-  tableHtml += '<th style="font-weight:700">Total</th></tr>';
-  months.forEach((m, mi) => {
-    const [y, mo] = m.split('-');
-    const label = MONTH_NAMES[parseInt(mo)-1] + ' ' + y;
-    tableHtml += `<tr><td style="font-weight:600">${label}</td>`;
-    let rowTotal = 0;
-    provNames.forEach((name, pi) => {
-      const count = datasets[pi].data[mi];
-      rowTotal += count;
-      tableHtml += `<td style="text-align:center;${count > 0 ? 'font-weight:600' : 'color:var(--text3)'}">${count}</td>`;
-    });
-    tableHtml += `<td style="text-align:center;font-weight:700">${rowTotal}</td></tr>`;
-  });
-  // Totals row
-  tableHtml += '<tr style="border-top:2px solid var(--border2);"><td style="font-weight:700">TOTAL</td>';
-  let grandTotal = 0;
+  // Build monthly totals table (horizontal: months as columns)
+  let tableHtml = '<div style="overflow-x:auto;"><table class="resultTable" style="font-size:12px;white-space:nowrap;">';
+  // Header: months
+  tableHtml += '<tr><th style="text-align:left;min-width:90px;"></th>';
+  months.forEach(m => { const [y,mo]=m.split('-'); tableHtml += `<th style="text-align:right;min-width:50px;padding:6px 8px;">${MONTH_NAMES[parseInt(mo)-1]}<br><span style="font-size:10px;font-weight:400;color:var(--text3);">${y}</span></th>`; });
+  tableHtml += '<th style="text-align:right;min-width:50px;padding:6px 8px;font-weight:700;">TOTAL</th></tr>';
+  // Rows: providers
   provNames.forEach((name, pi) => {
-    const total = datasets[pi].data.reduce((s,v) => s+v, 0);
-    grandTotal += total;
-    tableHtml += `<td style="text-align:center;font-weight:700;color:${colors[pi]}">${total}</td>`;
+    tableHtml += `<tr><td style="font-weight:500;"><span class="provDot" style="background:${colors[pi]}"></span>${esc(name)}</td>`;
+    let provTotal = 0;
+    months.forEach((m, mi) => {
+      const count = datasets[pi].data[mi];
+      provTotal += count;
+      tableHtml += `<td style="text-align:right;padding:6px 8px;${count > 0 ? 'font-weight:600' : 'color:var(--text3)'}">${count || '-'}</td>`;
+    });
+    tableHtml += `<td style="text-align:right;padding:6px 8px;font-weight:700;color:${colors[pi]}">${provTotal}</td></tr>`;
   });
-  tableHtml += `<td style="text-align:center;font-weight:700;color:var(--accent)">${grandTotal}</td></tr></table></div>`;
+  // Total row
+  tableHtml += '<tr style="border-top:2px solid var(--border2);"><td style="font-weight:700;">TOTAL</td>';
+  let grandTotal = 0;
+  months.forEach((m, mi) => {
+    let mTotal = 0; provNames.forEach((_, pi) => { mTotal += datasets[pi].data[mi]; }); grandTotal += mTotal;
+    tableHtml += `<td style="text-align:right;padding:6px 8px;font-weight:700;color:var(--accent);">${mTotal}</td>`;
+  });
+  tableHtml += `<td style="text-align:right;padding:6px 8px;font-weight:700;color:var(--accent);">${grandTotal}</td></tr></table></div>`;
   return { labels, datasets, tableHtml, hasData: allFull.length > 0 };
 }
 
