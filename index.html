@@ -128,6 +128,7 @@
     overflow: hidden;
     box-shadow: var(--shadow);
   }
+  #panelConfig { overflow: visible; }
   .panelHeader {
     padding: 16px 18px;
     display: flex; align-items: center; justify-content: space-between;
@@ -1215,6 +1216,12 @@
 
     <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;" data-i18n="config.phone">Telephone</label>
     <input id="txtNewPhone" type="tel" placeholder="06 12 34 56 78" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">
+
+    <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Email</label>
+    <input id="txtNewEmail" type="email" placeholder="prenom@email.com" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">
+
+    <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Adresse</label>
+    <input id="txtNewAddress" type="text" placeholder="Ville ou adresse" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">
 
     <div style="display:flex;gap:10px;margin-bottom:12px;">
       <div style="flex:1;">
@@ -2381,6 +2388,8 @@ function showAddProviderModal() {
   if (!checkProviderLimit()) return;
   document.getElementById('txtNewName').value = '';
   document.getElementById('txtNewPhone').value = '';
+  if(document.getElementById('txtNewEmail')) document.getElementById('txtNewEmail').value = '';
+  if(document.getElementById('txtNewAddress')) document.getElementById('txtNewAddress').value = '';
   document.getElementById('txtNewPct').value = '';
   document.getElementById('txtNewPrice').value = '';
   document.getElementById('overlay').style.display = 'block';
@@ -2392,10 +2401,10 @@ function closeAddProviderModal() {
   document.getElementById('addProviderModal').style.display = 'none';
 }
 function addProviderFromModal() {
-  const name=document.getElementById('txtNewName').value.trim(), phone=document.getElementById('txtNewPhone').value.trim(), pct=parseInt(document.getElementById('txtNewPct').value)||0, price=parseFloat(document.getElementById('txtNewPrice').value)||0;
-  if(!name){showToast('Veuillez saisir un nom.');return;}
+  const name=document.getElementById('txtNewName').value.trim(), phone=document.getElementById('txtNewPhone').value.trim(), email=(document.getElementById('txtNewEmail')||{}).value?.trim()||'', address=(document.getElementById('txtNewAddress')||{}).value?.trim()||'', pct=parseInt(document.getElementById('txtNewPct').value)||0, price=parseFloat(document.getElementById('txtNewPrice').value)||0;
+  if(!name){showToast(t('validation.name.required'));return;}
   syncProviders();
-  config.providers.push({name,phone,percentage:pct||0,price,vacations:''});
+  config.providers.push({name,phone,email,address,percentage:pct||0,price,vacations:'',waMode:'direct'});
   autoBalancePercentages();
   closeAddProviderModal();
   showToast(name + ' ajoute');
