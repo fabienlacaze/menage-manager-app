@@ -2853,8 +2853,19 @@ function copyPlanning() { if(!cleanings.length){showMsg('Aucun planning a copier
 function buildWhatsAppText(provName) {
   const pc = cleanings.filter(c => c.provider === provName);
   if (!pc.length) return '';
-  let txt = '';
-  pc.forEach(c => { txt += `${c.dayName} ${c.cleaningDateFR}\n`; });
+  const prop = API.getActiveProperty(fullConfig);
+  const propName = prop ? prop.name : '';
+  let txt = 'Bonjour ' + provName + ',\n\n';
+  txt += 'Voici votre planning de menages' + (propName ? ' pour "' + propName + '"' : '') + ' :\n\n';
+  pc.forEach(c => { txt += '- ' + c.dayName + ' ' + c.cleaningDateFR + (c.source ? ' (' + c.source + ')' : '') + '\n'; });
+  txt += '\n' + pc.length + ' menage(s) au total.\n';
+  // Add provider link if token exists
+  const p = config.providers.find(pr => pr.name === provName);
+  if (p && p.token) {
+    const base = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '');
+    txt += '\nConsultez votre planning en ligne :\n' + base + '/view.html?provider=' + p.token + '\n';
+  }
+  txt += '\n-- Cleaning Manager';
   return txt;
 }
 /* ── Provider Links ── */
