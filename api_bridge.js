@@ -260,9 +260,10 @@ const API = (function() {
     },
 
     async export_csv(cleanings, filename) {
-      let csv = 'Date menage;Jour;Arrivee;Depart;Prestataire;Telephone;Source\n';
+      const sep = '\t';
+      let csv = '\uFEFF' + ['Date menage','Jour','Arrivee','Depart','Prestataire','Telephone','Source'].join(sep) + '\n';
       for (const c of cleanings) {
-        csv += `${c.cleaningDateFR || c.dateFR || ''};${c.dayName || ''};${c.dateFR || ''};${c.checkoutDateFR || ''};${c.provider || ''};${c.providerPhone || ''};${c.source || ''}\n`;
+        csv += [c.cleaningDateFR || c.dateFR || '', c.dayName || '', c.dateFR || '', c.checkoutDateFR || '', c.provider || '', c.providerPhone || '', c.source || ''].join(sep) + '\n';
       }
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
