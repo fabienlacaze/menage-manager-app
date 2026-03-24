@@ -589,6 +589,14 @@
   .btnUpgrade { background:linear-gradient(135deg,#6c63ff,#5a52d5); color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; width:100%; }
   .btnUpgrade:hover { opacity:0.9; transform:translateY(-1px); }
 
+  /* ══ Calendar Tooltip ══ */
+  .calTooltip { position:absolute; background:var(--surface); border:1px solid var(--border2); border-radius:10px; padding:10px 14px; font-size:12px; color:var(--text); box-shadow:0 8px 24px rgba(0,0,0,0.4); z-index:50; pointer-events:none; white-space:nowrap; transform:translateX(-50%); min-width:160px; }
+  .calTooltip .tt-date { font-weight:700; font-size:13px; color:var(--accent); margin-bottom:6px; }
+  .calTooltip .tt-row { display:flex; align-items:center; gap:6px; padding:2px 0; }
+  .calTooltip .tt-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .calTooltip .tt-label { color:var(--text2); }
+  .calTooltip .tt-val { font-weight:600; color:var(--text); }
+
   /* ══ iCal Platform Labels ══ */
   .urlLabel.vrbo { background:linear-gradient(135deg,#3b5fe0,#1e40af); }
   .urlLabel.tripadvisor { background:linear-gradient(135deg,#34e0a1,#059669); }
@@ -2905,9 +2913,13 @@ function renderCalendar() {
   for(let day=1;day<=daysInMonth;day++){
     const dateStr=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
     let events='';
-    cleanings.forEach(c=>{if(c.cleaningDate===dateStr){const color=getProvColor(c.provider);events+=`<div class="calEvent calCleaning" style="background:${color}" title="Menage: ${esc(c.provider)}">${esc(c.provider)}</div>`;}});
-    reservations.forEach(r=>{if(dateStr>=r.start&&dateStr<r.end)events+=`<div class="calEvent calReserv" title="${esc(r.summary)}">${esc(r.source)}</div>`;});
-    html+=`<td${dateStr===todayStr?' class="calToday"':''}><div class="calDayNum">${day}</div>${events}</td>`;
+    const dayCleanings=cleanings.filter(c=>c.cleaningDate===dateStr);
+    const dayReservs=reservations.filter(r=>dateStr>=r.start&&dateStr<r.end);
+    dayCleanings.forEach(c=>{const color=getProvColor(c.provider);events+=`<div class="calEvent calCleaning" style="background:${color}">${esc(c.provider)}</div>`;});
+    dayReservs.forEach(r=>{events+=`<div class="calEvent calReserv">${esc(r.source)}</div>`;});
+    const hasEvents=dayCleanings.length||dayReservs.length;
+    const ttData=hasEvents?`onmouseenter="showCalTooltip(event,'${dateStr}')" onmouseleave="hideCalTooltip()"`:''
+    html+=`<td${dateStr===todayStr?' class="calToday"':''} ${ttData} style="position:relative;cursor:${hasEvents?'pointer':'default'}"><div class="calDayNum">${day}</div>${events}</td>`;
     col++;if(col>=7&&day<daysInMonth){html+='</tr><tr>';col=0;}
   }
   while(col>0&&col<7){html+='<td class="calEmpty"></td>';col++;}
@@ -2917,6 +2929,41 @@ function renderCalendar() {
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+
+function showCalTooltip(event, dateStr) {
+  hideCalTooltip();
+  const td = event.currentTarget;
+  const dayCleanings = cleanings.filter(c => c.cleaningDate === dateStr);
+  const dayReservs = reservations.filter(r => dateStr >= r.start && dateStr < r.end);
+  if (!dayCleanings.length && !dayReservs.length) return;
+  const dateFR = fmtDate(dateStr);
+  const DAYS = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const d = new Date(dateStr + 'T12:00:00');
+  const dayName = DAYS[d.getDay()];
+  let html = '<div class="tt-date">' + dayName + ' ' + dateFR + '</div>';
+  dayCleanings.forEach(c => {
+    const color = getProvColor(c.provider);
+    html += '<div class="tt-row"><span class="tt-dot" style="background:' + color + '"></span><span class="tt-label">Menage:</span><span class="tt-val">' + esc(c.provider) + '</span></div>';
+    if (c.checkoutDateFR) html += '<div class="tt-row"><span class="tt-label" style="margin-left:14px;">Depart:</span><span class="tt-val">' + c.checkoutDateFR + '</span></div>';
+    if (c.source) html += '<div class="tt-row"><span class="tt-label" style="margin-left:14px;">Source:</span><span class="tt-val">' + esc(c.source) + '</span></div>';
+  });
+  dayReservs.forEach(r => {
+    html += '<div class="tt-row"><span class="tt-dot" style="background:#3b82f6"></span><span class="tt-label">Reservation:</span><span class="tt-val">' + esc(r.source) + '</span></div>';
+    if (r.summary) html += '<div class="tt-row"><span class="tt-label" style="margin-left:14px;">' + esc(r.summary) + '</span></div>';
+  });
+  const tooltip = document.createElement('div');
+  tooltip.className = 'calTooltip';
+  tooltip.id = 'calTooltipEl';
+  tooltip.innerHTML = html;
+  td.appendChild(tooltip);
+  tooltip.style.bottom = '100%';
+  tooltip.style.left = '50%';
+  tooltip.style.marginBottom = '6px';
+}
+function hideCalTooltip() {
+  const el = document.getElementById('calTooltipEl');
+  if (el) el.remove();
+}
 
 /* ── History ── */
 async function archivePastCleanings() {
