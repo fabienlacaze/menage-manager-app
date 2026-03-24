@@ -904,14 +904,16 @@
     <div class="panelHeader" onclick="togglePanel('config')">
       <div class="panelLeft">
         <div class="stepBadge">1</div>
-        <div class="panelTitle">&#127968; <span id="propTitleName">Propriete</span></div>
+        <div class="panelTitle" style="display:flex;align-items:center;gap:8px;">&#127968;
+          <select id="propSelectTitle" onchange="event.stopPropagation();switchProperty(this.value)" style="background:transparent;border:none;color:var(--text);font-size:15px;font-weight:700;cursor:pointer;padding:2px 4px;max-width:200px;"></select>
+        </div>
       </div>
       <span class="panelChevron" id="chevConfig">&#9660;</span>
     </div>
     <div class="panelBody" id="bodyConfig">
-      <!-- Property selector -->
+      <!-- Property actions -->
+      <select id="propSelect" style="display:none;"></select>
       <div id="propertySelector" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
-        <select id="propSelect" onchange="switchProperty(this.value)" style="flex:1;min-width:150px;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;"></select>
         <button class="btnLocation" onclick="openPropDetail()" title="Details" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#9998;</button>
         <button class="btnLocation" onclick="openMapForProperty()" id="btnPropLocation" title="Position" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#128205;</button>
         <button class="btn btnSmall btnSuccess" onclick="addNewProperty()" style="padding:6px 14px;font-size:12px;" data-i18n="property.add">+ Ajouter</button>
@@ -1279,30 +1281,22 @@ let linens = []; // Jeux de linge: [{id, name, status:'available'|'used'|'pressi
 
 /* ── Property Management ── */
 function renderPropertySelector() {
-  const sel = document.getElementById('propSelect');
-  const btnRemove = document.getElementById('btnRemoveProp');
-  const titleName = document.getElementById('propTitleName');
-  if (!sel) return;
-  sel.innerHTML = '';
   const props = fullConfig.properties || [];
-  const activeProp = API.getActiveProperty(fullConfig);
-  for (const p of props) {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.name;
-    if (p.id === API.getActivePropertyId()) opt.selected = true;
-    sel.appendChild(opt);
-  }
+  const btnRemove = document.getElementById('btnRemoveProp');
   if (btnRemove) btnRemove.style.display = props.length > 1 ? '' : 'none';
-  // Update title with property name
-  if (titleName && activeProp) titleName.textContent = activeProp.name || 'Propriete';
-  // Show/hide selector (only if multiple properties)
-  const selectorDiv = document.getElementById('propertySelector');
-  if (selectorDiv && props.length <= 1) {
-    sel.style.display = 'none';
-  } else if (selectorDiv) {
-    sel.style.display = '';
-  }
+  // Fill both selects (title + panel)
+  ['propSelectTitle', 'propSelect'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '';
+    for (const p of props) {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      if (p.id === API.getActivePropertyId()) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  });
 }
 
 async function loadActiveProperty() {
