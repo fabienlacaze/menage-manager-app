@@ -868,9 +868,21 @@
 </div>
 
 <div class="content">
-  <!-- Ad banner (shown for free users, hidden until AdSense approved) -->
+  <!-- Premium upgrade banner (shown for free users) -->
+  <div id="premiumBanner" class="premiumBanner" style="display:none;">
+    <div style="flex:1;">
+      <div style="font-weight:700;font-size:14px;color:#fff;">&#11088; <span data-i18n="premium.title">Passez a Premium</span></div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px;" data-i18n="premium.subtitle">Prestataires illimites, pas de publicite</div>
+    </div>
+    <button class="btnPremium" onclick="showPremiumModal()" data-i18n="premium.btn">Voir les offres</button>
+  </div>
+
+  <!-- Ad banner (shown for free users) -->
   <div id="adBanner" class="adBanner" style="display:none;">
-    <div id="adContainer"></div>
+    <div style="text-align:center;padding:12px;color:var(--text3);font-size:11px;">
+      <div id="adContainer"><!-- AdSense will be inserted here --></div>
+      <span data-i18n="ad.label">Publicite</span> &mdash; <a href="#" onclick="showPremiumModal();return false;" style="color:var(--accent);" data-i18n="ad.remove">Supprimer les pubs</a>
+    </div>
   </div>
 
   <div id="notifBanner" class="notifBanner hidden"></div>
@@ -1020,14 +1032,6 @@
     </div>
   </div>
 
-  <!-- Premium banner (bottom, less intrusive) -->
-  <div id="premiumBanner" class="premiumBanner" style="display:none;margin:16px;">
-    <div style="flex:1;">
-      <div style="font-weight:600;font-size:13px;color:#fff;">&#11088; <span data-i18n="premium.title">Passez a Premium</span></div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;" data-i18n="premium.subtitle">Prestataires et proprietes illimites</div>
-    </div>
-    <button class="btnPremium" onclick="showPremiumModal()" data-i18n="premium.btn" style="font-size:12px;padding:8px 16px;">Offres</button>
-  </div>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
@@ -2265,7 +2269,24 @@ function showConfetti() {
   setTimeout(() => container.remove(), 4000);
 }
 
-/* particles removed - too distracting */
+/* ── Background Particles ── */
+function initParticles() {
+  const container = document.createElement('div');
+  container.className = 'particles';
+  document.body.appendChild(container);
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 30 + Math.random() * 120;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (10 + Math.random() * 20) + 's';
+    p.style.animationDelay = Math.random() * 10 + 's';
+    container.appendChild(p);
+  }
+}
+document.addEventListener('DOMContentLoaded', initParticles);
 
 /* ── Bottom Navigation ── */
 function navTo(section) {
