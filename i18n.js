@@ -40,6 +40,11 @@ const I18N = {
     'install.subtitle': 'Acces rapide depuis l\'ecran d\'accueil',
     'install.btn': 'Installer',
 
+    // Sections
+    'section.property': 'Propriete',
+    'section.team': 'Equipe menage',
+    'section.history': 'Historique & Pressing',
+
     // Config panel
     'config.title': 'Configuration',
     'config.ical': 'Calendriers iCal',
@@ -207,6 +212,11 @@ const I18N = {
     'generate.save': 'Save config',
 
     // Results panel
+    // Sections
+    'section.property': 'Property',
+    'section.team': 'Cleaning team',
+    'section.history': 'History & Linens',
+
     // Communication & Export
     'comm.title': 'Communication & Export',
     'comm.share': 'Share (read-only)',
