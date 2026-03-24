@@ -2478,7 +2478,8 @@ function getSortedCleanings() {
 }
 function renderResults() {
   if(!cleanings.length){document.getElementById('resultDiv').innerHTML='<div class="emptyState">Aucun menage a venir.</div>';document.getElementById('summaryDiv').classList.add('hidden');return;}
-  let html='<table class="resultTable"><tr><th style="width:30px">#</th><th class="sortable" onclick="doSort(\'source\')">Source '+sortArrowHtml('source')+'</th><th class="sortable" onclick="doSort(\'arrivee\')">Arrivee '+sortArrowHtml('arrivee')+'</th><th class="sortable" onclick="doSort(\'depart\')">Depart '+sortArrowHtml('depart')+'</th><th class="sortable" onclick="doSort(\'intervalle\')">Intervalle '+sortArrowHtml('intervalle')+'</th><th class="sortable" onclick="doSort(\'menage\')">Menage le '+sortArrowHtml('menage')+'</th><th class="sortable" onclick="doSort(\'prestataire\')">Prestataire '+sortArrowHtml('prestataire')+'</th><th style="width:55px;text-align:center">OK</th><th style="width:30px"></th></tr>';
+  const _s=t('table.source')||'Source', _a=t('table.checkin')||'Arrivee', _d=t('table.checkout')||'Depart', _i=t('table.interval')||'Intervalle', _m=t('table.cleaning')||'Menage le', _p=t('table.provider')||'Prestataire';
+  let html='<table class="resultTable"><tr><th style="width:30px">#</th><th class="sortable" onclick="doSort(\'source\')">'+_s+' '+sortArrowHtml('source')+'</th><th class="sortable" onclick="doSort(\'arrivee\')">'+_a+' '+sortArrowHtml('arrivee')+'</th><th class="sortable" onclick="doSort(\'depart\')">'+_d+' '+sortArrowHtml('depart')+'</th><th class="sortable" onclick="doSort(\'intervalle\')">'+_i+' '+sortArrowHtml('intervalle')+'</th><th class="sortable" onclick="doSort(\'menage\')">'+_m+' '+sortArrowHtml('menage')+'</th><th class="sortable" onclick="doSort(\'prestataire\')">'+_p+' '+sortArrowHtml('prestataire')+'</th><th style="width:55px;text-align:center">OK</th><th style="width:30px"></th></tr>';
   const sorted = getSortedCleanings();
   sorted.forEach((c,num)=>{
     const i = cleanings.indexOf(c);
@@ -2932,11 +2933,12 @@ function renderCalendar() {
   }
   while(col>0&&col<7){html+='<td class="calEmpty"></td>';col++;}
   html+='</tr></table>';
-  html+='<div style="margin-top:12px;font-size:11px;color:var(--text3);display:flex;gap:14px;align-items:center;flex-wrap:wrap;"><span class="calEvent calCleaning" style="display:inline-block;padding:3px 10px;">Menage</span><span class="calEvent calReserv" style="display:inline-block;padding:3px 10px;">Reservation</span><span style="color:var(--accent);font-weight:600;">Aujourd\'hui</span></div>';
+  html+='<div style="margin-top:12px;font-size:11px;color:var(--text3);display:flex;gap:14px;align-items:center;flex-wrap:wrap;"><span class="calEvent calCleaning" style="display:inline-block;padding:3px 10px;">Menage</span><span class="calEvent calReserv" style="display:inline-block;padding:3px 10px;">Reservation</span><span style="color:var(--accent);font-weight:600;cursor:pointer;" onclick="calToday()">&#9658; Aujourd\'hui</span></div>';
   document.getElementById('calView').innerHTML=html;
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+function calToday(){const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar();}
 
 function showCalTooltip(event, dateStr) {
   hideCalTooltip();

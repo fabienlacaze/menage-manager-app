@@ -59,6 +59,14 @@ const I18N = {
     'config.add': '+ Ajouter',
     'provider.add.title': 'Ajouter un prestataire',
 
+    // Table headers
+    'table.source': 'Source',
+    'table.checkin': 'Arrivee',
+    'table.checkout': 'Depart',
+    'table.interval': 'Intervalle',
+    'table.cleaning': 'Menage le',
+    'table.provider': 'Prestataire',
+
     // Generate
     'generate.title': 'Generer',
     'generate.btn': 'GENERER LE PLANNING',
@@ -220,6 +228,14 @@ const I18N = {
     'config.price': 'Rate',
     'config.add': '+ Add',
     'provider.add.title': 'Add a provider',
+
+    // Table headers
+    'table.source': 'Source',
+    'table.checkin': 'Check-in',
+    'table.checkout': 'Check-out',
+    'table.interval': 'Interval',
+    'table.cleaning': 'Cleaning on',
+    'table.provider': 'Provider',
 
     // Generate
     'generate.title': 'Generate',
