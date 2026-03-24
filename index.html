@@ -1072,7 +1072,7 @@
       </div>
       <div id="tabHistContent">
         <div id="historyDiv" style="max-height:500px;overflow-y:auto;"></div>
-        <div class="center mt10"><button class="btn btnDanger btnSmall" onclick="clearHistory()">Effacer l'historique</button></div>
+        <div class="center mt10" id="clearHistBtn" style="display:none;"><button class="btn btnDanger btnSmall" onclick="clearHistory()">Effacer l'historique</button></div>
       </div>
       <div id="tabPressingContent" class="hidden">
         <div id="pressingDiv"></div>
@@ -3395,7 +3395,9 @@ async function archivePastCleanings() {
   if(changed){history.sort((a,b)=>b.cleaningDate.localeCompare(a.cleaningDate));await API.save_history(history);}
 }
 function renderHistory() {
-  if(!history.length){document.getElementById('historyDiv').innerHTML='<div class="emptyState">Aucun historique disponible.</div>';return;}
+  const clearBtn=document.getElementById('clearHistBtn');
+  if(!history.length){document.getElementById('historyDiv').innerHTML='<div class="emptyState">Aucun historique disponible.</div>';if(clearBtn)clearBtn.style.display='none';return;}
+  if(clearBtn)clearBtn.style.display='';
   let html='<table class="histTable"><tr><th>#</th><th>Date menage</th><th>Arrivee</th><th>Depart</th><th>Prestataire</th><th>Source</th></tr>';
   history.forEach((h,i)=>{const color=getProvColor(h.provider);html+=`<tr><td style="color:var(--text3)">${i+1}</td><td style="font-weight:600;color:var(--accent);">${h.cleaningDateFR||fmtDate(h.cleaningDate)}</td><td>${h.dayName||''} ${h.dateFR||fmtDate(h.date)}</td><td style="color:var(--text2)">${h.checkoutDateFR||fmtDate(h.checkoutDate)}</td><td><span class="provDot" style="background:${color}"></span>${esc(h.provider)}</td><td><span class="badge badge-source">${esc(h.source)}</span></td></tr>`;});
   html+='</table>';document.getElementById('historyDiv').innerHTML=html;
