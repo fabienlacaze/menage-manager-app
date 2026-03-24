@@ -892,26 +892,28 @@
     <button class="btnDismiss" onclick="dismissInstall()">&times;</button>
   </div>
 
-  <!-- Property Selector -->
-  <div id="propertySelector" class="panel" style="padding:12px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-    <span style="font-size:13px;color:var(--text2);font-weight:600;" data-i18n="property.label">Propriete :</span>
-    <select id="propSelect" onchange="switchProperty(this.value)" style="flex:1;min-width:150px;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;"></select>
-    <button class="btnLocation" onclick="openPropDetail()" title="Details de la propriete" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#9998;</button>
-    <button class="btnLocation" onclick="openMapForProperty()" id="btnPropLocation" title="Position de la propriete" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#128205;</button>
-    <button class="btn btnSmall btnSuccess" onclick="addNewProperty()" style="padding:6px 14px;font-size:12px;" data-i18n="property.add">+ Ajouter</button>
-    <button class="btn btnSmall btnDanger" id="btnRemoveProp" onclick="removeCurrentProperty()" style="padding:6px 10px;font-size:12px;display:none;">&#128465;</button>
-  </div>
-
-  <!-- Section 1: Calendriers iCal -->
+  <!-- ═══ SECTION 1: PROPRIÉTÉ ═══ -->
   <div class="panel" id="panelConfig">
     <div class="panelHeader" onclick="togglePanel('config')">
       <div class="panelLeft">
         <div class="stepBadge">1</div>
-        <div class="panelTitle" data-i18n="config.ical">Calendriers iCal</div>
+        <div class="panelTitle">&#127968; <span data-i18n="section.property">Propriete</span></div>
       </div>
       <span class="panelChevron" id="chevConfig">&#9660;</span>
     </div>
-    <div class="panelBody collapsed" id="bodyConfig">
+    <div class="panelBody" id="bodyConfig">
+      <!-- Property selector -->
+      <div id="propertySelector" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+        <select id="propSelect" onchange="switchProperty(this.value)" style="flex:1;min-width:150px;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;"></select>
+        <button class="btnLocation" onclick="openPropDetail()" title="Details" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#9998;</button>
+        <button class="btnLocation" onclick="openMapForProperty()" id="btnPropLocation" title="Position" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#128205;</button>
+        <button class="btn btnSmall btnSuccess" onclick="addNewProperty()" style="padding:6px 14px;font-size:12px;" data-i18n="property.add">+ Ajouter</button>
+        <button class="btn btnSmall btnDanger" id="btnRemoveProp" onclick="removeCurrentProperty()" style="padding:6px 10px;font-size:12px;display:none;">&#128465;</button>
+      </div>
+      <!-- Property quick info -->
+      <div id="propQuickInfo" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);"></div>
+      <!-- iCal URLs -->
+      <div class="lbl" style="margin-bottom:8px;" data-i18n="config.ical">Calendriers iCal</div>
       <div class="urlRow">
         <span class="urlLabel airbnb">Airbnb</span>
         <input type="text" id="txtAirbnb" placeholder="URL iCal Airbnb...">
@@ -922,18 +924,15 @@
         <input type="text" id="txtBooking" placeholder="URL iCal Booking...">
         <button class="btnIcon" onclick="pasteField('txtBooking')" title="Coller">&#128203;</button>
       </div>
-      <div style="margin-top:10px;text-align:right;">
-        <button class="btn btnOutline btnSmall" onclick="saveConfig()" data-i18n="generate.save">Sauvegarder</button>
-      </div>
     </div>
   </div>
 
-  <!-- Section 2: Prestataires -->
+  <!-- ═══ SECTION 2: ÉQUIPE MÉNAGE ═══ -->
   <div class="panel">
     <div class="panelHeader" onclick="togglePanel('providers')">
       <div class="panelLeft">
-        <div class="stepBadge">2</div>
-        <div class="panelTitle" data-i18n="config.providers">Prestataires</div>
+        <div class="stepBadge" style="background:linear-gradient(135deg,#6c63ff,#5a52d5);">2</div>
+        <div class="panelTitle">&#128101; <span data-i18n="section.team">Equipe menage</span></div>
       </div>
       <span class="panelChevron" id="chevProviders">&#9660;</span>
     </div>
@@ -949,19 +948,20 @@
     </div>
   </div>
 
-  <!-- Section 3: Generer (toujours visible, proéminent) -->
+  <!-- ═══ BOUTON GÉNÉRER ═══ -->
   <div class="panel" style="background:linear-gradient(135deg, rgba(233,69,96,0.08), rgba(108,99,255,0.08));">
-    <div class="generateArea" style="padding:20px;">
-      <button class="btn btnPrimary" onclick="generatePlanning()" id="btnGenerate" style="width:100%;max-width:400px;padding:16px 32px;font-size:16px;font-weight:700;" data-i18n="generate.btn">GENERER LE PLANNING</button>
+    <div class="generateArea" style="padding:16px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btnPrimary" onclick="generatePlanning()" id="btnGenerate" style="flex:1;max-width:400px;padding:16px 32px;font-size:16px;font-weight:700;" data-i18n="generate.btn">GENERER LE PLANNING</button>
+      <button class="btn btnOutline" onclick="saveConfig()" style="padding:16px 20px;" data-i18n="generate.save">&#128190; Sauvegarder</button>
     </div>
   </div>
 
-  <!-- Section 4: Planning (section principale) -->
+  <!-- ═══ SECTION 3: PLANNING ═══ -->
   <div class="panel">
     <div class="panelHeader" onclick="togglePanel('results')">
       <div class="panelLeft">
         <div class="stepBadge" style="background:linear-gradient(135deg,var(--success),#059669);">3</div>
-        <div class="panelTitle" data-i18n="results.title">Planning</div>
+        <div class="panelTitle">&#128197; <span data-i18n="results.title">Planning</span></div>
       </div>
       <span class="panelChevron open" id="chevResults">&#9660;</span>
     </div>
@@ -971,8 +971,6 @@
         <button class="tabBtn active" id="tabList" onclick="switchTab('list')">&#128203; <span data-i18n="results.tab.list">Liste</span></button>
         <button class="tabBtn" id="tabCal" onclick="switchTab('calendar')">&#128197; <span data-i18n="results.tab.calendar">Calendrier</span></button>
         <button class="tabBtn" id="tabStats" onclick="switchTab('stats')">&#128200; <span data-i18n="results.tab.stats">Stats</span></button>
-        <button class="tabBtn" id="tabHist" onclick="switchTab('history')">&#128214; <span data-i18n="results.tab.history">Historique</span></button>
-        <button class="tabBtn" id="tabPressing" onclick="switchTab('pressing')">&#128084; <span data-i18n="results.tab.pressing">Pressing</span></button>
       </div>
       <div class="tabContent">
         <div id="tabListContent">
@@ -984,36 +982,52 @@
         </div>
         <div id="tabCalContent" class="hidden"><div class="calView" id="calView"></div></div>
         <div id="tabStatsContent" class="hidden"><div id="statsDiv"><div class="emptyState" data-i18n="stats.empty">Generez un planning pour voir les statistiques.</div></div></div>
-        <div id="tabHistContent" class="hidden">
-          <div id="historyDiv" style="max-height:500px;overflow-y:auto;"></div>
-          <div class="center mt10"><button class="btn btnDanger btnSmall" onclick="clearHistory()">Effacer l'historique</button></div>
-        </div>
-        <div id="tabPressingContent" class="hidden">
-          <div id="pressingDiv"></div>
-        </div>
       </div>
     </div>
   </div>
 
-  <!-- Section 5: Communication & Export -->
+  <!-- ═══ SECTION 4: COMMUNICATION & EXPORT ═══ -->
   <div class="panel">
     <div class="panelHeader" onclick="togglePanel('comm')">
       <div class="panelLeft">
-        <div class="stepBadge" style="background:linear-gradient(135deg,#6c63ff,#5a52d5);">4</div>
-        <div class="panelTitle" data-i18n="comm.title">Communication & Export</div>
+        <div class="stepBadge" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);">4</div>
+        <div class="panelTitle">&#128172; <span data-i18n="comm.title">Communication & Export</span></div>
       </div>
       <span class="panelChevron" id="chevComm">&#9660;</span>
     </div>
     <div class="panelBody collapsed" id="bodyComm">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
         <button class="btn btnWA" onclick="sendWhatsAppAll()" style="padding:14px;font-size:14px;">&#128172; <span data-i18n="results.whatsapp">WhatsApp</span></button>
-        <button class="btn btnOutline" onclick="shareReadonly()" style="padding:14px;font-size:14px;">&#128279; <span data-i18n="comm.share">Partager (lecture seule)</span></button>
+        <button class="btn btnOutline" onclick="shareReadonly()" style="padding:14px;font-size:14px;">&#128279; <span data-i18n="comm.share">Partager</span></button>
       </div>
-      <div class="lbl" data-i18n="comm.export" style="margin-bottom:10px;">Exporter</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
         <button class="btn btnOutline" onclick="exportCSV()" style="padding:12px;">&#128196; <span data-i18n="results.csv">CSV</span></button>
         <button class="btn btnOutline" onclick="exportPDF()" style="padding:12px;">&#128462; <span data-i18n="results.pdf">PDF</span></button>
         <button class="btn btnOutline" onclick="copyPlanning()" style="padding:12px;">&#128203; <span data-i18n="results.copy">Copier</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 5: HISTORIQUE & PRESSING ═══ -->
+  <div class="panel">
+    <div class="panelHeader" onclick="togglePanel('history')">
+      <div class="panelLeft">
+        <div class="stepBadge" style="background:linear-gradient(135deg,#f59e0b,#d97706);">5</div>
+        <div class="panelTitle">&#128214; <span data-i18n="section.history">Historique & Pressing</span></div>
+      </div>
+      <span class="panelChevron" id="chevHistory">&#9660;</span>
+    </div>
+    <div class="panelBody collapsed" id="bodyHistory">
+      <div class="tabBar" style="margin-bottom:10px;">
+        <button class="tabBtn active" id="tabHist" onclick="switchHistTab('history')">&#128214; <span data-i18n="results.tab.history">Historique</span></button>
+        <button class="tabBtn" id="tabPressing" onclick="switchHistTab('pressing')">&#128084; <span data-i18n="results.tab.pressing">Pressing</span></button>
+      </div>
+      <div id="tabHistContent">
+        <div id="historyDiv" style="max-height:500px;overflow-y:auto;"></div>
+        <div class="center mt10"><button class="btn btnDanger btnSmall" onclick="clearHistory()">Effacer l'historique</button></div>
+      </div>
+      <div id="tabPressingContent" class="hidden">
+        <div id="pressingDiv"></div>
       </div>
     </div>
   </div>
@@ -1277,6 +1291,7 @@ async function loadActiveProperty() {
   linens = await API.load_linens();
   document.getElementById('txtAirbnb').value = config.airbnbIcalUrl;
   document.getElementById('txtBooking').value = config.bookingIcalUrl;
+  renderPropQuickInfo();
   renderProviders();
   const saved = await API.load_planning();
   if (saved && saved.length > 0) {
@@ -1339,7 +1354,7 @@ function syncAndSaveConfig() {
 
 /* ── Panel Collapse ── */
 function togglePanel(id) {
-  const map = { config: ['bodyConfig','chevConfig'], providers: ['bodyProviders','chevProviders'], results: ['bodyResults','chevResults'], comm: ['bodyComm','chevComm'] };
+  const map = { config: ['bodyConfig','chevConfig'], providers: ['bodyProviders','chevProviders'], results: ['bodyResults','chevResults'], comm: ['bodyComm','chevComm'], history: ['bodyHistory','chevHistory'] };
   const [bodyId, chevId] = map[id] || [null, null];
   if (!bodyId) return;
   const body = document.getElementById(bodyId);
@@ -1667,6 +1682,31 @@ function renderPressing() {
     }
   }
   div.innerHTML = html;
+}
+
+/* ── History/Pressing sub-tabs ── */
+function switchHistTab(tab) {
+  document.getElementById('tabHistContent').style.display = tab === 'history' ? '' : 'none';
+  document.getElementById('tabPressingContent').style.display = tab === 'pressing' ? '' : 'none';
+  document.getElementById('tabHist').classList.toggle('active', tab === 'history');
+  document.getElementById('tabPressing').classList.toggle('active', tab === 'pressing');
+  if (tab === 'pressing') renderPressing();
+}
+
+/* ── Property Quick Info ── */
+function renderPropQuickInfo() {
+  const prop = API.getActiveProperty(fullConfig);
+  const div = document.getElementById('propQuickInfo');
+  if (!div || !prop) { if(div) div.innerHTML=''; return; }
+  const typeLabels = {apartment:'Appartement',house:'Maison',studio:'Studio',villa:'Villa',chalet:'Chalet',other:'Autre'};
+  const items = [];
+  if (prop.type) items.push(`<span style="background:var(--accent2);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;">${typeLabels[prop.type]||prop.type}</span>`);
+  if (prop.rooms) items.push(`<span style="color:var(--text2);font-size:12px;">&#127968; ${prop.rooms} pieces</span>`);
+  if (prop.surface) items.push(`<span style="color:var(--text2);font-size:12px;">${prop.surface} m²</span>`);
+  if (prop.cleaningPrice) items.push(`<span style="color:var(--success);font-size:12px;font-weight:600;">${prop.cleaningPrice}€/menage</span>`);
+  if (prop.cleaningDuration) items.push(`<span style="color:var(--text2);font-size:12px;">&#9201; ${prop.cleaningDuration} min</span>`);
+  if (prop.address) items.push(`<span style="color:var(--text3);font-size:11px;">&#128205; ${prop.address.substring(0,40)}${prop.address.length>40?'...':''}</span>`);
+  div.innerHTML = items.length ? items.join('') : '<span style="color:var(--text3);font-size:12px;">Cliquez ✏️ pour configurer la propriete</span>';
 }
 
 /* ── Property Detail Modal ── */
