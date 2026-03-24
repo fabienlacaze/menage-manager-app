@@ -3054,23 +3054,24 @@ function buildFinanceHtml() {
   if (months.length > 0) {
     html += '<div style="margin-top:14px;font-weight:600;font-size:13px;margin-bottom:8px;">Cout par mois</div>';
     const monthNames = ['Jan','Fev','Mar','Avr','Mai','Juin','Juil','Aout','Sep','Oct','Nov','Dec'];
-    months.forEach(m => {
-      const [y, mo] = m.split('-');
-      const label = monthNames[parseInt(mo)-1] + ' ' + y;
-      html += `<div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;">`;
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">`;
-      html += `<span style="font-weight:600;font-size:14px;">${label}</span>`;
-      html += `<span style="font-weight:700;color:var(--accent);font-size:14px;">${monthCosts[m].toFixed(0)} EUR</span>`;
-      html += `</div>`;
-      allProvs.forEach((name, i) => {
+    html += '<div style="overflow-x:auto;"><table class="resultTable" style="font-size:12px;white-space:nowrap;">';
+    // Header: months
+    html += '<tr><th style="text-align:left;min-width:90px;"></th>';
+    months.forEach(m => { const [y,mo]=m.split('-'); html += `<th style="text-align:right;min-width:60px;padding:6px 8px;">${monthNames[parseInt(mo)-1]}<br><span style="font-size:10px;font-weight:400;color:var(--text3);">${y}</span></th>`; });
+    html += '</tr>';
+    // Rows: providers
+    allProvs.forEach((name, i) => {
+      html += `<tr><td style="font-weight:500;"><span class="provDot" style="background:${allColors[i]}"></span>${esc(name)}</td>`;
+      months.forEach(m => {
         const val = (monthProvCosts[m] && monthProvCosts[m][name]) || 0;
-        html += `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">`;
-        html += `<span><span class="provDot" style="background:${allColors[i]}"></span>${name}</span>`;
-        html += `<span style="color:${val > 0 ? 'var(--text)' : 'var(--text3)'}">${val > 0 ? val.toFixed(0) + ' EUR' : '-'}</span>`;
-        html += `</div>`;
+        html += `<td style="text-align:right;padding:6px 8px;color:${val > 0 ? 'var(--text)' : 'var(--text3)'}">${val > 0 ? val.toFixed(0) + '€' : '-'}</td>`;
       });
-      html += `</div>`;
+      html += '</tr>';
     });
+    // Total row
+    html += '<tr style="border-top:2px solid var(--border2);"><td style="font-weight:700;">TOTAL</td>';
+    months.forEach(m => { html += `<td style="text-align:right;padding:6px 8px;font-weight:700;color:var(--accent);">${monthCosts[m].toFixed(0)}€</td>`; });
+    html += '</tr></table></div>';
   }
   return html;
 }
