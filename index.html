@@ -904,8 +904,7 @@
     <div class="panelHeader" onclick="togglePanel('config')">
       <div class="panelLeft">
         <div class="stepBadge">1</div>
-        <div class="panelTitle">&#127968; <span data-i18n="section.property">Propriete</span></div>
-        <!-- fallback if i18n not loaded -->
+        <div class="panelTitle">&#127968; <span id="propTitleName">Propriete</span></div>
       </div>
       <span class="panelChevron" id="chevConfig">&#9660;</span>
     </div>
@@ -1288,9 +1287,11 @@ let linens = []; // Jeux de linge: [{id, name, status:'available'|'used'|'pressi
 function renderPropertySelector() {
   const sel = document.getElementById('propSelect');
   const btnRemove = document.getElementById('btnRemoveProp');
+  const titleName = document.getElementById('propTitleName');
   if (!sel) return;
   sel.innerHTML = '';
   const props = fullConfig.properties || [];
+  const activeProp = API.getActiveProperty(fullConfig);
   for (const p of props) {
     const opt = document.createElement('option');
     opt.value = p.id;
@@ -1299,6 +1300,15 @@ function renderPropertySelector() {
     sel.appendChild(opt);
   }
   if (btnRemove) btnRemove.style.display = props.length > 1 ? '' : 'none';
+  // Update title with property name
+  if (titleName && activeProp) titleName.textContent = activeProp.name || 'Propriete';
+  // Show/hide selector (only if multiple properties)
+  const selectorDiv = document.getElementById('propertySelector');
+  if (selectorDiv && props.length <= 1) {
+    sel.style.display = 'none';
+  } else if (selectorDiv) {
+    sel.style.display = '';
+  }
 }
 
 async function loadActiveProperty() {
