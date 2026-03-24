@@ -928,7 +928,11 @@
       <div class="panelLeft">
         <div class="stepBadge">1</div>
         <div class="panelTitle" style="display:flex;align-items:center;gap:8px;">&#127968;<span class="helpTip" onclick="event.stopPropagation()">?<span class="helpBubble">Configurez votre logement : nom, adresse, calendriers iCal (Airbnb, Booking...). Cliquez ✏️ pour les details et 📍 pour la position.</span></span>
-          <select id="propSelectTitle" onchange="event.stopPropagation();switchProperty(this.value)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;padding:6px 28px 6px 12px;max-width:220px;border-radius:8px;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22%3E%3Cpath fill=%22%23ffffff%22 d=%22M1 1l5 5 5-5%22 stroke=%22%23ffffff%22 stroke-width=%221.5%22 fill=%22none%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;transition:all 0.2s;"></select>
+          <div id="propDropdown" style="position:relative;" onclick="event.stopPropagation()">
+            <div id="propDropdownBtn" onclick="togglePropDropdown()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;padding:6px 28px 6px 12px;max-width:220px;border-radius:8px;background-image:url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22%3E%3Cpath fill=%22%23ffffff%22 d=%22M1 1l5 5 5-5%22 stroke=%22%23ffffff%22 stroke-width=%221.5%22 fill=%22none%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Mon logement</div>
+            <div id="propDropdownMenu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:220px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:60;overflow:hidden;"></div>
+          </div>
+          <select id="propSelectTitle" style="display:none;"></select>
         </div>
       </div>
       <span class="panelChevron" id="chevConfig">&#9660;</span>
@@ -1384,10 +1388,25 @@ function renderPropertySelector() {
   const props = fullConfig.properties || [];
   const btnRemove = document.getElementById('btnRemoveProp');
   if (btnRemove) btnRemove.style.display = props.length > 1 ? '' : 'none';
-  // Fill both selects (title + panel)
-  ['propSelectTitle', 'propSelect'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (!sel) return;
+  const activeProp = API.getActiveProperty(fullConfig);
+  // Update custom dropdown button text
+  const ddBtn = document.getElementById('propDropdownBtn');
+  if (ddBtn && activeProp) ddBtn.textContent = activeProp.name || 'Propriete';
+  // Build dropdown menu items
+  const ddMenu = document.getElementById('propDropdownMenu');
+  if (ddMenu) {
+    let html = '';
+    props.forEach(p => {
+      const isActive = p.id === API.getActivePropertyId();
+      html += `<div onclick="selectPropFromDropdown('${p.id}')" style="padding:10px 16px;cursor:pointer;font-size:14px;font-weight:${isActive?'700':'400'};color:${isActive?'var(--accent)':'var(--text)'};background:${isActive?'rgba(233,69,96,0.1)':'transparent'};transition:background 0.2s;border-bottom:1px solid var(--border);" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='${isActive?'rgba(233,69,96,0.1)':'transparent'}'">
+        ${isActive ? '&#10003; ' : '&nbsp;&nbsp;&nbsp;'}${esc(p.name)}
+      </div>`;
+    });
+    ddMenu.innerHTML = html;
+  }
+  // Also fill hidden select for backward compat
+  const sel = document.getElementById('propSelect');
+  if (sel) {
     sel.innerHTML = '';
     for (const p of props) {
       const opt = document.createElement('option');
@@ -1396,7 +1415,27 @@ function renderPropertySelector() {
       if (p.id === API.getActivePropertyId()) opt.selected = true;
       sel.appendChild(opt);
     }
-  });
+  }
+}
+
+function togglePropDropdown() {
+  const menu = document.getElementById('propDropdownMenu');
+  if (!menu) return;
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  // Close on click outside
+  if (menu.style.display === 'block') {
+    setTimeout(() => {
+      document.addEventListener('click', closePropDropdown, { once: true });
+    }, 10);
+  }
+}
+function closePropDropdown() {
+  const menu = document.getElementById('propDropdownMenu');
+  if (menu) menu.style.display = 'none';
+}
+function selectPropFromDropdown(propId) {
+  closePropDropdown();
+  switchProperty(propId);
 }
 
 async function loadActiveProperty() {
