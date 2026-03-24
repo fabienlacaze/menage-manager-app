@@ -1333,6 +1333,7 @@ async function loadActiveProperty() {
   const now = new Date();
   calYear = now.getFullYear();
   calMonth = now.getMonth();
+  restorePanelStates();
 }
 
 async function switchProperty(propId) {
@@ -1390,8 +1391,12 @@ function togglePanel(id) {
   if (!bodyId) return;
   const body = document.getElementById(bodyId);
   const chev = document.getElementById(chevId);
-  if (id === 'config' || id === 'comm' || id === 'providers') {
+  if (id === 'config' || id === 'comm' || id === 'providers' || id === 'history') {
     body.classList.toggle('collapsed');
+    // Save panel state
+    const states = JSON.parse(localStorage.getItem('mm_panels') || '{}');
+    states[id] = body.classList.contains('collapsed') ? 'closed' : 'open';
+    localStorage.setItem('mm_panels', JSON.stringify(states));
   } else if (id === 'results') {
     const content = document.getElementById('bodyResults');
     const items = content.querySelectorAll('.filterBar, .tabBar, .tabContent');
@@ -1399,6 +1404,25 @@ function togglePanel(id) {
     items.forEach(el => { el.style.display = hidden ? '' : 'none'; });
   }
   chev.classList.toggle('open');
+}
+
+function restorePanelStates() {
+  const states = JSON.parse(localStorage.getItem('mm_panels') || '{}');
+  const map = { config: 'bodyConfig', providers: 'bodyProviders', comm: 'bodyComm', history: 'bodyHistory' };
+  // If sections 1 & 2 have been configured, collapse them on next visit
+  const hasConfig = config.airbnbIcalUrl || config.bookingIcalUrl || (config.providers && config.providers.length);
+  for (const [id, bodyId] of Object.entries(map)) {
+    const body = document.getElementById(bodyId);
+    if (!body) continue;
+    if (states[id] === 'closed') {
+      body.classList.add('collapsed');
+    } else if (states[id] === 'open') {
+      body.classList.remove('collapsed');
+    } else if (hasConfig && (id === 'config' || id === 'providers')) {
+      // First time: auto-collapse if already configured
+      body.classList.add('collapsed');
+    }
+  }
 }
 
 /* ── Init ── */
