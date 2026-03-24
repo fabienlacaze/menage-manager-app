@@ -26,6 +26,8 @@ const I18N = {
     'auth.register.check_email': 'Un email de confirmation a ete envoye a <b>{email}</b>.<br>Cliquez sur le lien dans l\'email puis revenez vous connecter.',
     'auth.register.connecting': 'Compte cree ! Connexion...',
     'auth.logout.confirm': 'Se deconnecter ?',
+    'auth.forgot': 'Mot de passe oublie ?',
+    'auth.reset.sent': 'Email de reinitialisation envoye ! Verifiez votre boite mail.',
 
     // Header
     'header.subtitle': 'Gestion des menages',
@@ -345,6 +347,8 @@ const I18N = {
     'auth.register.check_email': 'A confirmation email has been sent to <b>{email}</b>.<br>Click the link in the email then come back to sign in.',
     'auth.register.connecting': 'Account created! Signing in...',
     'auth.logout.confirm': 'Sign out?',
+    'auth.forgot': 'Forgot password?',
+    'auth.reset.sent': 'Reset email sent! Check your inbox.',
 
     // Header
     'header.subtitle': 'Cleaning management',
