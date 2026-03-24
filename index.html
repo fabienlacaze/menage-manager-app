@@ -2367,7 +2367,13 @@ async function generatePlanning(isAuto) {
       const today = new Date().toISOString().substring(0,10);
       const genLog = JSON.parse(localStorage.getItem('mm_gen_log') || '[]').filter(d => d === today);
       if (genLog.length >= limits.maxGenerates) {
-        showPremiumModal('Vous avez atteint la limite de ' + limits.maxGenerates + ' generations par jour. Passez a Premium pour des generations illimitees.');
+        // Calculate time until midnight
+        const now = new Date();
+        const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+        const diffMs = midnight - now;
+        const hours = Math.floor(diffMs / 3600000);
+        const mins = Math.floor((diffMs % 3600000) / 60000);
+        showPremiumModal('Vous avez atteint la limite de ' + limits.maxGenerates + ' generations par jour. Prochaine generation gratuite dans ' + hours + 'h ' + mins + 'min. Passez a Premium pour des generations illimitees.');
         return;
       }
       genLog.push(today);
