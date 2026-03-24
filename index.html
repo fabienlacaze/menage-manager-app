@@ -872,23 +872,23 @@
     <button class="btnHelp" onclick="showChangelog()" data-i18n-attr="title" data-i18n="header.changelog" title="Historique modifications" style="font-size:13px;">&#128221;</button>
     <button class="btnHelp" onclick="toggleTheme()" data-i18n-attr="title" data-i18n="header.theme" title="Theme clair/sombre" id="themeBtn" style="font-size:15px;">&#9788;</button>
     <button class="btnHelp" onclick="showHelp()" data-i18n-attr="title" data-i18n="header.help" title="Aide">?</button>
-    <button class="btnHelp" onclick="if(confirm(t('auth.logout.confirm')))authLogout()" data-i18n-attr="title" data-i18n="header.logout" title="Deconnexion" style="font-size:13px;">&#9211;</button>
+    <button class="btnHelp" onclick="customConfirm(t('auth.logout.confirm')||'Se deconnecter ?','Deconnexion').then(ok=>{if(ok)authLogout()})" data-i18n-attr="title" data-i18n="header.logout" title="Deconnexion" style="font-size:13px;">&#9211;</button>
   </div>
 </div>
 
 <div class="content">
   <!-- Premium + Ad banner (shown for free users) -->
   <div id="premiumBanner" class="premiumBanner" style="display:none;flex-direction:column;gap:0;">
-    <div style="display:flex;align-items:center;padding:12px 18px;">
-      <div style="flex:1;">
-        <div style="font-weight:700;font-size:14px;color:#fff;">&#11088; <span data-i18n="premium.title">Passez a Premium</span></div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px;" data-i18n="premium.subtitle">Prestataires illimites, pas de publicite</div>
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 18px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">&#11088; <span data-i18n="premium.title">Passez a Premium</span></div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:1px;" data-i18n="premium.subtitle">Tout illimite, sans pub</div>
       </div>
-      <button class="btnPremium" onclick="showPremiumModal()" data-i18n="premium.btn">Voir les offres</button>
+      <button class="btnPremium" onclick="showPremiumModal()" data-i18n="premium.btn" style="white-space:nowrap;flex-shrink:0;">Offres</button>
     </div>
-    <div id="adBanner" style="border-top:1px solid rgba(255,255,255,0.1);padding:8px;text-align:center;">
-      <div id="adContainer"><!-- AdSense will be inserted here --></div>
-      <span style="color:rgba(255,255,255,0.4);font-size:10px;" data-i18n="ad.label">Publicite</span>
+    <div id="adBanner" style="border-top:1px solid rgba(255,255,255,0.1);padding:6px;text-align:center;">
+      <div id="adContainer"></div>
+      <span style="color:rgba(255,255,255,0.3);font-size:9px;" data-i18n="ad.label">Publicite</span>
     </div>
   </div>
 
@@ -1128,6 +1128,18 @@
     <div style="text-align:center;color:var(--text3);font-size:11px;" data-i18n="premium.cancel">Annulable a tout moment. Paiement securise par Stripe.</div>
   </div>
 </div>
+<!-- Confirm Modal -->
+<div class="modal" id="confirmModal" style="max-width:380px;">
+  <div class="modalHeader" id="confirmTitle">Confirmer</div>
+  <div class="modalBody" style="padding:20px;text-align:center;">
+    <div id="confirmMsg" style="font-size:14px;color:var(--text);margin-bottom:20px;"></div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btnOutline" style="padding:12px 28px;font-size:14px;" onclick="resolveConfirm(false)">Annuler</button>
+      <button class="btn btnDanger" style="padding:12px 28px;font-size:14px;" id="confirmOkBtn" onclick="resolveConfirm(true)">Supprimer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Provider Modal -->
 <div class="modal" id="addProviderModal" style="max-width:420px;">
   <div class="modalHeader" style="display:flex;justify-content:space-between;align-items:center;">
@@ -1395,7 +1407,8 @@ function addNewProperty() {
 async function removeCurrentProperty() {
   if ((fullConfig.properties || []).length <= 1) return;
   const prop = API.getActiveProperty(fullConfig);
-  if (!confirm((t('property.remove_confirm') || 'Supprimer') + ' "' + (prop ? prop.name : '') + '" ?')) return;
+  const ok = await customConfirm((t('property.remove_confirm') || 'Supprimer') + ' "' + (prop ? prop.name : '') + '" ?', 'Supprimer');
+  if (!ok) return;
   fullConfig = API.removeProperty(fullConfig, prop.id);
   await API.save_config(fullConfig);
   renderPropertySelector();
@@ -2297,7 +2310,7 @@ function autoBalancePercentages() {
   });
   renderProviders();
 }
-function removeProvider(i) { const name=config.providers[i]?.name||''; if(!confirm('Supprimer le prestataire "'+name+'" ?'))return; syncProviders(); config.providers.splice(i,1); autoBalancePercentages(); autoRegenerateIfNeeded(); }
+async function removeProvider(i) { const name=config.providers[i]?.name||''; const ok=await customConfirm('Supprimer le prestataire "'+name+'" ?','Supprimer'); if(!ok)return; syncProviders(); config.providers.splice(i,1); autoBalancePercentages(); autoRegenerateIfNeeded(); }
 
 /* ── Vacations ── */
 function showVacModal(i) { syncProviders(); vacPopupIdx=i; renderVacContent(); document.getElementById('overlay').style.display='block'; document.getElementById('vacModal').style.display='block'; }
@@ -2886,6 +2899,23 @@ function fmtDate(iso){if(!iso||iso.length<10)return iso||'';return iso.substring
 function getProvColor(name){const i=config.providers.findIndex(p=>p.name===name);return COLORS[i]||'#888';}
 function setStatus(html){document.getElementById('statusText').innerHTML=html;}
 function pasteField(id){navigator.clipboard.readText().then(t=>{document.getElementById(id).value=t.trim();});}
+/* ── Custom Confirm Modal ── */
+let confirmResolve = null;
+function customConfirm(msg, okText) {
+  return new Promise(resolve => {
+    confirmResolve = resolve;
+    document.getElementById('confirmMsg').textContent = msg;
+    if (okText) document.getElementById('confirmOkBtn').textContent = okText;
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById('confirmModal').style.display = 'block';
+  });
+}
+function resolveConfirm(val) {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('confirmModal').style.display = 'none';
+  if (confirmResolve) { confirmResolve(val); confirmResolve = null; }
+}
+
 function showToast(msg){
   const t=document.getElementById('toast');
   t.innerHTML='<span class="toast-text">'+msg+'</span><span class="toast-broom" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:22px;opacity:0;">🧹</span>';
