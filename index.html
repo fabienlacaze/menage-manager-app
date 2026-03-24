@@ -589,6 +589,12 @@
   .btnUpgrade { background:linear-gradient(135deg,#6c63ff,#5a52d5); color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; width:100%; }
   .btnUpgrade:hover { opacity:0.9; transform:translateY(-1px); }
 
+  /* ══ Help Tooltips ══ */
+  .helpTip { display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.1);color:var(--text3);font-size:10px;font-weight:700;cursor:help;margin-left:6px;transition:all 0.2s;position:relative; }
+  .helpTip:hover { background:var(--accent2);color:#fff; }
+  .helpTip .helpBubble { display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:400;color:var(--text2);white-space:normal;width:240px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:50;line-height:1.5; }
+  .helpTip:hover .helpBubble { display:block; }
+
   /* ══ Calendar Tooltip ══ */
   .calTooltip { position:absolute; background:var(--surface); border:1px solid var(--border2); border-radius:10px; padding:10px 14px; font-size:12px; color:var(--text); box-shadow:0 8px 24px rgba(0,0,0,0.4); z-index:50; pointer-events:none; white-space:nowrap; transform:translateX(-50%); min-width:160px; }
   .calTooltip .tt-date { font-weight:700; font-size:13px; color:var(--accent); margin-bottom:6px; }
@@ -724,7 +730,9 @@
   /* Property selector polish */
   #propSelectTitle:hover { background:rgba(255,255,255,0.14); border-color:rgba(255,255,255,0.25); }
   #propSelectTitle:focus { outline:none; border-color:var(--accent2); box-shadow:0 0 0 2px rgba(108,99,255,0.3); }
-  #propSelectTitle option { background:#1a1a2e; color:#f0f0f5; padding:10px; font-size:14px; border-radius:0; }
+  #propSelectTitle option { background:#1a1a2e; color:#f0f0f5; padding:10px 14px; font-size:14px; border:none; outline:none; }
+  #propSelectTitle option:checked { background:#2a2a4e; }
+  select option { background:#1a1a2e !important; color:#f0f0f5 !important; }
   #propSelect { background-image:none; appearance:auto; }
 
   /* Toast animation */
@@ -915,7 +923,7 @@
     <div class="panelHeader" onclick="togglePanel('config')">
       <div class="panelLeft">
         <div class="stepBadge">1</div>
-        <div class="panelTitle" style="display:flex;align-items:center;gap:8px;">&#127968;
+        <div class="panelTitle" style="display:flex;align-items:center;gap:8px;">&#127968;<span class="helpTip" onclick="event.stopPropagation()">?<span class="helpBubble">Configurez votre logement : nom, adresse, calendriers iCal (Airbnb, Booking...). Cliquez ✏️ pour les details et 📍 pour la position.</span></span>
           <select id="propSelectTitle" onchange="event.stopPropagation();switchProperty(this.value)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;padding:6px 28px 6px 12px;max-width:220px;border-radius:8px;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22%3E%3Cpath fill=%22%23ffffff%22 d=%22M1 1l5 5 5-5%22 stroke=%22%23ffffff%22 stroke-width=%221.5%22 fill=%22none%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;transition:all 0.2s;"></select>
         </div>
       </div>
@@ -949,7 +957,7 @@
     <div class="panelHeader" onclick="togglePanel('providers')">
       <div class="panelLeft">
         <div class="stepBadge" style="background:linear-gradient(135deg,#6c63ff,#5a52d5);">2</div>
-        <div class="panelTitle">&#128101; <span data-i18n="section.team">Equipe menage</span></div>
+        <div class="panelTitle">&#128101; <span data-i18n="section.team">Equipe menage</span><span class="helpTip" onclick="event.stopPropagation()">?<span class="helpBubble">Ajoutez vos prestataires de menage avec leur % de repartition (total = 100%). Cliquez 📍 pour definir leur zone d'action.</span></span></div>
       </div>
       <span class="panelChevron" id="chevProviders">&#9660;</span>
     </div>
@@ -966,7 +974,7 @@
     <div class="panelHeader" onclick="togglePanel('results')">
       <div class="panelLeft">
         <div class="stepBadge" style="background:linear-gradient(135deg,var(--success),#059669);">3</div>
-        <div class="panelTitle">&#128197; <span data-i18n="results.title">Planning</span></div>
+        <div class="panelTitle">&#128197; <span data-i18n="results.title">Planning</span><span class="helpTip" onclick="event.stopPropagation()">?<span class="helpBubble">Le planning est genere automatiquement a partir de vos calendriers. Cliquez Rafraichir pour forcer la mise a jour. Filtrez par prestataire.</span></span></div>
       </div>
       <button class="btn btnSmall" onclick="event.stopPropagation();generatePlanning()" id="btnGenerate" style="padding:6px 14px;font-size:11px;background:var(--accent);color:#fff;border:none;border-radius:8px;" data-i18n="generate.refresh">&#128260; Rafraichir</button>
       <span class="panelChevron open" id="chevResults">&#9660;</span>
@@ -997,7 +1005,7 @@
     <div class="panelHeader" onclick="togglePanel('comm')">
       <div class="panelLeft">
         <div class="stepBadge" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);">4</div>
-        <div class="panelTitle">&#128172; <span data-i18n="comm.title">Communication & Export</span></div>
+        <div class="panelTitle">&#128172; <span data-i18n="comm.title">Communication & Export</span><span class="helpTip" onclick="event.stopPropagation()">?<span class="helpBubble">Exportez le planning en CSV ou envoyez-le via WhatsApp. Partagez un lien en lecture seule avec vos prestataires.</span></span></div>
       </div>
       <span class="panelChevron" id="chevComm">&#9660;</span>
     </div>
@@ -1030,13 +1038,13 @@
     <div class="panelHeader" onclick="togglePanel('history')">
       <div class="panelLeft">
         <div class="stepBadge" style="background:linear-gradient(135deg,#f59e0b,#d97706);">5</div>
-        <div class="panelTitle">&#128214; <span data-i18n="section.history">Historique & Pressing</span></div>
+        <div class="panelTitle">&#128214; <span data-i18n="section.history">Historique & Pressing</span><span class="helpTip" onclick="event.stopPropagation()">?<span class="helpBubble">Les menages passes sont archives automatiquement. Gerez vos jeux de linge dans l'onglet Pressing.</span></span></div>
       </div>
       <span class="panelChevron" id="chevHistory">&#9660;</span>
     </div>
     <div class="panelBody collapsed" id="bodyHistory">
-      <div id="histPremiumZone" style="position:relative;min-height:80px;">
-        <div id="histPremLock" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,15,26,0.7);align-items:center;justify-content:center;border-radius:var(--radius-sm);z-index:2;cursor:pointer;" onclick="showPremiumModal('L\'historique et le pressing sont reserves aux utilisateurs Premium')"><span style="font-size:32px;">&#128274;</span><span style="color:#fff;font-size:13px;font-weight:600;margin-top:8px;">Premium</span></div>
+      <div id="histPremiumZone" style="position:relative;min-height:120px;">
+        <div id="histPremLock" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,15,26,0.85);border-radius:var(--radius-sm);z-index:2;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;" onclick="showPremiumModal('L\'historique et le pressing sont reserves aux utilisateurs Premium')"><span style="font-size:32px;">&#128274;</span><span style="color:#fff;font-size:13px;font-weight:600;margin-top:8px;">Premium</span></div>
         <div id="histPremContent">
       <div class="tabBar" style="margin-bottom:10px;">
         <button class="tabBtn active" id="tabHist" onclick="switchHistTab('history')">&#128214; <span data-i18n="results.tab.history">Historique</span></button>
