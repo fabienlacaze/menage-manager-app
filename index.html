@@ -2363,6 +2363,7 @@ function renderProviders() {
       <td><input type="text" class="provInput pctInput" id="ppct_${i}" value="${p.percentage}" onchange="redistributePct(${i})"></td>
       <td><input type="text" class="provInput pctInput" id="pprice_${i}" value="${p.price||''}" placeholder="0"></td>
       <td class="center"><button class="btn btnSmall" onclick="showVacModal(${i})">${vacCount > 0 ? vacCount+' per.' : 'Aucune'}</button></td>
+      <td class="center"><button class="btnLocation" onclick="editProvider(${i})" title="Modifier" style="font-size:14px;">&#9998;</button></td>
       <td class="center"><button class="btnLocation ${p.lat ? 'hasLocation' : ''}" onclick="openMapForProvider(${i})" title="${p.address || 'Definir la zone'}">&#128205;</button></td>
       <td class="center">${p.token ? `<button class="btn btnSmall" style="padding:4px 8px;" onclick="copyViewLink('${esc(p.token)}')" title="Copier le lien prestataire">&#128279;</button>` : ''}</td>
       <td class="center"><button class="btn btnSmall btnDanger" style="padding:4px 8px;" onclick="removeProvider(${i})">&#10005;</button></td>
@@ -2411,6 +2412,47 @@ function addProviderFromModal() {
   autoRegenerateIfNeeded();
 }
 function addProvider() { showAddProviderModal(); }
+
+let editProviderIdx = -1;
+function editProvider(idx) {
+  syncProviders();
+  editProviderIdx = idx;
+  const p = config.providers[idx];
+  if (!p) return;
+  document.getElementById('txtNewName').value = p.name || '';
+  document.getElementById('txtNewPhone').value = p.phone || '';
+  if (document.getElementById('txtNewEmail')) document.getElementById('txtNewEmail').value = p.email || '';
+  if (document.getElementById('txtNewAddress')) document.getElementById('txtNewAddress').value = p.address || '';
+  document.getElementById('txtNewPct').value = p.percentage || '';
+  document.getElementById('txtNewPrice').value = p.price || '';
+  // Change modal title and button
+  const modalTitle = document.querySelector('#addProviderModal .modalHeader span');
+  if (modalTitle) modalTitle.textContent = t('provider.edit.title') || 'Modifier le prestataire';
+  const addBtn = document.querySelector('#addProviderModal .btn.btnPrimary');
+  if (addBtn) { addBtn.textContent = t('prop.detail.save') || 'Enregistrer'; addBtn.onclick = saveEditProvider; }
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('addProviderModal').style.display = 'block';
+}
+
+function saveEditProvider() {
+  const p = config.providers[editProviderIdx];
+  if (!p) return;
+  p.name = document.getElementById('txtNewName').value.trim();
+  p.phone = document.getElementById('txtNewPhone').value.trim();
+  p.email = (document.getElementById('txtNewEmail') || {}).value?.trim() || '';
+  p.address = (document.getElementById('txtNewAddress') || {}).value?.trim() || '';
+  p.percentage = parseInt(document.getElementById('txtNewPct').value) || 0;
+  p.price = parseFloat(document.getElementById('txtNewPrice').value) || 0;
+  renderProviders();
+  closeAddProviderModal();
+  showToast(p.name + ' ' + (t('config.saved') || 'modifie'));
+  editProviderIdx = -1;
+  // Reset modal for next add
+  const modalTitle = document.querySelector('#addProviderModal .modalHeader span');
+  if (modalTitle) modalTitle.textContent = t('provider.add.title') || 'Ajouter un prestataire';
+  const addBtn = document.querySelector('#addProviderModal .btn.btnPrimary');
+  if (addBtn) { addBtn.textContent = t('config.add') || '+ Ajouter'; addBtn.onclick = addProviderFromModal; }
+}
 
 let autoRegenTimer = null;
 function autoRegenerateIfNeeded() {
