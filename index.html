@@ -2352,7 +2352,7 @@ function toISO(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2
 function renderProviders() {
   const providers = config.providers || [];
   let html = '<table class="provTable">';
-  html += '<tr><th></th><th>Nom</th><th>Tel</th><th class="colPct">%</th><th class="colPct">Tarif</th><th class="colVac">Vacances</th><th></th><th></th><th></th></tr>';
+  html += '<tr><th></th><th>Nom</th><th>Tel</th><th class="colPct">%</th><th class="colPct">Tarif</th><th class="colVac">Vacances</th><th class="center" style="width:35px;">&#9998;</th><th class="center" style="width:35px;">&#128205;</th><th class="center" style="width:35px;"></th></tr>';
   let totalPct = 0;
   providers.forEach((p, i) => {
     const color = COLORS[i] || '#888';
