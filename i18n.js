@@ -176,6 +176,145 @@ const I18N = {
     // Status
     'status.ready': 'Pret',
     'status.restored': 'Planning restaure',
+
+    // Validation
+    'validation.name.required': 'Veuillez saisir un nom.',
+    'config.ical.required': 'Saisissez au moins une URL iCal.',
+    'config.provider.required': 'Ajoutez au moins un prestataire.',
+    'config.percentages.invalid': 'Le total des pourcentages doit etre 100%',
+    'config.saved': 'Configuration sauvegardee',
+
+    // Generate
+    'generate.loading': 'Generation en cours...',
+    'generate.success': 'Planning genere avec succes',
+    'generate.refresh': 'Rafraichir',
+    'generate.remaining': 'reste {n} generation(s) gratuite(s)',
+
+    // Export
+    'export.empty': 'Aucun planning a exporter.',
+    'export.filter.empty': 'Aucun menage avec ce filtre.',
+    'export.csv.success': 'CSV exporte : {n} menage(s)',
+    'export.pdf.success': 'PDF exporte : {n} menage(s)',
+    'export.pdf.title': 'Planning Menages',
+    'export.pdf.generated': 'Genere le',
+    'export.text.copied': 'Planning copie',
+
+    // WhatsApp
+    'whatsapp.empty': 'Aucun menage pour',
+    'whatsapp.opened': 'Copie + WhatsApp ouvert pour',
+    'whatsapp.copied': 'Planning copie dans le presse-papier !',
+    'whatsapp.empty.all': 'Aucun planning a envoyer.',
+    'whatsapp.no.providers': 'Aucun prestataire avec des menages.',
+    'whatsapp.title': 'Envoyer par WhatsApp',
+    'whatsapp.select': 'Cliquez sur un prestataire :',
+
+    // Share
+    'share.save.first': 'Sauvegardez la configuration d\'abord.',
+    'share.link.copied': 'Lien lecture seule copie !',
+
+    // Provider
+    'provider.added': 'ajoute',
+    'provider.delete.confirm': 'Supprimer le prestataire',
+    'provider.link.copied': 'Lien prestataire copie !',
+    'provider.zone.define': 'Definir la zone',
+
+    // Vacation
+    'vacation.none': 'Aucune',
+    'vacation.title': 'Vacances de',
+    'vacation.empty': 'Aucune periode de vacances.',
+    'vacation.dates.required': 'Selectionnez les deux dates.',
+    'vacation.dates.invalid': 'La date de debut doit etre avant la fin.',
+
+    // Linen
+    'linen.name.required': 'Saisissez un nom pour le jeu de linge.',
+    'linen.duplicate': 'Ce jeu existe deja.',
+    'linen.empty': 'Aucun jeu de linge. Ajoutez-en un ci-dessus.',
+    'linen.status.available': 'Disponible',
+    'linen.status.used': 'Utilise',
+    'linen.status.pressing': 'Au pressing',
+    'linen.action.mark.used': 'Marquer utilise',
+    'linen.action.send.pressing': 'Envoyer au pressing',
+    'linen.action.return': 'Retour du pressing',
+    'linen.last.used': 'Dernier usage :',
+    'linen.never.used': 'Jamais utilise',
+    'linen.history.recent': 'Historique recent',
+
+    // iCal
+    'ical.empty': 'Aucun calendrier configure',
+    'ical.all.added': 'Toutes les plateformes sont deja ajoutees',
+    'ical.choose.platform': 'Choisir une plateforme :',
+    'ical.add.title': 'Ajouter un calendrier',
+    'ical.add.button': '+ Ajouter un calendrier',
+    'ical.delete.confirm': 'Supprimer le calendrier',
+
+    // Property
+    'property.click.configure': 'Cliquez ✏️ pour configurer la propriete',
+    'property.type.apartment': 'Appartement',
+    'property.type.house': 'Maison',
+    'property.type.studio': 'Studio',
+    'property.type.villa': 'Villa',
+    'property.type.chalet': 'Chalet',
+    'property.type.other': 'Autre',
+    'property.image.toolarge': 'Image trop grande (max 500 Ko)',
+    'property.checklist.empty': 'Aucune instruction',
+    'property.name.placeholder': 'Nom du logement',
+    'property.instruction.placeholder': 'Nouvelle instruction...',
+
+    // Time
+    'time.today': 'aujourd\'hui',
+    'time.tomorrow': 'demain',
+    'time.in2days': 'dans 2 jours',
+
+    // Notifications
+    'notification.unsupported': 'Notifications non supportees par ce navigateur.',
+    'notification.blocked': 'Notifications bloquees. Autorisez-les dans les parametres.',
+    'notification.denied': 'Permission de notification refusee.',
+    'reminder.duplicate': 'Rappel deja programme pour',
+    'reminder.scheduled': 'Rappel programme J-2 pour',
+
+    // Premium limits
+    'premium.limit.providers': 'Vous avez atteint la limite de {n} prestataires.',
+    'premium.limit.properties': 'Vous avez atteint la limite de {n} propriete(s).',
+    'premium.limit.icals': 'Vous avez atteint la limite de {n} calendriers.',
+    'premium.limit.generations': 'Limite de {n} generations/jour atteinte.',
+    'premium.stats.locked': 'Les graphiques et couts sont reserves aux utilisateurs Premium',
+    'premium.comm.locked': 'WhatsApp, PDF et Partage sont reserves aux utilisateurs Premium',
+    'premium.history.locked': 'L\'historique et le pressing sont reserves aux utilisateurs Premium',
+    'premium.upgrade.text': 'Passez a Premium pour debloquer.',
+
+    // Confirm
+    'confirm.title': 'Confirmer',
+    'confirm.cancel': 'Annuler',
+    'confirm.delete': 'Supprimer',
+
+    // Changelog
+    'changelog.title': 'Historique des modifications',
+    'changelog.empty': 'Aucune modification enregistree.',
+    'changelog.cleared': 'Historique efface',
+
+    // Calendar
+    'calendar.legend.cleaning': 'Menage',
+    'calendar.legend.reservation': 'Reservation',
+    'calendar.today': 'Aujourd\'hui',
+
+    // Help tooltips
+    'help.property': 'Configurez votre logement : nom, adresse, calendriers iCal. Cliquez ✏️ pour les details et 📍 pour la position.',
+    'help.providers': 'Ajoutez vos prestataires avec leur % de repartition (total = 100%). Cliquez 📍 pour definir leur zone d\'action.',
+    'help.planning': 'Le planning est genere automatiquement. Cliquez Rafraichir pour forcer la mise a jour. Filtrez par prestataire.',
+    'help.communication': 'Exportez en CSV ou envoyez via WhatsApp. Partagez un lien lecture seule.',
+    'help.history': 'Les menages passes sont archives automatiquement. Gerez vos jeux de linge dans Pressing.',
+
+    // Table headers (provider list)
+    'table.name': 'Nom',
+    'table.phone': 'Tel',
+    'table.pct': '%',
+    'table.rate': 'Tarif',
+    'table.vacations': 'Vacances',
+    'table.link': 'Lien',
+
+    // Results
+    'results.empty.future': 'Aucun menage a venir.',
+    'results.loading': 'Chargement en cours...',
   },
 
   en: {
@@ -351,6 +490,145 @@ const I18N = {
 
     'status.ready': 'Ready',
     'status.restored': 'Planning restored',
+
+    // Validation
+    'validation.name.required': 'Please enter a name.',
+    'config.ical.required': 'Enter at least one iCal URL.',
+    'config.provider.required': 'Add at least one provider.',
+    'config.percentages.invalid': 'Total percentages must be 100%',
+    'config.saved': 'Configuration saved',
+
+    // Generate
+    'generate.loading': 'Generating planning...',
+    'generate.success': 'Planning generated successfully',
+    'generate.refresh': 'Refresh',
+    'generate.remaining': '{n} free generation(s) remaining',
+
+    // Export
+    'export.empty': 'No planning to export.',
+    'export.filter.empty': 'No cleaning with this filter.',
+    'export.csv.success': 'CSV exported: {n} cleaning(s)',
+    'export.pdf.success': 'PDF exported: {n} cleaning(s)',
+    'export.pdf.title': 'Cleaning Planning',
+    'export.pdf.generated': 'Generated on',
+    'export.text.copied': 'Planning copied',
+
+    // WhatsApp
+    'whatsapp.empty': 'No cleaning for',
+    'whatsapp.opened': 'Copied + WhatsApp opened for',
+    'whatsapp.copied': 'Planning copied to clipboard!',
+    'whatsapp.empty.all': 'No planning to send.',
+    'whatsapp.no.providers': 'No provider with cleanings.',
+    'whatsapp.title': 'Send via WhatsApp',
+    'whatsapp.select': 'Click a provider:',
+
+    // Share
+    'share.save.first': 'Save configuration first.',
+    'share.link.copied': 'Read-only link copied!',
+
+    // Provider
+    'provider.added': 'added',
+    'provider.delete.confirm': 'Delete provider',
+    'provider.link.copied': 'Provider link copied!',
+    'provider.zone.define': 'Define zone',
+
+    // Vacation
+    'vacation.none': 'None',
+    'vacation.title': 'Vacations for',
+    'vacation.empty': 'No vacation period.',
+    'vacation.dates.required': 'Select both dates.',
+    'vacation.dates.invalid': 'Start date must be before end date.',
+
+    // Linen
+    'linen.name.required': 'Enter a name for the linen set.',
+    'linen.duplicate': 'This set already exists.',
+    'linen.empty': 'No linen set. Add one above.',
+    'linen.status.available': 'Available',
+    'linen.status.used': 'In use',
+    'linen.status.pressing': 'At laundry',
+    'linen.action.mark.used': 'Mark as used',
+    'linen.action.send.pressing': 'Send to laundry',
+    'linen.action.return': 'Return from laundry',
+    'linen.last.used': 'Last used:',
+    'linen.never.used': 'Never used',
+    'linen.history.recent': 'Recent history',
+
+    // iCal
+    'ical.empty': 'No calendar configured',
+    'ical.all.added': 'All platforms already added',
+    'ical.choose.platform': 'Choose a platform:',
+    'ical.add.title': 'Add a calendar',
+    'ical.add.button': '+ Add a calendar',
+    'ical.delete.confirm': 'Delete calendar',
+
+    // Property
+    'property.click.configure': 'Click ✏️ to configure the property',
+    'property.type.apartment': 'Apartment',
+    'property.type.house': 'House',
+    'property.type.studio': 'Studio',
+    'property.type.villa': 'Villa',
+    'property.type.chalet': 'Chalet',
+    'property.type.other': 'Other',
+    'property.image.toolarge': 'Image too large (max 500 KB)',
+    'property.checklist.empty': 'No instructions',
+    'property.name.placeholder': 'Property name',
+    'property.instruction.placeholder': 'New instruction...',
+
+    // Time
+    'time.today': 'today',
+    'time.tomorrow': 'tomorrow',
+    'time.in2days': 'in 2 days',
+
+    // Notifications
+    'notification.unsupported': 'Notifications not supported by this browser.',
+    'notification.blocked': 'Notifications blocked. Allow them in browser settings.',
+    'notification.denied': 'Notification permission denied.',
+    'reminder.duplicate': 'Reminder already set for',
+    'reminder.scheduled': 'Reminder set D-2 for',
+
+    // Premium limits
+    'premium.limit.providers': 'You reached the limit of {n} providers.',
+    'premium.limit.properties': 'You reached the limit of {n} property(ies).',
+    'premium.limit.icals': 'You reached the limit of {n} calendars.',
+    'premium.limit.generations': 'Limit of {n} generations/day reached.',
+    'premium.stats.locked': 'Charts and costs are reserved for Premium users',
+    'premium.comm.locked': 'WhatsApp, PDF and Share are reserved for Premium users',
+    'premium.history.locked': 'History and linens are reserved for Premium users',
+    'premium.upgrade.text': 'Upgrade to Premium to unlock.',
+
+    // Confirm
+    'confirm.title': 'Confirm',
+    'confirm.cancel': 'Cancel',
+    'confirm.delete': 'Delete',
+
+    // Changelog
+    'changelog.title': 'Change history',
+    'changelog.empty': 'No changes recorded.',
+    'changelog.cleared': 'History cleared',
+
+    // Calendar
+    'calendar.legend.cleaning': 'Cleaning',
+    'calendar.legend.reservation': 'Reservation',
+    'calendar.today': 'Today',
+
+    // Help tooltips
+    'help.property': 'Configure your property: name, address, iCal calendars. Click ✏️ for details and 📍 for location.',
+    'help.providers': 'Add your providers with their % split (total = 100%). Click 📍 to define their service zone.',
+    'help.planning': 'Planning is generated automatically. Click Refresh to force update. Filter by provider.',
+    'help.communication': 'Export as CSV or send via WhatsApp. Share a read-only link.',
+    'help.history': 'Past cleanings are archived automatically. Manage your linens in the Pressing tab.',
+
+    // Table headers (provider list)
+    'table.name': 'Name',
+    'table.phone': 'Phone',
+    'table.pct': '%',
+    'table.rate': 'Rate',
+    'table.vacations': 'Vacations',
+    'table.link': 'Link',
+
+    // Results
+    'results.empty.future': 'No upcoming cleanings.',
+    'results.loading': 'Loading...',
   }
 };
 
