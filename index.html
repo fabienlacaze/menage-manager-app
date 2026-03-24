@@ -1105,7 +1105,7 @@
 <div class="modal" id="msgModal">
   <div class="modalHeader" id="msgTitle">Menage Manager</div>
   <div class="modalBody" id="msgBody"></div>
-  <div class="modalBtns"><button class="btn btnPrimary" style="padding:12px 32px;font-size:14px;" onclick="closeMsg()" data-i18n="modal.ok">OK</button></div>
+  <div class="modalBtns" id="msgModalBtns"><button class="btn btnPrimary" style="padding:12px 32px;font-size:14px;" onclick="closeMsg()" data-i18n="modal.ok">OK</button></div>
 </div>
 <div class="modal" id="vacModal">
   <div class="modalHeader" data-i18n="modal.vacations">Vacances prestataire</div>
@@ -2072,22 +2072,47 @@ async function removeIcal(idx) {
 
 /* ── Onboarding ── */
 function showOnboarding() {
+  // Step 1: Language selection
   let html = '<div style="text-align:center;padding:10px;">';
-  html += '<div style="font-size:40px;margin-bottom:12px;">&#127968;&#128171;</div>';
-  html += '<div style="font-size:18px;font-weight:700;color:var(--accent);margin-bottom:8px;">Bienvenue sur Cleaning Manager !</div>';
-  html += '<div style="color:var(--text2);font-size:13px;line-height:1.8;text-align:left;margin:16px 0;">';
-  html += '<b>3 etapes pour commencer :</b><br><br>';
-  html += '1. <b>Propriete</b> — Renseignez le nom et collez les URLs iCal de vos plateformes (Airbnb, Booking...)<br>';
-  html += '2. <b>Equipe menage</b> — Ajoutez vos prestataires avec leur % de repartition<br>';
-  html += '3. <b>Planning</b> — Il se genere automatiquement !<br><br>';
-  html += 'Cliquez <b>?</b> a cote de chaque section pour plus d\'aide.';
-  html += '</div>';
-  html += '<button class="btn btnPrimary" style="padding:14px 32px;font-size:14px;" onclick="closeMsg();localStorage.setItem(\'mm_onboarded\',\'1\');">C\'est parti !</button>';
-  html += '</div>';
+  html += '<div style="font-size:40px;margin-bottom:12px;">&#127760;</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:var(--accent);margin-bottom:16px;">Choose your language</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:20px 0;">';
+  const langs = [
+    {code:'fr',flag:'fr',name:'Francais'},
+    {code:'en',flag:'gb',name:'English'},
+    {code:'es',flag:'es',name:'Espanol',premium:true},
+    {code:'pt',flag:'pt',name:'Portugues',premium:true},
+    {code:'it',flag:'it',name:'Italiano',premium:true},
+    {code:'de',flag:'de',name:'Deutsch',premium:true},
+  ];
+  langs.forEach(l => {
+    const premBadge = l.premium ? ' <span style="font-size:9px;background:var(--accent2);color:#fff;padding:1px 5px;border-radius:4px;">PRO</span>' : '';
+    html += `<button class="btn btnOutline" onclick="setLang('${l.code}');showOnboardingStep2()" style="padding:12px 20px;font-size:14px;min-width:130px;">`;
+    html += `<img src="https://flagcdn.com/w20/${l.flag}.png" width="20" height="15" style="vertical-align:middle;margin-right:8px;">`;
+    html += `${l.name}${premBadge}</button>`;
+  });
+  html += '</div></div>';
   document.getElementById('msgTitle').textContent = '';
   document.getElementById('msgBody').innerHTML = html;
+  document.getElementById('msgModalBtns').style.display = 'none';
   document.getElementById('overlay').style.display = 'block';
   document.getElementById('msgModal').style.display = 'block';
+}
+
+function showOnboardingStep2() {
+  let html = '<div style="text-align:center;padding:10px;">';
+  html += '<div style="font-size:40px;margin-bottom:12px;">&#127968;&#128171;</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:var(--accent);margin-bottom:8px;">' + (t('onboarding.welcome') || 'Bienvenue sur Cleaning Manager !') + '</div>';
+  html += '<div style="color:var(--text2);font-size:13px;line-height:1.8;text-align:left;margin:16px 0;">';
+  html += '<b>' + (t('onboarding.steps') || '3 etapes pour commencer :') + '</b><br><br>';
+  html += '1. <b>' + (t('section.property') || 'Propriete') + '</b> — ' + (t('onboarding.step1') || 'Renseignez le nom et collez les URLs iCal') + '<br>';
+  html += '2. <b>' + (t('section.team') || 'Equipe menage') + '</b> — ' + (t('onboarding.step2') || 'Ajoutez vos prestataires avec leur %') + '<br>';
+  html += '3. <b>' + (t('results.title') || 'Planning') + '</b> — ' + (t('onboarding.step3') || 'Il se genere automatiquement !') + '<br><br>';
+  html += (t('onboarding.help') || 'Cliquez ? a cote de chaque section pour plus d\'aide.');
+  html += '</div>';
+  html += '<button class="btn btnPrimary" style="padding:14px 32px;font-size:14px;" onclick="closeMsg();localStorage.setItem(\'mm_onboarded\',\'1\');">' + (t('onboarding.go') || 'C\'est parti !') + '</button>';
+  html += '</div>';
+  document.getElementById('msgBody').innerHTML = html;
 }
 
 /* ── History/Pressing sub-tabs ── */
@@ -3355,7 +3380,7 @@ function showToast(msg){
   setTimeout(()=>{t.style.display='none';t.style.opacity='1';t.style.transition='';},4800);
 }
 function showMsg(msg){document.getElementById('msgBody').innerHTML=msg;document.getElementById('overlay').style.display='block';document.getElementById('msgModal').style.display='block';}
-function closeMsg(){document.getElementById('overlay').style.display='none';document.getElementById('msgModal').style.display='none';}
+function closeMsg(){document.getElementById('overlay').style.display='none';document.getElementById('msgModal').style.display='none';document.getElementById('msgModalBtns').style.display='';}
 function showHelp(){document.getElementById('overlay').style.display='block';document.getElementById('helpModal').style.display='block';}
 function showChangelog(){
   const log=JSON.parse(localStorage.getItem('mm_changelog')||'[]');

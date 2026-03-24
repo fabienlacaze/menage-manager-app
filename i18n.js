@@ -322,6 +322,15 @@ const I18N = {
     // Results
     'results.empty.future': 'Aucun menage a venir.',
     'results.loading': 'Chargement en cours...',
+
+    // Onboarding
+    'onboarding.welcome': 'Bienvenue sur Cleaning Manager !',
+    'onboarding.steps': '3 etapes pour commencer :',
+    'onboarding.step1': 'Renseignez le nom et collez les URLs iCal de vos plateformes (Airbnb, Booking...)',
+    'onboarding.step2': 'Ajoutez vos prestataires avec leur % de repartition',
+    'onboarding.step3': 'Il se genere automatiquement !',
+    'onboarding.help': 'Cliquez ? a cote de chaque section pour plus d\'aide.',
+    'onboarding.go': 'C\'est parti !',
   },
 
   en: {
@@ -643,6 +652,15 @@ const I18N = {
     // Results
     'results.empty.future': 'No upcoming cleanings.',
     'results.loading': 'Loading...',
+
+    // Onboarding
+    'onboarding.welcome': 'Welcome to Cleaning Manager!',
+    'onboarding.steps': '3 steps to get started:',
+    'onboarding.step1': 'Enter the name and paste iCal URLs from your platforms (Airbnb, Booking...)',
+    'onboarding.step2': 'Add your providers with their % distribution',
+    'onboarding.step3': 'It generates automatically!',
+    'onboarding.help': 'Click ? next to each section for more help.',
+    'onboarding.go': 'Let\'s go!',
   },
 
   // ═══ ESPAÑOL ═══
