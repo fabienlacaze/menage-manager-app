@@ -2725,8 +2725,9 @@ async function sendViaChannel(channel) {
       window.open(`fb-messenger://share/?link=${encodeURIComponent('https://fabienlacaze.github.io/menage-manager-app/')}&quote=${encoded}`, '_blank');
       break;
     case 'email':
+      const provEmail = p ? (p.email || '') : '';
       const subject = encodeURIComponent('Planning menages - ' + (sendSelectedProvider || ''));
-      window.open(`mailto:?subject=${subject}&body=${encoded}`, '_blank');
+      window.open(`mailto:${provEmail}?subject=${subject}&body=${encoded}`, '_blank');
       break;
     case 'copy':
       await navigator.clipboard.writeText(txt).catch(() => {});
