@@ -851,10 +851,8 @@ function setLang(lang) {
       el.innerHTML = t(key);
     }
   });
-  // Update flag buttons
-  document.querySelectorAll('.lang-flag').forEach(el => {
-    el.style.opacity = el.getAttribute('data-lang') === lang ? '1' : '0.4';
-  });
+  // Update lang button if exists
+  if (typeof updateLangButton === 'function') updateLangButton();
   // Update auth tab text
   if (typeof switchAuthTab === 'function' && typeof authMode !== 'undefined') {
     const tabLogin = document.getElementById('tabLogin');

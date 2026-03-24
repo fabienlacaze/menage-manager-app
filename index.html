@@ -117,7 +117,7 @@
   .header-actions { display: flex; gap: 8px; align-items: center; }
 
   /* ── Main Content ── */
-  .content { padding: 16px 16px 250px 16px; max-width: 900px; margin: 0 auto; display:flex; flex-direction:column; gap:14px; }
+  .content { padding: 16px 16px 320px 16px; max-width: 900px; margin: 0 auto; display:flex; flex-direction:column; gap:14px; }
 
   /* ── Notification Banner ── */
   .notifBanner {
@@ -901,12 +901,7 @@
     </div>
   </div>
   <div class="header-actions">
-    <span class="lang-flag" data-lang="fr" onclick="setLang('fr')" style="cursor:pointer;font-size:16px;opacity:1;" title="Francais"><img src="https://flagcdn.com/w20/fr.png" width="20" height="15" alt="FR" style="vertical-align:middle;"></span>
-    <span class="lang-flag" data-lang="en" onclick="setLang('en')" style="cursor:pointer;font-size:16px;opacity:0.4;" title="English"><img src="https://flagcdn.com/w20/gb.png" width="20" height="15" alt="EN" style="vertical-align:middle;"></span>
-    <span class="lang-flag" data-lang="es" onclick="setLangPremium('es')" style="cursor:pointer;font-size:16px;opacity:0.4;" title="Español"><img src="https://flagcdn.com/w20/es.png" width="20" height="15" alt="ES" style="vertical-align:middle;"></span>
-    <span class="lang-flag" data-lang="pt" onclick="setLangPremium('pt')" style="cursor:pointer;font-size:16px;opacity:0.4;" title="Português"><img src="https://flagcdn.com/w20/pt.png" width="20" height="15" alt="PT" style="vertical-align:middle;"></span>
-    <span class="lang-flag" data-lang="it" onclick="setLangPremium('it')" style="cursor:pointer;font-size:16px;opacity:0.4;" title="Italiano"><img src="https://flagcdn.com/w20/it.png" width="20" height="15" alt="IT" style="vertical-align:middle;"></span>
-    <span class="lang-flag" data-lang="de" onclick="setLangPremium('de')" style="cursor:pointer;font-size:16px;opacity:0.4;" title="Deutsch"><img src="https://flagcdn.com/w20/de.png" width="20" height="15" alt="DE" style="vertical-align:middle;"></span>
+    <button class="btnHelp" onclick="showLangModal()" title="Langue" id="langBtn" style="font-size:14px;padding:4px 8px;"><img src="https://flagcdn.com/w20/fr.png" width="20" height="15" id="langFlagImg" style="vertical-align:middle;"> <span style="font-size:11px;vertical-align:middle;" id="langCode">FR</span></button>
     <button class="btnHelp" onclick="showChangelog()" data-i18n-attr="title" data-i18n="header.changelog" title="Historique modifications" style="font-size:13px;">&#128221;</button>
     <button class="btnHelp" onclick="toggleTheme()" data-i18n-attr="title" data-i18n="header.theme" title="Theme clair/sombre" id="themeBtn" style="font-size:15px;">&#9788;</button>
     <button class="btnHelp" onclick="showHelp()" data-i18n-attr="title" data-i18n="header.help" title="Aide">?</button>
@@ -1217,6 +1212,17 @@
         <span style="font-size:20px;">📋</span> <span data-i18n="send.copy">Copier le texte</span>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- Language Modal -->
+<div class="modal" id="langModal" style="max-width:360px;">
+  <div class="modalHeader" style="display:flex;justify-content:space-between;align-items:center;">
+    <span>&#127760; Langue / Language</span>
+    <button class="btn btnSmall" onclick="closeLangModal()" style="padding:4px 10px;">&#10005;</button>
+  </div>
+  <div class="modalBody" style="padding:16px 20px;">
+    <div style="display:flex;flex-direction:column;gap:6px;" id="langList"></div>
   </div>
 </div>
 
@@ -1616,6 +1622,7 @@ async function init() {
   fullConfig = await API.load_config();
   renderPropertySelector();
   await loadActiveProperty();
+  updateLangButton();
   if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
   checkRentalNotifications();
   checkReminders();
@@ -2068,6 +2075,55 @@ async function removeIcal(idx) {
   prop.icals.splice(idx, 1);
   syncIcalToOldFormat(prop);
   renderIcalList();
+}
+
+/* ── Language Modal ── */
+const LANG_LIST = [
+  {code:'fr',flag:'fr',name:'Francais',premium:false},
+  {code:'en',flag:'gb',name:'English',premium:false},
+  {code:'es',flag:'es',name:'Espanol',premium:true},
+  {code:'pt',flag:'pt',name:'Portugais',premium:true},
+  {code:'it',flag:'it',name:'Italien',premium:true},
+  {code:'de',flag:'de',name:'Allemand',premium:true},
+];
+
+function showLangModal() {
+  const list = document.getElementById('langList');
+  list.innerHTML = LANG_LIST.map(l => {
+    const isActive = currentLang === l.code;
+    const proBadge = l.premium ? '<span style="font-size:8px;background:var(--accent2);color:#fff;padding:2px 5px;border-radius:4px;font-weight:700;margin-left:6px;">PRO</span>' : '';
+    return `<button onclick="selectLang('${l.code}',${l.premium})" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:${isActive?'rgba(233,69,96,0.12)':'rgba(255,255,255,0.03)'};border:1px solid ${isActive?'var(--accent)':'var(--border2)'};border-radius:10px;cursor:pointer;color:var(--text);font-size:14px;font-weight:${isActive?'700':'400'};transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='${isActive?'rgba(233,69,96,0.12)':'rgba(255,255,255,0.03)'}'">
+      <img src="https://flagcdn.com/w20/${l.flag}.png" width="20" height="15">
+      ${l.name}${proBadge}
+      ${isActive?'<span style="margin-left:auto;color:var(--accent);">&#10003;</span>':''}
+    </button>`;
+  }).join('');
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('langModal').style.display = 'block';
+}
+
+function closeLangModal() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('langModal').style.display = 'none';
+}
+
+function selectLang(code, isPremium) {
+  if (isPremium && typeof API !== 'undefined' && !API.isPremium()) {
+    closeLangModal();
+    showPremiumModal('Les langues supplementaires sont reservees aux utilisateurs Premium.');
+    return;
+  }
+  setLang(code);
+  updateLangButton();
+  closeLangModal();
+}
+
+function updateLangButton() {
+  const l = LANG_LIST.find(l => l.code === currentLang) || LANG_LIST[0];
+  const img = document.getElementById('langFlagImg');
+  const code = document.getElementById('langCode');
+  if (img) img.src = 'https://flagcdn.com/w20/' + l.flag + '.png';
+  if (code) code.textContent = l.code.toUpperCase();
 }
 
 /* ── Onboarding ── */
