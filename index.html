@@ -1980,7 +1980,18 @@ async function showProviderMode() {
   // Find which properties this provider has cleanings in
   const org = API.getOrg();
   if (!org) {
-    content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);">Aucune organisation trouvee. Contactez votre gestionnaire.</div>';
+    const { data: { user: u2 } } = await sb.auth.getUser();
+    content.innerHTML = `<div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:48px;margin-bottom:16px;">&#9203;</div>
+      <div style="font-size:18px;font-weight:700;color:#6c63ff;margin-bottom:8px;">En attente d'invitation</div>
+      <div style="font-size:13px;color:var(--text3);line-height:1.6;">
+        Votre compte prestataire est pret !<br><br>
+        Pour recevoir des missions, votre gestionnaire doit vous inviter.<br><br>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;margin:16px 0;">
+          Votre email : <b style="color:var(--text);font-size:15px;">${esc(u2 ? u2.email : '')}</b>
+        </div>
+      </div>
+    </div>`;
     return;
   }
 
@@ -3757,11 +3768,37 @@ function wizardStep_ProviderReady() {
   document.getElementById('msgBody').innerHTML = html;
 }
 
-function wizardFinishProvider() {
+async function wizardFinishProvider() {
   window._wizardActive = false;
   closeMsg();
   localStorage.setItem('mm_onboarded', '1');
-  showProviderMode();
+  document.getElementById('appMain').style.display = '';
+  document.querySelector('.header').style.display = '';
+
+  // Check if provider has an org
+  const org = API.getOrg();
+  if (org) {
+    showProviderMode();
+  } else {
+    // No org = not invited yet, show waiting screen
+    const content = document.querySelector('.content');
+    const { data: { user } } = await sb.auth.getUser();
+    const email = user ? user.email : '';
+    content.innerHTML = `<div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:48px;margin-bottom:16px;">&#9203;</div>
+      <div style="font-size:18px;font-weight:700;color:#6c63ff;margin-bottom:8px;">En attente d'invitation</div>
+      <div style="font-size:13px;color:var(--text3);line-height:1.6;">
+        Votre compte prestataire est pret !<br><br>
+        Pour recevoir des missions de menage, votre gestionnaire<br>
+        ou proprietaire doit vous ajouter dans son equipe.<br><br>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;margin:16px 0;font-size:14px;">
+          Communiquez-lui votre email :<br>
+          <b style="color:var(--text);font-size:16px;">${esc(email)}</b>
+        </div>
+        Il pourra vous inviter via le bouton <b>Equipe</b> de l'application.
+      </div>
+    </div>`;
+  }
 }
 
 async function wizardFinish() {
