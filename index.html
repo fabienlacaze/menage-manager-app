@@ -906,7 +906,7 @@
     <button class="btnHelp" onclick="showChangelog()" data-i18n-attr="title" data-i18n="header.changelog" title="Historique modifications" style="font-size:13px;">&#128221;</button>
     <button class="btnHelp" onclick="toggleTheme()" data-i18n-attr="title" data-i18n="header.theme" title="Theme clair/sombre" id="themeBtn" style="font-size:15px;">&#9788;</button>
     <button class="btnHelp" onclick="showHelp()" data-i18n-attr="title" data-i18n="header.help" title="Aide">?</button>
-    <button class="btnHelp" onclick="showTeamModal()" title="Equipe" style="font-size:13px;">&#128101;</button>
+    <button class="btnHelp" id="btnTeam" onclick="showTeamModal()" title="Equipe" style="font-size:13px;display:none;">&#128101;</button>
     <button class="btnHelp" onclick="showAccountModal()" title="Mon compte" style="font-size:13px;">&#9881;</button>
     <button class="btnHelp" onclick="customConfirm(t('auth.logout.confirm')||'Se deconnecter ?','Deconnexion').then(ok=>{if(ok)authLogout()})" data-i18n-attr="title" data-i18n="header.logout" title="Deconnexion" style="font-size:13px;">&#9211;</button>
   </div>
@@ -1667,7 +1667,9 @@ async function switchProperty(propId) {
 async function loadDashboard() {
   const panel = document.getElementById('panelDashboard');
   if (!panel) return;
-  // Show dashboard for all users (summary of their properties)
+  // Dashboard only for Business plan
+  const plan = API.getPlan();
+  if (plan !== 'business') { panel.style.display = 'none'; return; }
   try {
     const dash = await API.loadDashboard();
     if (!dash || !dash.properties.length) { panel.style.display = 'none'; return; }
@@ -2063,8 +2065,12 @@ function updatePlanUI() {
   const isPremium = API.isPremium();
   const banner = document.getElementById('premiumBanner');
   const adBanner = document.getElementById('adBanner');
+  const plan = API.getPlan();
+  const isBusiness = plan === 'business';
   if (banner) banner.style.display = isPremium ? 'none' : 'flex';
   if (adBanner) adBanner.style.display = isPremium ? 'none' : 'block';
+  const btnTeam = document.getElementById('btnTeam');
+  if (btnTeam) btnTeam.style.display = isBusiness ? '' : 'none';
   // Update header with premium badge
   const h1 = document.querySelector('.header h1');
   if (h1) {
