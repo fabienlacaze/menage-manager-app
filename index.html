@@ -3577,20 +3577,32 @@ async function wizardSaveProperty() {
 // ── Wizard: iCal URL ──
 function wizardStep_IcalUrl() {
   const step = wizardData.roleId === 'concierge' ? '3/4' : '2/3';
+  const platforms = [
+    { id: 'airbnb', name: 'Airbnb', color: '#e94560', url: 'https://www.airbnb.fr/hosting/listings', help: 'Calendrier > Tarifs et disponibilites > Exporter le calendrier', placeholder: 'https://www.airbnb.fr/calendar/ical/...' },
+    { id: 'booking', name: 'Booking', color: '#003580', url: 'https://admin.booking.com/hotel/hoteladmin/extranet_ng/manage/calendar.html', help: 'Extranet > Tarifs > Sync calendrier > Exporter', placeholder: 'https://ical.booking.com/v1/export/...' },
+    { id: 'vrbo', name: 'Vrbo', color: '#3b5cad', url: 'https://www.vrbo.com/owner/calendar', help: 'Calendrier > Importer/Exporter > Exporter', placeholder: 'https://www.vrbo.com/icalendar/...' },
+    { id: 'tripadvisor', name: 'Tripadvisor', color: '#00aa6c', url: 'https://www.tripadvisor.com/rentals', help: 'Calendrier > Synchroniser > Exporter iCal', placeholder: 'URL iCal Tripadvisor...' },
+    { id: 'other', name: 'Autre', color: '#666', url: '', help: 'Copiez l\'URL iCal de votre plateforme', placeholder: 'https://...' },
+  ];
   let html = '<div style="text-align:center;padding:10px;">';
   html += '<div style="font-size:32px;margin-bottom:8px;">&#128197;</div>';
   html += '<div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:4px;">Etape ' + step + '</div>';
-  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:6px;">Collez l\'URL de votre calendrier iCal</div>';
-  html += '<div style="font-size:11px;color:var(--text3);margin-bottom:16px;">Airbnb : Calendrier > Exporter > Copier le lien<br>Booking : Extranet > Tarifs > Sync calendrier</div>';
-  html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">';
-  html += '<span style="background:#e94560;color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;min-width:60px;text-align:center;">Airbnb</span>';
-  html += '<input id="wizAirbnb" type="url" placeholder="https://www.airbnb.fr/calendar/ical/..." style="flex:1;padding:10px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-family:\'Inter\',sans-serif;">';
-  html += '</div>';
-  html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;">';
-  html += '<span style="background:#003580;color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;min-width:60px;text-align:center;">Booking</span>';
-  html += '<input id="wizBooking" type="url" placeholder="https://ical.booking.com/v1/export/..." style="flex:1;padding:10px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-family:\'Inter\',sans-serif;">';
-  html += '</div>';
-  html += '<div style="display:flex;gap:10px;">';
+  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Connectez vos calendriers</div>';
+
+  platforms.forEach(p => {
+    html += '<div style="margin-bottom:10px;">';
+    html += '<div style="display:flex;gap:8px;align-items:center;">';
+    html += '<span style="background:' + p.color + ';color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;min-width:70px;text-align:center;">' + p.name + '</span>';
+    html += '<input id="wiz_' + p.id + '" type="url" placeholder="' + p.placeholder + '" style="flex:1;padding:10px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:11px;font-family:\'Inter\',sans-serif;">';
+    if (p.url) {
+      html += '<a href="' + p.url + '" target="_blank" style="background:rgba(255,255,255,0.08);color:var(--text2);padding:8px 10px;border-radius:8px;font-size:10px;text-decoration:none;white-space:nowrap;border:1px solid var(--border2);" title="' + p.help + '">Ouvrir &#8599;</a>';
+    }
+    html += '</div>';
+    html += '<div style="font-size:10px;color:var(--text3);text-align:left;margin:2px 0 0 82px;">' + p.help + '</div>';
+    html += '</div>';
+  });
+
+  html += '<div style="display:flex;gap:10px;margin-top:16px;">';
   html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardStep_PropertyName()">&#10094; Retour</button>';
   html += '<button class="btn btnPrimary" style="flex:1;padding:12px;font-size:13px;" onclick="wizardSaveIcal()">Suivant &#10140;</button>';
   html += '</div>';
@@ -3599,18 +3611,17 @@ function wizardStep_IcalUrl() {
 }
 
 async function wizardSaveIcal() {
-  const airbnb = (document.getElementById('wizAirbnb') || {}).value?.trim() || '';
-  const booking = (document.getElementById('wizBooking') || {}).value?.trim() || '';
-  wizardData.airbnb = airbnb;
-  wizardData.booking = booking;
+  const platforms = ['airbnb', 'booking', 'vrbo', 'tripadvisor', 'other'];
+  const icals = [];
+  platforms.forEach(p => {
+    const input = document.getElementById('wiz_' + p);
+    const url = input ? input.value.trim() : '';
+    if (url) icals.push({ platform: p, url });
+  });
+  wizardData.icals = icals;
 
-  if (wizardData.propId) {
-    const icals = [];
-    if (airbnb) icals.push({ platform: 'airbnb', url: airbnb });
-    if (booking) icals.push({ platform: 'booking', url: booking });
-    if (icals.length) {
-      await sb.from('properties').update({ icals }).eq('id', wizardData.propId);
-    }
+  if (wizardData.propId && icals.length) {
+    await sb.from('properties').update({ icals }).eq('id', wizardData.propId);
   }
   wizardStep_Provider();
 }
