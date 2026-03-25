@@ -3184,19 +3184,117 @@ function showOnboarding() {
 }
 
 function showOnboardingStep2() {
+  // Step 2: Role selection
   let html = '<div style="text-align:center;padding:10px;">';
-  html += '<div style="font-size:40px;margin-bottom:12px;">&#127968;&#128171;</div>';
-  html += '<div style="font-size:18px;font-weight:700;color:var(--accent);margin-bottom:8px;">' + (t('onboarding.welcome') || 'Bienvenue sur Cleaning Manager !') + '</div>';
-  html += '<div style="color:var(--text2);font-size:13px;line-height:1.8;text-align:left;margin:16px 0;">';
-  html += '<b>' + (t('onboarding.steps') || '3 etapes pour commencer :') + '</b><br><br>';
-  html += '1. <b>' + (t('section.property') || 'Propriete') + '</b> — ' + (t('onboarding.step1') || 'Renseignez le nom et collez les URLs iCal') + '<br>';
-  html += '2. <b>' + (t('section.team') || 'Equipe menage') + '</b> — ' + (t('onboarding.step2') || 'Ajoutez vos prestataires avec leur %') + '<br>';
-  html += '3. <b>' + (t('results.title') || 'Planning') + '</b> — ' + (t('onboarding.step3') || 'Il se genere automatiquement !') + '<br><br>';
-  html += (t('onboarding.help') || 'Cliquez ? a cote de chaque section pour plus d\'aide.');
-  html += '</div>';
-  html += '<button class="btn btnPrimary" style="padding:14px 32px;font-size:14px;" onclick="closeMsg();localStorage.setItem(\'mm_onboarded\',\'1\');document.querySelector(\'.content\').style.display=\'\';">' + (t('onboarding.go') || 'C\'est parti !') + '</button>';
+  html += '<div style="font-size:18px;font-weight:700;color:var(--accent);margin-bottom:6px;">' + (t('onboarding.welcome') || 'Bienvenue sur Cleaning Manager !') + '</div>';
+  html += '<div style="color:var(--text3);font-size:12px;margin-bottom:16px;">' + (t('onboarding.role_question') || 'Quel est votre profil ?') + '</div>';
+
+  const roles = [
+    {
+      id: 'concierge',
+      icon: '&#127970;',
+      title: t('role.concierge.title') || 'Je gere une conciergerie',
+      desc: t('role.concierge.desc') || 'Vous gerez les menages pour plusieurs proprietaires. Dashboard, facturation, equipe.',
+      plan: 'Business (19.99€/mois)',
+      color: '#6c63ff',
+    },
+    {
+      id: 'owner',
+      icon: '&#127968;',
+      title: t('role.owner.title') || 'Je suis proprietaire',
+      desc: t('role.owner.desc') || 'Vous louez sur Airbnb/Booking et gerez vos propres menages.',
+      plan: t('role.owner.plan') || 'Gratuit (1 propriete) / Pro (3.99€/mois)',
+      color: '#e94560',
+    },
+    {
+      id: 'provider',
+      icon: '&#129529;',
+      title: t('role.provider.title') || 'Je suis prestataire de menage',
+      desc: t('role.provider.desc') || 'Vous faites les menages. Consultez votre planning, validez vos interventions.',
+      plan: t('role.provider.plan') || 'Gratuit (invite par un gerant)',
+      color: '#34d399',
+    },
+  ];
+
+  roles.forEach(r => {
+    html += `<div onclick="selectRole('${r.id}')" style="background:var(--surface2);border:2px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:10px;cursor:pointer;text-align:left;transition:all 0.2s;" onmouseover="this.style.borderColor='${r.color}';this.style.transform='scale(1.02)'" onmouseout="this.style.borderColor='var(--border2)';this.style.transform='scale(1)'">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="font-size:28px;">${r.icon}</span>
+        <span style="font-size:15px;font-weight:700;color:${r.color};">${r.title}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:6px;">${r.desc}</div>
+      <div style="font-size:11px;color:var(--text3);">${r.plan}</div>
+    </div>`;
+  });
+
   html += '</div>';
   document.getElementById('msgBody').innerHTML = html;
+}
+
+function selectRole(roleId) {
+  localStorage.setItem('mm_user_role', roleId);
+
+  // Show role-specific onboarding
+  let html = '<div style="text-align:center;padding:10px;">';
+
+  if (roleId === 'concierge') {
+    html += '<div style="font-size:40px;margin-bottom:10px;">&#127970;</div>';
+    html += '<div style="font-size:16px;font-weight:700;color:#6c63ff;margin-bottom:12px;">' + (t('onboarding.concierge.title') || 'Mode Conciergerie') + '</div>';
+    html += '<div style="color:var(--text2);font-size:13px;line-height:1.8;text-align:left;margin:12px 0;">';
+    html += '<b>' + (t('onboarding.steps') || 'Pour commencer :') + '</b><br><br>';
+    html += '1. <b>Proprietes</b> — Ajoutez les logements de vos clients avec leurs calendriers iCal<br>';
+    html += '2. <b>Equipe</b> — Ajoutez vos prestataires de menage et definissez les zones<br>';
+    html += '3. <b>Planning</b> — Il se genere automatiquement !<br>';
+    html += '4. <b>Dashboard</b> — Vue globale de tous les menages<br>';
+    html += '5. <b>Invitez</b> — Proprietaires et prestataires via le bouton Equipe<br>';
+    html += '</div>';
+  } else if (roleId === 'owner') {
+    html += '<div style="font-size:40px;margin-bottom:10px;">&#127968;</div>';
+    html += '<div style="font-size:16px;font-weight:700;color:#e94560;margin-bottom:12px;">' + (t('onboarding.owner.title') || 'Mode Proprietaire') + '</div>';
+    html += '<div style="color:var(--text2);font-size:13px;line-height:1.8;text-align:left;margin:12px 0;">';
+    html += '<b>' + (t('onboarding.steps') || 'Pour commencer :') + '</b><br><br>';
+    html += '1. <b>Propriete</b> — Renseignez votre logement et collez les URLs iCal (Airbnb, Booking...)<br>';
+    html += '2. <b>Prestataires</b> — Ajoutez vos prestataires de menage avec leur %<br>';
+    html += '3. <b>Planning</b> — Il se genere automatiquement !<br>';
+    html += '4. <b>Communication</b> — Envoyez le planning par WhatsApp, email ou chat<br>';
+    html += '</div>';
+  } else {
+    html += '<div style="font-size:40px;margin-bottom:10px;">&#129529;</div>';
+    html += '<div style="font-size:16px;font-weight:700;color:#34d399;margin-bottom:12px;">' + (t('onboarding.provider.title') || 'Mode Prestataire') + '</div>';
+    html += '<div style="color:var(--text2);font-size:13px;line-height:1.8;text-align:left;margin:12px 0;">';
+    html += (t('onboarding.provider.desc') || 'Votre gestionnaire ou proprietaire vous a invite.') + '<br><br>';
+    html += '<b>' + (t('onboarding.provider.features') || 'Ce que vous pouvez faire :') + '</b><br><br>';
+    html += '&#10003; Consulter vos menages a venir<br>';
+    html += '&#10003; Accepter ou refuser les missions<br>';
+    html += '&#10003; Signaler votre arrivee et depart<br>';
+    html += '&#10003; Prendre des photos avant/apres<br>';
+    html += '&#10003; Suivre la checklist de chaque logement<br>';
+    html += '&#10003; Discuter avec votre gestionnaire<br>';
+    html += '</div>';
+  }
+
+  html += '<button class="btn btnPrimary" style="padding:14px 32px;font-size:14px;width:100%;" onclick="finishOnboarding(\'' + roleId + '\')">' + (t('onboarding.go') || 'C\'est parti !') + '</button>';
+  html += '</div>';
+  document.getElementById('msgBody').innerHTML = html;
+}
+
+async function finishOnboarding(roleId) {
+  closeMsg();
+  localStorage.setItem('mm_onboarded', '1');
+  const content = document.querySelector('.content');
+  if (content) content.style.display = '';
+
+  // Update member role in DB if needed
+  if (roleId === 'provider') {
+    const member = API.getMember();
+    if (member && member.role !== 'provider') {
+      await sb.from('members').update({ role: 'provider' }).eq('id', member.id);
+      location.reload(); // Reload to show provider mode
+    }
+  } else if (roleId === 'concierge') {
+    // Set org plan preference
+    localStorage.setItem('mm_preferred_plan', 'business');
+  }
 }
 
 /* ── History/Pressing sub-tabs ── */
