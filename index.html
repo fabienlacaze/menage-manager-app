@@ -546,6 +546,7 @@ async function loadPDF() {
     .header .subtitle { display: none; }
     .header-logo { width: 34px; height: 34px; font-size: 16px; border-radius: 10px; }
     .content { padding: 8px 4px 350px 4px; }
+    .templateGrid { grid-template-columns: 1fr !important; }
     .panel { border-radius: 12px; margin-bottom: 8px; }
     .panelHeader { padding: 12px 10px; }
     .panelBody { padding: 0 10px 10px 10px; }
@@ -1066,12 +1067,16 @@ async function loadPDF() {
           <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;">{total}</code>
           <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;">{lien}</code>
         </div>
-        <textarea id="propDetailTemplate" rows="5" oninput="previewTemplate()" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;resize:vertical;font-family:'Inter',sans-serif;box-sizing:border-box;margin-bottom:6px;"></textarea>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <button class="btn btnSmall btnOutline" onclick="resetTemplate();previewTemplate()" style="font-size:11px;padding:4px 10px;">Reinitialiser</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="templateGrid">
+          <div>
+            <textarea id="propDetailTemplate" rows="8" oninput="previewTemplate()" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;resize:vertical;font-family:'Inter',sans-serif;box-sizing:border-box;margin-bottom:6px;"></textarea>
+            <button class="btn btnSmall btnOutline" onclick="resetTemplate();previewTemplate()" style="font-size:11px;padding:4px 10px;">Reinitialiser</button>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:600;">Apercu :</div>
+            <div id="templatePreview" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;color:var(--text2);white-space:pre-wrap;line-height:1.5;max-height:220px;overflow-y:auto;"></div>
+          </div>
         </div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:600;">Apercu :</div>
-        <div id="templatePreview" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;color:var(--text2);white-space:pre-wrap;line-height:1.5;max-height:180px;overflow-y:auto;"></div>
       </div>
     </div>
   </div>
