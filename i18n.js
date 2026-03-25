@@ -247,6 +247,13 @@ const I18N = {
     'account.deleted': 'Compte supprime.',
     'premium.upgrade': 'Passer a Premium',
 
+    // Dashboard
+    'dash.today': "Menages aujourd'hui",
+    'dash.week': 'Cette semaine',
+    'dash.properties': 'Proprietes',
+    'dash.providers': 'Prestataires',
+    'dash.no_today': "Aucun menage aujourd'hui",
+
     'vacation.dates.required': 'Selectionnez les deux dates.',
     'vacation.dates.invalid': 'La date de debut doit etre avant la fin.',
 
@@ -595,6 +602,13 @@ const I18N = {
     'account.delete_confirm2': 'Last chance! Confirm deletion.',
     'account.deleted': 'Account deleted.',
     'premium.upgrade': 'Upgrade to Premium',
+
+    // Dashboard
+    'dash.today': 'Cleanings today',
+    'dash.week': 'This week',
+    'dash.properties': 'Properties',
+    'dash.providers': 'Providers',
+    'dash.no_today': 'No cleaning today',
     'validate.pct': 'Total must be 100%',
     'notif.blocked': 'Notifications blocked. Enable them in browser settings.',
     'notif.denied': 'Notification permission denied.',
