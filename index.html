@@ -1376,6 +1376,19 @@ async function loadPDF() {
   </div>
 </div>
 
+<!-- Chat Modal -->
+<div class="modal" id="chatModal" style="max-width:480px;max-height:80vh;display:flex;flex-direction:column;">
+  <div class="modalHeader" style="display:flex;justify-content:space-between;align-items:center;">
+    <span>&#128172; <span id="chatTitle">Chat</span></span>
+    <button class="modalClose" onclick="closeChatModal()">&times;</button>
+  </div>
+  <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:200px;max-height:50vh;background:var(--bg);"></div>
+  <div style="padding:10px 12px;border-top:1px solid var(--border2);display:flex;gap:8px;">
+    <input type="text" id="chatInput" placeholder="Votre message..." onkeydown="if(event.key==='Enter')sendChatMessage()" style="flex:1;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;">
+    <button onclick="sendChatMessage()" style="background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:14px;cursor:pointer;">&#9993;</button>
+  </div>
+</div>
+
 <!-- Add Provider Modal -->
 <div class="modal" id="addProviderModal" style="max-width:420px;">
   <div class="modalHeader" style="display:flex;justify-content:space-between;align-items:center;">
@@ -1988,9 +2001,12 @@ async function showProviderMode() {
       const key = dateStr + '_' + providerName;
       const v = validations[key];
       const status = v ? v.status : 'pending';
-      const statusIcon = status === 'done' ? '&#9989;' : status === 'in_progress' ? '&#9203;' : '&#9898;';
-      const statusLabel = status === 'done' ? 'Termine' : status === 'in_progress' ? 'En cours' : 'A faire';
-      const statusColor = status === 'done' ? '#34d399' : status === 'in_progress' ? '#f59e0b' : 'var(--text3)';
+      const statusIcons = { done: '&#9989;', in_progress: '&#9203;', accepted: '&#9989;', seen: '&#128065;', sent: '&#9993;', refused: '&#10060;', pending: '&#9898;' };
+      const statusIcon = statusIcons[status] || '&#9898;';
+      const statusLabels = { done: 'Termine', in_progress: 'En cours', accepted: 'Accepte ✓✓', seen: 'Lu ✓', sent: 'Envoye', refused: 'Refuse', pending: 'A faire' };
+      const statusLabel = statusLabels[status] || 'A faire';
+      const statusColors = { done: '#34d399', in_progress: '#f59e0b', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', pending: 'var(--text3)' };
+      const statusColor = statusColors[status] || 'var(--text3)';
       const source = (c.source || '').toLowerCase();
       const badgeClass = source.includes('airbnb') ? 'background:#e94560;' : source.includes('booking') ? 'background:#003580;' : 'background:#666;';
 
@@ -2022,11 +2038,31 @@ async function showProviderMode() {
         html += '</div>';
       }
 
-      // Action buttons (if not done)
-      if (status !== 'done') {
+      // Mark as seen automatically
+      if (status === 'sent' || status === 'pending') {
+        markCleaningAsSeen(c.propertyId, dateStr, providerName);
+      }
+
+      // Action buttons based on status
+      if (status === 'sent' || status === 'seen' || status === 'pending') {
+        // Step 1: Accept or Refuse
+        html += `<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+          <button onclick="acceptCleaning('${c.propertyId}','${dateStr}','${esc(providerName)}')" style="flex:1;padding:10px;background:#34d399;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#10003; Accepter</button>
+          <button onclick="refuseCleaning('${c.propertyId}','${dateStr}','${esc(providerName)}')" style="flex:1;padding:10px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#10007; Refuser</button>
+        </div>`;
+      } else if (status === 'accepted') {
+        // Step 2: In progress or Done
         html += `<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
           <button onclick="providerValidate('${c.propertyId}','${dateStr}','${esc(providerName)}','in_progress',this)" style="flex:1;padding:10px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#128692; En route</button>
           <button onclick="providerValidate('${c.propertyId}','${dateStr}','${esc(providerName)}','done',this)" style="flex:1;padding:10px;background:#34d399;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#9989; Termine</button>
+        </div>
+        <div style="margin-top:8px;">
+          <input type="file" accept="image/*" multiple onchange="providerUploadPhotos(this,'${c.propertyId}','${dateStr}','${esc(providerName)}')" style="font-size:11px;color:var(--text3);">
+        </div>`;
+      } else if (status === 'in_progress') {
+        // Step 3: Just Done
+        html += `<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+          <button onclick="providerValidate('${c.propertyId}','${dateStr}','${esc(providerName)}','done',this)" style="flex:1;padding:10px;background:#34d399;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#9989; Marquer comme termine</button>
         </div>
         <div style="margin-top:8px;">
           <input type="file" accept="image/*" multiple onchange="providerUploadPhotos(this,'${c.propertyId}','${dateStr}','${esc(providerName)}')" style="font-size:11px;color:var(--text3);">
@@ -2043,6 +2079,9 @@ async function showProviderMode() {
       html += '</div>';
     }
   }
+
+  // Add floating chat button
+  html += `<button onclick="openProviderChat()" style="position:fixed;bottom:80px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(108,99,255,0.4);z-index:50;">&#128172;</button>`;
 
   content.innerHTML = html;
 
@@ -2096,6 +2135,146 @@ async function providerUploadPhotos(input, propId, date, provName) {
   showToast(photos.length + ' photo(s) ajoutee(s)');
   showProviderMode();
 }
+
+/* ── Chat ── */
+let chatProviderName = '';
+let chatRealtimeSub = null;
+
+async function openChat(providerName) {
+  chatProviderName = providerName;
+  document.getElementById('chatTitle').textContent = 'Chat — ' + providerName;
+  document.getElementById('chatInput').value = '';
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('chatModal').style.display = 'flex';
+  await loadChatMessages();
+  // Subscribe to realtime updates
+  if (chatRealtimeSub) sb.removeChannel(chatRealtimeSub);
+  chatRealtimeSub = sb.channel('chat_' + chatProviderName)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'recipient_name=eq.' + chatProviderName }, () => loadChatMessages())
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'sender_name=eq.' + chatProviderName }, () => loadChatMessages())
+    .subscribe();
+  setTimeout(() => document.getElementById('chatInput').focus(), 200);
+}
+
+function closeChatModal() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('chatModal').style.display = 'none';
+  if (chatRealtimeSub) { sb.removeChannel(chatRealtimeSub); chatRealtimeSub = null; }
+}
+
+async function loadChatMessages() {
+  const org = API.getOrg();
+  if (!org) return;
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: msgs } = await sb.from('messages')
+    .select('*')
+    .eq('org_id', org.id)
+    .or('recipient_name.eq.' + chatProviderName + ',sender_name.eq.' + chatProviderName)
+    .order('created_at', { ascending: true })
+    .limit(50);
+
+  const container = document.getElementById('chatMessages');
+  if (!msgs || !msgs.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;font-size:13px;">Aucun message. Envoyez le premier !</div>';
+    return;
+  }
+
+  container.innerHTML = msgs.map(m => {
+    const isMe = m.sender_id === user.id;
+    const time = new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const roleColor = m.sender_role === 'admin' ? '#6c63ff' : m.sender_role === 'provider' ? '#34d399' : '#f59e0b';
+    return `<div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};margin-bottom:8px;">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:2px;">${esc(m.sender_name)} · ${time}</div>
+      <div style="max-width:80%;padding:10px 14px;border-radius:${isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px'};background:${isMe ? 'linear-gradient(135deg,#6c63ff,#5a54e0)' : 'var(--surface2)'};color:${isMe ? '#fff' : 'var(--text)'};font-size:13px;line-height:1.4;">${esc(m.body)}</div>
+    </div>`;
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const body = input.value.trim();
+  if (!body) return;
+  input.value = '';
+
+  const org = API.getOrg();
+  const { data: { user } } = await sb.auth.getUser();
+  const role = API.getRole();
+  const prop = API.getActiveProperty(fullConfig);
+
+  await sb.from('messages').insert({
+    org_id: org.id,
+    property_id: prop ? prop.id : null,
+    sender_id: user.id,
+    sender_name: user.email.split('@')[0],
+    sender_role: role,
+    recipient_name: chatProviderName,
+    body: body,
+  });
+
+  await loadChatMessages();
+}
+
+// Provider chat (from provider mode)
+async function openProviderChat() {
+  const { data: { user } } = await sb.auth.getUser();
+  // Find provider name
+  const org = API.getOrg();
+  if (!org) return;
+  const { data: properties } = await sb.from('properties').select('providers').eq('org_id', org.id);
+  let myName = user.email.split('@')[0];
+  if (properties) {
+    for (const p of properties) {
+      const match = (p.providers || []).find(pr => pr.email === user.email);
+      if (match) { myName = match.name; break; }
+    }
+  }
+  chatProviderName = myName;
+  document.getElementById('chatTitle').textContent = 'Chat';
+  document.getElementById('chatInput').value = '';
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('chatModal').style.display = 'flex';
+  await loadChatMessages();
+  if (chatRealtimeSub) sb.removeChannel(chatRealtimeSub);
+  chatRealtimeSub = sb.channel('chat_prov_' + myName)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'recipient_name=eq.' + myName }, () => loadChatMessages())
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'sender_name=eq.' + myName }, () => loadChatMessages())
+    .subscribe();
+  setTimeout(() => document.getElementById('chatInput').focus(), 200);
+}
+
+/* ── Double Check (Seen + Accepted) ── */
+async function markCleaningAsSeen(propId, date, provName) {
+  const { data: existing } = await sb.from('cleaning_validations')
+    .select('status').eq('property_id', propId).eq('cleaning_date', date).eq('provider_name', provName).single();
+  if (existing && existing.status !== 'sent') return; // Already beyond 'seen'
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('cleaning_validations').upsert({
+    property_id: propId, cleaning_date: date, provider_name: provName,
+    status: 'seen', validated_at: new Date().toISOString(), validated_by: user.id,
+  }, { onConflict: 'property_id,cleaning_date,provider_name' });
+}
+
+async function acceptCleaning(propId, date, provName) {
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('cleaning_validations').upsert({
+    property_id: propId, cleaning_date: date, provider_name: provName,
+    status: 'accepted', validated_at: new Date().toISOString(), validated_by: user.id,
+  }, { onConflict: 'property_id,cleaning_date,provider_name' });
+  showToast('Menage accepte ✓✓');
+  showProviderMode();
+}
+
+async function refuseCleaning(propId, date, provName) {
+  const { data: { user } } = await sb.auth.getUser();
+  await sb.from('cleaning_validations').upsert({
+    property_id: propId, cleaning_date: date, provider_name: provName,
+    status: 'refused', validated_at: new Date().toISOString(), validated_by: user.id,
+  }, { onConflict: 'property_id,cleaning_date,provider_name' });
+  showToast('Menage refuse — le gestionnaire sera notifie');
+  showProviderMode();
+}
+
 /* ── Auth ── */
 function togglePassVisibility(inputId, icon) {
   const input = document.getElementById(inputId);
@@ -3091,7 +3270,7 @@ function toISO(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2
 function renderProviders() {
   const providers = config.providers || [];
   let html = '<table class="provTable">';
-  html += '<tr><th style="width:20px;"></th><th style="text-align:center;">Nom</th><th style="text-align:center;">Tel</th><th style="text-align:center;width:65px;">%</th><th style="text-align:center;width:70px;">Tarif</th><th style="text-align:center;width:70px;">Vacances</th><th style="text-align:center;width:36px;font-size:11px;">✏️</th><th style="text-align:center;width:36px;font-size:11px;">📍</th><th style="text-align:center;width:30px;"></th></tr>';
+  html += '<tr><th style="width:20px;"></th><th style="text-align:center;">Nom</th><th style="text-align:center;">Tel</th><th style="text-align:center;width:65px;">%</th><th style="text-align:center;width:70px;">Tarif</th><th style="text-align:center;width:70px;">Vacances</th><th style="text-align:center;width:36px;font-size:11px;">✏️</th><th style="text-align:center;width:36px;font-size:11px;">📍</th><th style="text-align:center;width:36px;font-size:11px;">💬</th><th style="text-align:center;width:30px;"></th></tr>';
   let totalPct = 0;
   providers.forEach((p, i) => {
     const color = COLORS[i] || '#888';
@@ -3105,6 +3284,7 @@ function renderProviders() {
       <td class="center"><button class="btn btnSmall" onclick="showVacModal(${i})">${vacCount > 0 ? vacCount+' per.' : (t('vacation.none') || 'None')}</button></td>
       <td class="center"><button class="btnLocation" onclick="editProvider(${i})" title="Modifier" style="font-size:14px;">&#9998;</button></td>
       <td class="center"><button class="btnLocation ${p.lat ? 'hasLocation' : ''}" onclick="openMapForProvider(${i})" title="${p.address || 'Definir la zone'}">&#128205;</button></td>
+      <td class="center"><button class="btnLocation" onclick="openChat('${esc(p.name)}')" title="Chat" style="font-size:14px;">&#128172;</button></td>
       <td class="center"><button class="btn btnSmall btnDanger" style="padding:4px 8px;" onclick="removeProvider(${i})">&#10005;</button></td>
     </tr>`;
     totalPct += parseInt(p.percentage) || 0;
