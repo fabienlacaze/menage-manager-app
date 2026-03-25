@@ -3390,17 +3390,19 @@ function initAddressAutocomplete(inputId, mapId, dataKey) {
     clearTimeout(_autocompleteTimer);
     const q = input.value.trim();
     if (q.length < 3) { sugDiv.style.display = 'none'; return; }
+    sugDiv.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text3);">Recherche...</div>';
+    sugDiv.style.display = 'block';
     _autocompleteTimer = setTimeout(async () => {
       try {
-        const resp = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q) + '&limit=5&addressdetails=1');
+        const resp = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q) + '&limit=5&addressdetails=1&countrycodes=fr,be,ch,lu,mc');
         const results = await resp.json();
-        if (!results.length) { sugDiv.style.display = 'none'; return; }
-        sugDiv.innerHTML = results.map(r =>
-          `<div onclick="selectWizAddress('${inputId}','${mapId}','${dataKey}',${r.lat},${r.lon},'${esc(r.display_name).replace(/'/g, "\\'")}')" style="padding:10px 12px;cursor:pointer;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">${esc(r.display_name)}</div>`
-        ).join('');
-        sugDiv.style.display = 'block';
-      } catch (e) { sugDiv.style.display = 'none'; }
-    }, 400);
+        if (!results.length) { sugDiv.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text3);">Aucun resultat</div>'; return; }
+        sugDiv.innerHTML = results.map(r => {
+          const name = esc(r.display_name).replace(/'/g, "\\'");
+          return `<div onmousedown="selectWizAddress('${inputId}','${mapId}','${dataKey}',${r.lat},${r.lon},'${name}')" style="padding:10px 12px;cursor:pointer;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='transparent'">${esc(r.display_name)}</div>`;
+        }).join('');
+      } catch (e) { sugDiv.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text3);">Erreur de recherche</div>'; }
+    }, 300);
   });
 
   // Hide suggestions on blur (with delay for click)
