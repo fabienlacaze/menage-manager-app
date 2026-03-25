@@ -1879,10 +1879,14 @@ async function init() {
   await API.load_plan();
   updatePlanUI();
 
-  // Check if user is a provider (limited access)
+  // Check role for different views
   const role = API.getRole();
   if (role === 'provider') {
     showProviderMode();
+    return;
+  }
+  if (role === 'owner') {
+    showOwnerMode();
     return;
   }
 
@@ -2107,6 +2111,174 @@ async function showProviderMode() {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
   }
+}
+
+/* ── Owner Mode ── */
+async function showOwnerMode() {
+  const content = document.querySelector('.content');
+  if (!content) return;
+  content.innerHTML = '';
+
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+
+  const org = API.getOrg();
+  if (!org) {
+    content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);">Aucune organisation trouvee.</div>';
+    return;
+  }
+
+  // Get member info to find which properties this owner can see
+  const member = API.getMember();
+
+  // Load properties
+  const { data: allProperties } = await sb.from('properties').select('*').eq('org_id', org.id);
+  // Filter: owner sees properties where owner_member_id matches, or all if no filter
+  const properties = (allProperties || []).filter(p => p.owner_member_id === member.id || !p.owner_member_id);
+
+  // Header
+  const headerEl = document.querySelector('.header');
+  if (headerEl) {
+    const h1 = headerEl.querySelector('h1');
+    if (h1) h1.innerHTML = '&#127968; Mes proprietes';
+    document.querySelectorAll('.header-actions .btnHelp').forEach(btn => {
+      const onclick = btn.getAttribute('onclick') || '';
+      if (!onclick.includes('authLogout') && !onclick.includes('toggleTheme') && !onclick.includes('showAccountModal')) {
+        btn.style.display = 'none';
+      }
+    });
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+  let allCleanings = [];
+  let totalCost = 0;
+
+  for (const prop of properties) {
+    const { data: planning } = await sb.from('plannings').select('cleanings').eq('property_id', prop.id).single();
+    if (planning && planning.cleanings) {
+      planning.cleanings.forEach(c => {
+        allCleanings.push({ ...c, propertyId: prop.id, propertyName: prop.name });
+        const prov = (prop.providers || []).find(p => p.name === c.provider);
+        if (prov && (c.cleaningDate || c.date) >= today) totalCost += (prov.price || 0);
+      });
+    }
+  }
+
+  const futureCleanings = allCleanings.filter(c => (c.cleaningDate || c.date) >= today);
+  const weekCleanings = futureCleanings.filter(c => (c.cleaningDate || c.date) <= weekEnd);
+
+  // Load validations
+  const validations = {};
+  for (const prop of properties) {
+    const { data: vals } = await sb.from('cleaning_validations').select('*').eq('property_id', prop.id);
+    if (vals) vals.forEach(v => { validations[v.property_id + '_' + v.cleaning_date + '_' + v.provider_name] = v; });
+  }
+
+  let html = '';
+
+  // KPI cards
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
+    <div style="background:linear-gradient(135deg,#e94560,#c73e54);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:24px;font-weight:800;color:#fff;">${properties.length}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Proprietes</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#6c63ff,#5a54e0);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:24px;font-weight:800;color:#fff;">${futureCleanings.length}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Menages a venir</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:24px;font-weight:800;color:#fff;">${weekCleanings.length}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Cette semaine</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#34d399,#059669);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:24px;font-weight:800;color:#fff;">${totalCost}€</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Cout previsionnel</div>
+    </div>
+  </div>`;
+
+  // Properties list
+  for (const prop of properties) {
+    const propCleanings = futureCleanings.filter(c => c.propertyId === prop.id);
+
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <div style="font-weight:700;font-size:16px;">${esc(prop.name)}</div>
+          <div style="font-size:12px;color:var(--text3);">${esc(prop.address || '')}</div>
+        </div>
+        <div style="font-size:12px;color:var(--accent);font-weight:600;">${propCleanings.length} menage(s)</div>
+      </div>`;
+
+    if (propCleanings.length === 0) {
+      html += '<div style="color:var(--text3);font-size:12px;padding:8px 0;">Aucun menage prevu.</div>';
+    } else {
+      // Show next 5 cleanings
+      propCleanings.sort((a, b) => (a.cleaningDate || a.date || '').localeCompare(b.cleaningDate || b.date || ''));
+      propCleanings.slice(0, 5).forEach(c => {
+        const key = prop.id + '_' + (c.cleaningDate || c.date) + '_' + (c.provider || '');
+        const v = validations[key];
+        const status = v ? v.status : 'pending';
+        const statusIcons = { done: '✅', departed: '🚪', in_progress: '🧹', arrived: '🏠', accepted: '✓✓', seen: '👁', sent: '✉️', refused: '❌', pending: '⏳' };
+        const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'En cours', arrived: 'Sur place', accepted: 'Accepte', seen: 'Lu', sent: 'Envoye', refused: 'Refuse', pending: 'En attente' };
+        const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', pending: 'var(--text3)' };
+
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px;">
+          <div style="min-width:90px;font-weight:600;">${fmtDate(c.cleaningDate || c.date)}</div>
+          <div style="flex:1;color:var(--text2);">${esc(c.provider || '?')}</div>
+          <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:#fff;background:${c.source?.toLowerCase().includes('airbnb')?'#e94560':'#003580'};">${esc(c.source || '')}</span>
+          <span style="font-size:11px;color:${statusColors[status] || 'var(--text3)'};">${statusIcons[status] || '⏳'} ${statusLabels[status] || ''}</span>
+        </div>`;
+      });
+      if (propCleanings.length > 5) {
+        html += `<div style="text-align:center;color:var(--text3);font-size:11px;padding-top:6px;">+ ${propCleanings.length - 5} autre(s)</div>`;
+      }
+    }
+
+    // Validation photos from recent cleanings
+    const recentPhotos = [];
+    propCleanings.forEach(c => {
+      const key = prop.id + '_' + (c.cleaningDate || c.date) + '_' + (c.provider || '');
+      const v = validations[key];
+      if (v && v.photos && v.photos.length) recentPhotos.push(...v.photos.slice(0, 3));
+    });
+    if (recentPhotos.length) {
+      html += '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">';
+      recentPhotos.slice(0, 6).forEach(p => { html += `<img src="${p}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">`; });
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  // Recent activity (from chat messages)
+  const { data: recentMsgs } = await sb.from('messages').select('*').eq('org_id', org.id).eq('sender_role', 'provider').order('created_at', { ascending: false }).limit(10);
+  if (recentMsgs && recentMsgs.length) {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px;">&#128276; Activite recente</div>`;
+    recentMsgs.forEach(m => {
+      const time = new Date(m.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      html += `<div style="padding:6px 0;border-top:1px solid var(--border);font-size:12px;">
+        <span style="color:var(--text3);">${time}</span> — ${esc(m.body)}
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // Chat button
+  html += `<button onclick="openOwnerChat()" style="position:fixed;bottom:70px;right:16px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(108,99,255,0.4);z-index:50;">&#128172;</button>`;
+
+  content.innerHTML = html;
+}
+
+async function openOwnerChat() {
+  chatProviderName = 'gestionnaire';
+  document.getElementById('chatWidget').style.display = 'flex';
+  document.getElementById('chatFab').style.display = 'none';
+  const sel = document.getElementById('chatProvSelect');
+  if (sel) { sel.innerHTML = '<option value="gestionnaire">Gestionnaire</option>'; sel.value = 'gestionnaire'; }
+  await loadChatMessages();
+  subscribeChat();
 }
 
 async function providerValidate(propId, date, provName, status, btn) {
