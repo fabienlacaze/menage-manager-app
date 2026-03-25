@@ -230,6 +230,8 @@ const API = (function() {
     // ─── Plan management ───
     async load_plan() {
       try {
+        // Load org first if not loaded
+        if (!currentOrg) await loadOrg();
         // Try org plan first (Phase 2)
         if (currentOrg) {
           currentPlan = currentOrg.plan || 'free';
