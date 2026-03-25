@@ -1261,6 +1261,17 @@
     </div>
   </div>
 </div>
+<div class="modal" id="promptModal" style="max-width:400px;">
+  <div class="modalHeader">Saisie</div>
+  <div class="modalBody" style="padding:20px;">
+    <div id="promptMsg" style="font-size:14px;color:var(--text);margin-bottom:14px;"></div>
+    <input type="text" id="promptInput" style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;outline:none;" />
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
+      <button class="btn btnOutline" style="padding:12px 28px;font-size:14px;" onclick="resolvePrompt(false)">Annuler</button>
+      <button class="btn btnPrimary" style="padding:12px 28px;font-size:14px;" onclick="resolvePrompt(true)">OK</button>
+    </div>
+  </div>
+</div>
 
 <!-- Add Provider Modal -->
 <div class="modal" id="addProviderModal" style="max-width:420px;">
@@ -1558,13 +1569,13 @@ async function switchProperty(propId) {
   await loadActiveProperty();
 }
 
-function addNewProperty() {
+async function addNewProperty() {
   const limits = API.getLimits();
   if ((fullConfig.properties || []).length >= limits.maxProperties) {
     showPremiumModal('Vous avez atteint la limite de ' + limits.maxProperties + ' propriete(s). Passez a Premium pour en ajouter plus.');
     return;
   }
-  const name = prompt(t('property.name_prompt') || 'Nom de la propriete :');
+  const name = await customPrompt(t('property.name_prompt') || 'Nom de la propriete :', '', {placeholder:'Ex: Appart Nice Centre'});
   if (!name) return;
   fullConfig = API.addProperty(fullConfig, name);
   renderPropertySelector();
@@ -1790,7 +1801,7 @@ function closeAccountModal() {
 }
 async function changePassword() {
   closeAccountModal();
-  const newPwd = prompt(t('account.new_password') || 'Nouveau mot de passe (6 caracteres minimum) :');
+  const newPwd = await customPrompt(t('account.new_password') || 'Nouveau mot de passe (6 caracteres minimum) :', '', {type:'password',placeholder:'••••••'});
   if (!newPwd) return;
   if (newPwd.length < 6) { showMsg(t('account.pwd_short') || 'Le mot de passe doit faire au moins 6 caracteres.'); return; }
   const { error } = await sb.auth.updateUser({ password: newPwd });
@@ -1799,7 +1810,7 @@ async function changePassword() {
 }
 async function changeEmail() {
   closeAccountModal();
-  const newEmail = prompt(t('account.new_email') || 'Nouvel email :');
+  const newEmail = await customPrompt(t('account.new_email') || 'Nouvel email :', '', {placeholder:'email@example.com'});
   if (!newEmail) return;
   const { error } = await sb.auth.updateUser({ email: newEmail });
   if (error) { showMsg((t('error') || 'Erreur') + ': ' + error.message); return; }
@@ -3598,6 +3609,36 @@ function resolveConfirm(val) {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('confirmModal').style.display = 'none';
   if (confirmResolve) { confirmResolve(val); confirmResolve = null; }
+}
+
+let promptResolve = null;
+function customPrompt(msg, defaultVal, opts) {
+  return new Promise(resolve => {
+    promptResolve = resolve;
+    const modal = document.getElementById('promptModal');
+    if (!modal) {
+      // Fallback to native prompt if modal doesn't exist
+      resolve(prompt(msg, defaultVal || ''));
+      return;
+    }
+    document.getElementById('promptMsg').textContent = msg;
+    const input = document.getElementById('promptInput');
+    input.value = defaultVal || '';
+    input.type = (opts && opts.type) || 'text';
+    input.placeholder = (opts && opts.placeholder) || '';
+    document.getElementById('overlay').style.display = 'block';
+    modal.style.display = 'block';
+    setTimeout(() => input.focus(), 100);
+    input.onkeydown = (e) => { if (e.key === 'Enter') resolvePrompt(true); if (e.key === 'Escape') resolvePrompt(false); };
+  });
+}
+function resolvePrompt(ok) {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('promptModal').style.display = 'none';
+  if (promptResolve) {
+    promptResolve(ok ? document.getElementById('promptInput').value : null);
+    promptResolve = null;
+  }
 }
 
 function showToast(msg){
