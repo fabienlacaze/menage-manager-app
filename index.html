@@ -1406,6 +1406,11 @@ async function loadPDF() {
       </div>
     </div>
 
+    <div style="flex:1;margin-bottom:12px;">
+      <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Max menages/jour</label>
+      <input id="txtNewMaxPerDay" type="number" min="1" max="20" value="3" placeholder="3" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;box-sizing:border-box;">
+    </div>
+
     <button class="btn btnPrimary" style="width:100%;padding:14px;font-size:14px;" onclick="addProviderFromModal()" data-i18n="config.add">Ajouter</button>
   </div>
 </div>
@@ -2916,7 +2921,8 @@ function addProviderFromModal() {
   const name=document.getElementById('txtNewName').value.trim(), phone=document.getElementById('txtNewPhone').value.trim(), email=(document.getElementById('txtNewEmail')||{}).value?.trim()||'', address=(document.getElementById('txtNewAddress')||{}).value?.trim()||'', pct=parseInt(document.getElementById('txtNewPct').value)||0, price=parseFloat(document.getElementById('txtNewPrice').value)||0;
   if(!name){showToast(t('validation.name.required'));return;}
   syncProviders();
-  config.providers.push({name,phone,email,address,percentage:pct||0,price,vacations:'',waMode:'direct'});
+  const maxPerDay=parseInt((document.getElementById('txtNewMaxPerDay')||{}).value)||3;
+  config.providers.push({name,phone,email,address,percentage:pct||0,price,maxPerDay,vacations:'',waMode:'direct'});
   autoBalancePercentages();
   closeAddProviderModal();
   showToast(name + ' ajoute');
@@ -2936,6 +2942,7 @@ function editProvider(idx) {
   if (document.getElementById('txtNewAddress')) document.getElementById('txtNewAddress').value = p.address || '';
   document.getElementById('txtNewPct').value = p.percentage || '';
   document.getElementById('txtNewPrice').value = p.price || '';
+  if (document.getElementById('txtNewMaxPerDay')) document.getElementById('txtNewMaxPerDay').value = p.maxPerDay || 3;
   // Change modal title and button
   const modalTitle = document.querySelector('#addProviderModal .modalHeader span');
   if (modalTitle) modalTitle.textContent = t('provider.edit.title') || 'Modifier le prestataire';
@@ -2954,6 +2961,7 @@ function saveEditProvider() {
   p.address = (document.getElementById('txtNewAddress') || {}).value?.trim() || '';
   p.percentage = parseInt(document.getElementById('txtNewPct').value) || 0;
   p.price = parseFloat(document.getElementById('txtNewPrice').value) || 0;
+  p.maxPerDay = parseInt((document.getElementById('txtNewMaxPerDay') || {}).value) || 3;
   renderProviders();
   closeAddProviderModal();
   showToast(p.name + ' ' + (t('config.saved') || 'modifie'));
@@ -3644,12 +3652,19 @@ function detectConflicts() {
     }
   });
 
-  // Check: tight turnaround (less than 3h between checkout and next checkin)
+  // Check: same-day turnaround with short window
+  // Get check-in/check-out times from property
+  const propDetail = API.getActiveProperty(fullConfig);
+  const checkoutTime = (propDetail && propDetail.checkoutTime) || '11:00';
+  const checkinTime = (propDetail && propDetail.checkinTime) || '15:00';
+  const [coH, coM] = checkoutTime.split(':').map(Number);
+  const [ciH, ciM] = checkinTime.split(':').map(Number);
+  const gapHours = (ciH + ciM/60) - (coH + coM/60);
   cleanings.forEach(c => {
     if (c.prevCheckout && c.date) {
       const days = getIntervalDays(c.prevCheckout, c.date);
-      if (days === 0) {
-        alerts.push({ type: 'tight', icon: '🔴', msg: `Check-out + menage + check-in le meme jour (${fmtDate(c.date)})`, severity: 'danger' });
+      if (days === 0 && gapHours < 4) {
+        alerts.push({ type: 'tight', icon: '⏱️', msg: `Seulement ${gapHours.toFixed(0)}h entre check-out (${checkoutTime}) et check-in (${checkinTime}) le ${fmtDate(c.date)}`, severity: 'warning' });
       }
     }
   });

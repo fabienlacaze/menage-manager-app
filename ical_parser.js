@@ -233,33 +233,86 @@ async function generatePlanningFromICal(config, previousPlanning, transmittedDat
       cleaning.isLocked = false;
     }
 
-    // Phase 2: round-robin for new cleanings
+    // Count cleanings per provider per day
+    const dailyCounts = {};
+    function getDailyCount(provName, date) {
+      return (dailyCounts[provName + '_' + date] || 0);
+    }
+    function addDailyCount(provName, date) {
+      dailyCounts[provName + '_' + date] = (dailyCounts[provName + '_' + date] || 0) + 1;
+    }
+    // Init daily counts from locked assignments
+    for (const c of cleanings) {
+      if (c.isLocked && c.provider) addDailyCount(c.provider, c.cleaningDate || c.date);
+    }
+
+    // Haversine distance (km)
+    function haversine(lat1, lon1, lat2, lon2) {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // Get property location for distance check
+    const propLat = config.lat || null;
+    const propLng = config.lng || null;
+
+    // Phase 2: smart assignment (% + availability + daily limit + distance)
     for (const cleaning of cleanings) {
       if (cleaning.isLocked) continue;
 
       const cleaningDate = new Date(cleaning.date + 'T00:00:00');
+      const dateStr = cleaning.cleaningDate || cleaning.date;
       const totalAssigned = Math.max(Object.values(counters).reduce((s, v) => s + v, 0), 1);
 
-      let bestProvider = null, bestDeficit = -999999;
+      let bestProvider = null, bestScore = -999999;
 
       for (const p of providers) {
+        // Skip if on vacation
         if (isOnVacation(p, cleaningDate)) continue;
+
+        // Skip if daily max reached (default 3, configurable via p.maxPerDay)
+        const maxPerDay = parseInt(p.maxPerDay) || 3;
+        if (getDailyCount(p.name, dateStr) >= maxPerDay) continue;
+
+        // Skip if out of geographic range
+        if (propLat && propLng && p.lat && p.lng) {
+          const dist = haversine(p.lat, p.lng, propLat, propLng);
+          const radius = parseFloat(p.radius) || 50;
+          if (dist > radius) continue;
+        }
+
+        // Score: higher = better candidate
         const currentRatio = (counters[p.name] / totalAssigned) * 100;
         const deficit = (parseInt(p.percentage) || 0) - currentRatio;
-        if (bestProvider === null || deficit > bestDeficit) {
+        let score = deficit * 10; // Base score from % deficit
+
+        // Bonus: less daily load = better
+        score -= getDailyCount(p.name, dateStr) * 5;
+
+        // Bonus: closer = better (if geo available)
+        if (propLat && propLng && p.lat && p.lng) {
+          const dist = haversine(p.lat, p.lng, propLat, propLng);
+          score -= dist * 0.1; // Slight penalty for distance
+        }
+
+        if (bestProvider === null || score > bestScore) {
           bestProvider = p;
-          bestDeficit = deficit;
+          bestScore = score;
         }
       }
 
-      // Fallback if all on vacation
+      // Fallback if all filtered out (vacation + overloaded + out of range)
       if (!bestProvider) {
         for (const p of providers) {
           const currentRatio = (counters[p.name] / totalAssigned) * 100;
           const deficit = (parseInt(p.percentage) || 0) - currentRatio;
-          if (bestProvider === null || deficit > bestDeficit) {
+          if (bestProvider === null || deficit > bestScore) {
             bestProvider = p;
-            bestDeficit = deficit;
+            bestScore = deficit;
           }
         }
       }
@@ -267,6 +320,7 @@ async function generatePlanningFromICal(config, previousPlanning, transmittedDat
       cleaning.provider = bestProvider.name;
       cleaning.providerPhone = bestProvider.phone || '';
       counters[bestProvider.name]++;
+      addDailyCount(bestProvider.name, dateStr);
     }
   }
 
