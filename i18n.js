@@ -355,12 +355,28 @@ const I18N = {
 
     // Onboarding
     'onboarding.welcome': 'Bienvenue sur Cleaning Manager !',
-    'onboarding.steps': '3 etapes pour commencer :',
+    'onboarding.role_question': 'Quel est votre profil ?',
+    'onboarding.steps': 'Pour commencer :',
     'onboarding.step1': 'Renseignez le nom et collez les URLs iCal de vos plateformes (Airbnb, Booking...)',
     'onboarding.step2': 'Ajoutez vos prestataires avec leur % de repartition',
     'onboarding.step3': 'Il se genere automatiquement !',
     'onboarding.help': 'Cliquez ? a cote de chaque section pour plus d\'aide.',
     'onboarding.go': 'C\'est parti !',
+    'onboarding.concierge.title': 'Mode Conciergerie',
+    'onboarding.owner.title': 'Mode Proprietaire',
+    'onboarding.provider.title': 'Mode Prestataire',
+    'onboarding.provider.desc': 'Votre gestionnaire ou proprietaire vous a invite.',
+    'onboarding.provider.features': 'Ce que vous pouvez faire :',
+
+    // Roles
+    'role.concierge.title': 'Je gere une conciergerie',
+    'role.concierge.desc': 'Vous gerez les menages pour plusieurs proprietaires. Dashboard, facturation, gestion d\'equipe.',
+    'role.owner.title': 'Je suis proprietaire',
+    'role.owner.desc': 'Vous louez sur Airbnb/Booking et gerez vos propres menages.',
+    'role.owner.plan': 'Gratuit (1 propriete) / Pro (3.99€/mois)',
+    'role.provider.title': 'Je suis prestataire de menage',
+    'role.provider.desc': 'Vous faites les menages. Consultez votre planning, validez vos interventions.',
+    'role.provider.plan': 'Gratuit (invite par un gerant)',
   },
 
   en: {
@@ -714,12 +730,28 @@ const I18N = {
 
     // Onboarding
     'onboarding.welcome': 'Welcome to Cleaning Manager!',
-    'onboarding.steps': '3 steps to get started:',
+    'onboarding.role_question': 'What is your profile?',
+    'onboarding.steps': 'To get started:',
     'onboarding.step1': 'Enter the name and paste iCal URLs from your platforms (Airbnb, Booking...)',
     'onboarding.step2': 'Add your providers with their % distribution',
     'onboarding.step3': 'It generates automatically!',
     'onboarding.help': 'Click ? next to each section for more help.',
     'onboarding.go': 'Let\'s go!',
+    'onboarding.concierge.title': 'Concierge Mode',
+    'onboarding.owner.title': 'Owner Mode',
+    'onboarding.provider.title': 'Provider Mode',
+    'onboarding.provider.desc': 'Your manager or owner has invited you.',
+    'onboarding.provider.features': 'What you can do:',
+
+    // Roles
+    'role.concierge.title': 'I manage a concierge service',
+    'role.concierge.desc': 'You manage cleanings for multiple property owners. Dashboard, billing, team management.',
+    'role.owner.title': 'I am a property owner',
+    'role.owner.desc': 'You rent on Airbnb/Booking and manage your own cleanings.',
+    'role.owner.plan': 'Free (1 property) / Pro ($3.99/month)',
+    'role.provider.title': 'I am a cleaning provider',
+    'role.provider.desc': 'You do the cleanings. View your schedule, validate your work.',
+    'role.provider.plan': 'Free (invited by a manager)',
   },
 
   // ═══ ESPAÑOL ═══

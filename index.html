@@ -26,7 +26,7 @@
 <meta name="google" content="notranslate">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase_config.js?v=13"></script>
-<script src="i18n.js?v=19"></script>
+<script src="i18n.js?v=20"></script>
 <script src="ical_parser.js?v=13"></script>
 <script src="api_bridge.js?v=16"></script>
 <!-- Lazy-loaded: Leaflet, Chart.js, jsPDF (loaded on demand to improve startup) -->
@@ -880,7 +880,7 @@ async function loadPDF() {
 <body>
 
 <!-- Auth Screen -->
-<div id="authScreen" style="display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px;">
+<div id="authScreen" style="display:none;justify-content:center;align-items:center;min-height:100vh;padding:20px;">
   <div style="background:var(--surface);padding:36px;border-radius:16px;width:380px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
     <div style="text-align:center;margin-bottom:24px;">
       <div style="width:60px;height:60px;background:linear-gradient(135deg,#e94560,#6c63ff);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;margin-bottom:12px;">M</div>
@@ -3353,16 +3353,20 @@ async function finishOnboarding(roleId) {
     // Update role based on choice
     if (roleId === 'provider') {
       await sb.from('members').update({ role: 'provider' }).eq('id', member.id);
+      // Show provider mode directly (don't wait for reload)
+      showProviderMode();
+      return;
     } else if (roleId === 'owner') {
       await sb.from('members').update({ role: 'admin' }).eq('id', member.id);
-      // Owners are admin of their own org
     } else if (roleId === 'concierge') {
       await sb.from('members').update({ role: 'admin' }).eq('id', member.id);
       await sb.from('organizations').update({ name: 'Ma conciergerie', plan: 'free' }).eq('id', org.id);
     }
   }
 
-  // Reload to apply the correct view
+  // Show the main content and reload
+  const content = document.querySelector('.content');
+  if (content) content.style.display = '';
   location.reload();
 }
 
