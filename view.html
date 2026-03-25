@@ -129,50 +129,80 @@ async function loadData() {
   }
 
   try {
-    // Fetch all user_data rows (public read policy allows this)
-    const resp = await fetch(`${SUPABASE_URL_VIEW}/rest/v1/user_data?select=config,planning`, {
-      headers: { 'apikey': ANON_KEY }
-    });
-    const allData = await resp.json();
-
     let found = null;
     let providerName = null;
     let matchedProp = null;
     let matchedPlanning = [];
 
-    for (const row of allData) {
-      const cfg = row.config || {};
-      const props = cfg.properties || [];
-      const planningData = row.planning || {};
+    // Phase 2: Search in properties table by token (secure - only returns matching property)
+    if (readonlyToken) {
+      const resp = await fetch(`${SUPABASE_URL_VIEW}/rest/v1/properties?readonly_token=eq.${encodeURIComponent(readonlyToken)}&select=id,name,providers,plannings(cleanings,transmitted)`, {
+        headers: { 'apikey': ANON_KEY }
+      });
+      const props = await resp.json();
+      if (props && props.length > 0) {
+        const p = props[0];
+        found = true;
+        matchedProp = { id: p.id, name: p.name, providers: p.providers || [] };
+        matchedPlanning = (p.plannings && p.plannings[0]) ? (p.plannings[0].cleanings || []) : [];
+      }
+    }
 
-      // Multi-property: search in each property
-      for (const prop of props) {
-        if (readonlyToken && prop.readonlyToken === readonlyToken) {
-          found = row; matchedProp = prop;
-          matchedPlanning = Array.isArray(planningData) ? planningData : (planningData[prop.id] || []);
-          break;
-        }
-        if (providerToken) {
-          const prov = (prop.providers || []).find(p => p.token === providerToken);
+    if (providerToken && !found) {
+      // Search all properties for this provider token
+      const resp = await fetch(`${SUPABASE_URL_VIEW}/rest/v1/properties?select=id,name,providers,plannings(cleanings)`, {
+        headers: { 'apikey': ANON_KEY }
+      });
+      const allProps = await resp.json();
+      if (Array.isArray(allProps)) {
+        for (const p of allProps) {
+          const prov = (p.providers || []).find(pr => pr.token === providerToken);
           if (prov) {
-            found = row; matchedProp = prop; providerName = prov.name;
-            matchedPlanning = Array.isArray(planningData) ? planningData : (planningData[prop.id] || []);
+            found = true;
+            matchedProp = { id: p.id, name: p.name, providers: p.providers || [] };
+            providerName = prov.name;
+            matchedPlanning = (p.plannings && p.plannings[0]) ? (p.plannings[0].cleanings || []) : [];
             break;
           }
         }
       }
+    }
 
-      // Fallback: legacy single-property format
-      if (!found && !props.length) {
-        if (readonlyToken && cfg.readonlyToken === readonlyToken) {
-          found = row; matchedPlanning = Array.isArray(row.planning) ? row.planning : [];
-          matchedProp = { name: cfg.property || 'Planning', providers: cfg.providers || [] };
+    // Fallback: legacy user_data table
+    if (!found) {
+      const resp = await fetch(`${SUPABASE_URL_VIEW}/rest/v1/user_data?select=config,planning`, {
+        headers: { 'apikey': ANON_KEY }
+      });
+      const allData = await resp.json();
+      for (const row of allData) {
+        const cfg = row.config || {};
+        const props = cfg.properties || [];
+        const planningData = row.planning || {};
+        for (const prop of props) {
+          if (readonlyToken && prop.readonlyToken === readonlyToken) {
+            found = true; matchedProp = prop;
+            matchedPlanning = Array.isArray(planningData) ? planningData : (planningData[prop.id] || []);
+            break;
+          }
+          if (providerToken) {
+            const prov = (prop.providers || []).find(p => p.token === providerToken);
+            if (prov) {
+              found = true; matchedProp = prop; providerName = prov.name;
+              matchedPlanning = Array.isArray(planningData) ? planningData : (planningData[prop.id] || []);
+              break;
+            }
+          }
         }
-        if (providerToken) {
-          const prov = (cfg.providers || []).find(p => p.token === providerToken);
-          if (prov) {
-            found = row; providerName = prov.name;
-            matchedPlanning = Array.isArray(row.planning) ? row.planning : [];
+        if (!found && !props.length) {
+          if (readonlyToken && cfg.readonlyToken === readonlyToken) {
+            found = true; matchedPlanning = Array.isArray(row.planning) ? row.planning : [];
+            matchedProp = { name: cfg.property || 'Planning', providers: cfg.providers || [] };
+          }
+          if (providerToken) {
+            const prov = (cfg.providers || []).find(p => p.token === providerToken);
+            if (prov) {
+              found = true; providerName = prov.name;
+              matchedPlanning = Array.isArray(row.planning) ? row.planning : [];
             matchedProp = { name: cfg.property || 'Planning', providers: cfg.providers || [] };
           }
         }
