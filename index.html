@@ -1381,8 +1381,8 @@ async function loadPDF() {
   <div style="background:linear-gradient(135deg,#6c63ff,#5a54e0);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
     <div style="display:flex;align-items:center;gap:8px;">
       <span style="font-size:18px;">&#128172;</span>
-      <select id="chatProvSelect" onchange="switchChatProvider(this.value)" style="background:rgba(255,255,255,0.15);color:#fff;border:none;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
-        <option value="">-- Choisir --</option>
+      <select id="chatProvSelect" onchange="switchChatProvider(this.value)" style="background:rgba(255,255,255,0.15);color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;appearance:none;-webkit-appearance:none;padding-right:24px;background-image:url('data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22 viewBox=%220 0 10 6%22%3E%3Cpath fill=%22%23ffffff%22 d=%22M0 0l5 5 5-5%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center;">
+        <option value="" style="background:#1a1a2e;color:#f0f0f5;">-- Choisir --</option>
       </select>
     </div>
     <button onclick="closeChatWidget()" style="background:none;border:none;color:rgba(255,255,255,0.8);font-size:18px;cursor:pointer;">&times;</button>
@@ -3388,7 +3388,7 @@ function renderPropQuickInfo() {
   if (prop.cleaningPrice) items.push(`<span style="color:var(--success);font-size:12px;font-weight:600;">${prop.cleaningPrice}€/menage</span>`);
   if (prop.cleaningDuration) items.push(`<span style="color:var(--text2);font-size:12px;">&#9201; ${prop.cleaningDuration} min</span>`);
   if (prop.address) items.push(`<span style="color:var(--text3);font-size:11px;">&#128205; ${prop.address.substring(0,40)}${prop.address.length>40?'...':''}</span>`);
-  div.innerHTML = items.length ? items.join('') : '<span style="color:var(--text3);font-size:12px;">Cliquez ✏️ pour configurer la propriete</span>';
+  div.innerHTML = items.length ? items.join('') : '';
 }
 
 /* ── Property Detail Modal ── */
