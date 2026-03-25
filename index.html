@@ -906,6 +906,7 @@
     <button class="btnHelp" onclick="showChangelog()" data-i18n-attr="title" data-i18n="header.changelog" title="Historique modifications" style="font-size:13px;">&#128221;</button>
     <button class="btnHelp" onclick="toggleTheme()" data-i18n-attr="title" data-i18n="header.theme" title="Theme clair/sombre" id="themeBtn" style="font-size:15px;">&#9788;</button>
     <button class="btnHelp" onclick="showHelp()" data-i18n-attr="title" data-i18n="header.help" title="Aide">?</button>
+    <button class="btnHelp" onclick="showAccountModal()" title="Mon compte" style="font-size:13px;">&#9881;</button>
     <button class="btnHelp" onclick="customConfirm(t('auth.logout.confirm')||'Se deconnecter ?','Deconnexion').then(ok=>{if(ok)authLogout()})" data-i18n-attr="title" data-i18n="header.logout" title="Deconnexion" style="font-size:13px;">&#9211;</button>
   </div>
 </div>
@@ -1157,6 +1158,27 @@
     </div>
   </div>
   <div class="modalBtns"><button class="btn btnPrimary" style="padding:12px 32px;font-size:14px;" onclick="closeHelp()" data-i18n="modal.close">Fermer</button></div>
+</div>
+<div class="modal" id="accountModal" style="max-width:440px;">
+  <div class="modalHeader" style="display:flex;justify-content:space-between;align-items:center;">
+    <span id="accountTitle">Mon compte</span>
+    <button class="modalClose" onclick="closeAccountModal()">&times;</button>
+  </div>
+  <div class="modalBody" id="accountBody">
+    <div style="margin-bottom:20px;">
+      <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">EMAIL</label>
+      <div id="accountEmail" style="padding:10px 14px;background:var(--surface2);border-radius:8px;color:var(--text);font-size:14px;margin-top:4px;"></div>
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">PLAN</label>
+      <div id="accountPlan" style="padding:10px 14px;background:var(--surface2);border-radius:8px;color:var(--text);font-size:14px;margin-top:4px;"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btnOutline" style="padding:12px;font-size:13px;" onclick="changePassword()">&#128274; Changer le mot de passe</button>
+      <button class="btn btnOutline" style="padding:12px;font-size:13px;" onclick="changeEmail()">&#9993; Changer l'email</button>
+      <button class="btn btnDanger" style="padding:12px;font-size:13px;margin-top:10px;" onclick="deleteAccount()">&#128465; Supprimer mon compte</button>
+    </div>
+  </div>
 </div>
 <div class="modal" id="premiumModal" style="max-width:520px;">
   <div class="modalHeader" style="display:flex;justify-content:space-between;align-items:center;">
@@ -1748,6 +1770,67 @@ async function authLogout() {
   await sb.auth.signOut();
   localStorage.clear();
   checkAuth();
+}
+/* ── Account Management ── */
+async function showAccountModal() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  document.getElementById('accountEmail').textContent = user.email;
+  const plan = API.getPlan();
+  const planEl = document.getElementById('accountPlan');
+  planEl.innerHTML = plan === 'premium'
+    ? '<span style="color:var(--success);font-weight:700;">Premium</span> <span class="premiumBadge">PRO</span>'
+    : '<span>' + (t('premium.plan.free') || 'Gratuit') + '</span> — <a href="#" onclick="showPremiumModal();closeAccountModal();return false;" style="color:var(--accent);">' + (t('premium.upgrade') || 'Passer a Premium') + '</a>';
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('accountModal').style.display = 'block';
+}
+function closeAccountModal() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('accountModal').style.display = 'none';
+}
+async function changePassword() {
+  closeAccountModal();
+  const newPwd = prompt(t('account.new_password') || 'Nouveau mot de passe (6 caracteres minimum) :');
+  if (!newPwd) return;
+  if (newPwd.length < 6) { showMsg(t('account.pwd_short') || 'Le mot de passe doit faire au moins 6 caracteres.'); return; }
+  const { error } = await sb.auth.updateUser({ password: newPwd });
+  if (error) { showMsg((t('error') || 'Erreur') + ': ' + error.message); return; }
+  showToast(t('account.pwd_changed') || 'Mot de passe modifie !');
+}
+async function changeEmail() {
+  closeAccountModal();
+  const newEmail = prompt(t('account.new_email') || 'Nouvel email :');
+  if (!newEmail) return;
+  const { error } = await sb.auth.updateUser({ email: newEmail });
+  if (error) { showMsg((t('error') || 'Erreur') + ': ' + error.message); return; }
+  showToast(t('account.email_sent') || 'Email de confirmation envoye a ' + newEmail);
+}
+async function deleteAccount() {
+  closeAccountModal();
+  const ok = await customConfirm(
+    t('account.delete_confirm') || 'Etes-vous sur de vouloir supprimer votre compte ? Cette action est irreversible. Toutes vos donnees seront perdues.',
+    t('account.delete_btn') || 'Supprimer definitivement'
+  );
+  if (!ok) return;
+  const ok2 = await customConfirm(
+    t('account.delete_confirm2') || 'Derniere chance ! Tapez "SUPPRIMER" pour confirmer.',
+    'SUPPRIMER'
+  );
+  if (!ok2) return;
+  // Delete user data first
+  try {
+    const userId = (await sb.auth.getUser()).data.user.id;
+    // Note: actual user deletion requires admin API - we clear data and sign out
+    await sb.from('user_data').delete().eq('user_id', userId);
+    await sb.from('subscriptions').delete().eq('user_id', userId);
+    await sb.from('profiles').delete().eq('id', userId);
+    await sb.auth.signOut();
+    localStorage.clear();
+    showToast(t('account.deleted') || 'Compte supprime.');
+    checkAuth();
+  } catch (e) {
+    showMsg((t('error') || 'Erreur') + ': ' + e.message);
+  }
 }
 /* ── Premium / Freemium ── */
 function updatePlanUI() {

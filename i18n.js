@@ -233,6 +233,20 @@ const I18N = {
     'notif.blocked': 'Notifications bloquees. Autorisez-les dans les parametres du navigateur.',
     'notif.denied': 'Permission de notification refusee.',
     'error': 'Erreur',
+
+    // Account
+    'account.title': 'Mon compte',
+    'account.new_password': 'Nouveau mot de passe (6 caracteres minimum) :',
+    'account.pwd_short': 'Le mot de passe doit faire au moins 6 caracteres.',
+    'account.pwd_changed': 'Mot de passe modifie !',
+    'account.new_email': 'Nouvel email :',
+    'account.email_sent': 'Email de confirmation envoye.',
+    'account.delete_confirm': 'Etes-vous sur de vouloir supprimer votre compte ? Cette action est irreversible. Toutes vos donnees seront perdues.',
+    'account.delete_btn': 'Supprimer definitivement',
+    'account.delete_confirm2': 'Derniere chance ! Confirmez la suppression.',
+    'account.deleted': 'Compte supprime.',
+    'premium.upgrade': 'Passer a Premium',
+
     'vacation.dates.required': 'Selectionnez les deux dates.',
     'vacation.dates.invalid': 'La date de debut doit etre avant la fin.',
 
@@ -568,6 +582,19 @@ const I18N = {
     'ical.remove_confirm': 'Remove calendar',
     'btn.delete': 'Delete',
     'provider.remove_confirm': 'Remove provider',
+
+    // Account
+    'account.title': 'My account',
+    'account.new_password': 'New password (6 characters minimum):',
+    'account.pwd_short': 'Password must be at least 6 characters.',
+    'account.pwd_changed': 'Password changed!',
+    'account.new_email': 'New email:',
+    'account.email_sent': 'Confirmation email sent.',
+    'account.delete_confirm': 'Are you sure you want to delete your account? This action is irreversible. All your data will be lost.',
+    'account.delete_btn': 'Delete permanently',
+    'account.delete_confirm2': 'Last chance! Confirm deletion.',
+    'account.deleted': 'Account deleted.',
+    'premium.upgrade': 'Upgrade to Premium',
     'validate.pct': 'Total must be 100%',
     'notif.blocked': 'Notifications blocked. Enable them in browser settings.',
     'notif.denied': 'Notification permission denied.',
