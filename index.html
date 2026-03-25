@@ -2076,7 +2076,10 @@ function updatePlanUI() {
   if (h1) {
     const existing = h1.querySelector('.premiumBadge');
     if (isPremium && !existing) {
-      h1.insertAdjacentHTML('beforeend', ' <span class="premiumBadge">PRO</span>');
+      const plan = API.getPlan();
+      const badgeText = plan === 'business' ? 'BIZ' : 'PRO';
+      const badgeColor = plan === 'business' ? 'background:#6c63ff;' : '';
+      h1.insertAdjacentHTML('beforeend', ' <span class="premiumBadge" style="' + badgeColor + '">' + badgeText + '</span>');
     } else if (!isPremium && existing) {
       existing.remove();
     }
