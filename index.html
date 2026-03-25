@@ -1182,7 +1182,7 @@ async function loadPDF() {
 
 </div>
 
-<div class="overlay" id="overlay" onclick="closeAllModals()"></div>
+<div class="overlay" id="overlay" onclick="if(!window._wizardActive)closeAllModals()"></div>
 <div class="modal" id="msgModal">
   <div class="modalHeader" id="msgTitle">Menage Manager</div>
   <div class="modalBody" id="msgBody"></div>
@@ -3215,6 +3215,7 @@ function updateLangButton() {
 
 /* ── Onboarding ── */
 function showOnboarding() {
+  window._wizardActive = true;
   // Step 1: Language selection
   let html = '<div style="text-align:center;padding:10px;">';
   html += '<div style="font-size:40px;margin-bottom:12px;">&#127760;</div>';
@@ -3338,6 +3339,7 @@ function selectRole(roleId) {
 }
 
 let wizardData = {};
+window._wizardActive = false;
 
 async function finishOnboarding(roleId) {
   localStorage.setItem('mm_user_role', roleId);
@@ -3346,17 +3348,24 @@ async function finishOnboarding(roleId) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
 
+  // Provider: NEVER show wizard, go directly to provider mode
+  if (roleId === 'provider') {
+    let member = API.getMember();
+    if (member) {
+      await sb.from('members').update({ role: 'provider' }).eq('id', member.id);
+    }
+    window._wizardActive = false;
+    closeMsg();
+    localStorage.setItem('mm_onboarded', '1');
+    showProviderMode();
+    return;
+  }
+
   let org = API.getOrg();
   let member = API.getMember();
 
   if (org && member) {
-    if (roleId === 'provider') {
-      await sb.from('members').update({ role: 'provider' }).eq('id', member.id);
-      closeMsg();
-      localStorage.setItem('mm_onboarded', '1');
-      showProviderMode();
-      return;
-    } else if (roleId === 'owner') {
+    if (roleId === 'owner') {
       await sb.from('members').update({ role: 'admin' }).eq('id', member.id);
     } else if (roleId === 'concierge') {
       await sb.from('members').update({ role: 'admin' }).eq('id', member.id);
@@ -3365,7 +3374,8 @@ async function finishOnboarding(roleId) {
     wizardData.memberId = member.id;
   }
 
-  // Start wizard
+  // Start wizard (only for owner and concierge)
+  window._wizardActive = true;
   if (roleId === 'concierge') {
     wizardStep_ConciergeName();
   } else {
@@ -3380,7 +3390,10 @@ function wizardStep_ConciergeName() {
   html += '<div style="font-size:16px;font-weight:700;color:#6c63ff;margin-bottom:4px;">Etape 1/4</div>';
   html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Comment s\'appelle votre conciergerie ?</div>';
   html += '<input id="wizOrgName" type="text" placeholder="Ex: Conciergerie Cote d\'Azur" value="" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:16px;">';
-  html += '<button class="btn btnPrimary" style="width:100%;padding:14px;font-size:14px;" onclick="wizardSaveConciergeName()">Suivant &#10140;</button>';
+  html += '<div style="display:flex;gap:10px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="showOnboardingStep2()">&#10094; Retour</button>';
+  html += '<button class="btn btnPrimary" style="flex:1;padding:14px;font-size:14px;" onclick="wizardSaveConciergeName()">Suivant &#10140;</button>';
+  html += '</div>';
   html += '</div>';
   document.getElementById('msgBody').innerHTML = html;
   setTimeout(() => document.getElementById('wizOrgName').focus(), 200);
@@ -3405,7 +3418,10 @@ function wizardStep_PropertyName() {
   html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Ajoutez votre premiere propriete</div>';
   html += '<input id="wizPropName" type="text" placeholder="Ex: Appartement Nice Centre" value="" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
   html += '<input id="wizPropAddress" type="text" placeholder="Adresse (optionnel)" value="" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:16px;">';
-  html += '<button class="btn btnPrimary" style="width:100%;padding:14px;font-size:14px;" onclick="wizardSaveProperty()">Suivant &#10140;</button>';
+  html += '<div style="display:flex;gap:10px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="' + (wizardData.roleId === 'concierge' ? 'wizardStep_ConciergeName()' : 'showOnboardingStep2()') + '">&#10094; Retour</button>';
+  html += '<button class="btn btnPrimary" style="flex:1;padding:14px;font-size:14px;" onclick="wizardSaveProperty()">Suivant &#10140;</button>';
+  html += '</div>';
   html += '</div>';
   document.getElementById('msgBody').innerHTML = html;
   setTimeout(() => document.getElementById('wizPropName').focus(), 200);
@@ -3443,7 +3459,7 @@ function wizardStep_IcalUrl() {
   html += '<input id="wizBooking" type="url" placeholder="https://ical.booking.com/v1/export/..." style="flex:1;padding:10px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-family:\'Inter\',sans-serif;">';
   html += '</div>';
   html += '<div style="display:flex;gap:10px;">';
-  html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardSaveIcal()">Passer &#10140;</button>';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardStep_PropertyName()">&#10094; Retour</button>';
   html += '<button class="btn btnPrimary" style="flex:1;padding:12px;font-size:13px;" onclick="wizardSaveIcal()">Suivant &#10140;</button>';
   html += '</div>';
   html += '</div>';
@@ -3477,6 +3493,7 @@ function wizardStep_Provider() {
   html += '<input id="wizProvName" type="text" placeholder="Nom du prestataire" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
   html += '<input id="wizProvPhone" type="tel" placeholder="06 12 34 56 78" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:16px;">';
   html += '<div style="display:flex;gap:10px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardStep_IcalUrl()">&#10094; Retour</button>';
   html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardFinish()">Passer</button>';
   html += '<button class="btn btnPrimary" style="flex:1;padding:12px;font-size:13px;" onclick="wizardSaveProvider()">Terminer &#10003;</button>';
   html += '</div>';
@@ -3498,6 +3515,7 @@ async function wizardSaveProvider() {
 }
 
 async function wizardFinish() {
+  window._wizardActive = false;
   closeMsg();
   localStorage.setItem('mm_onboarded', '1');
   const content = document.querySelector('.content');
