@@ -3348,16 +3348,14 @@ async function finishOnboarding(roleId) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
 
-  // Provider: NEVER show wizard, go directly to provider mode
+  // Provider: short wizard (name + phone only)
   if (roleId === 'provider') {
     let member = API.getMember();
     if (member) {
       await sb.from('members').update({ role: 'provider' }).eq('id', member.id);
     }
-    window._wizardActive = false;
-    closeMsg();
-    localStorage.setItem('mm_onboarded', '1');
-    showProviderMode();
+    window._wizardActive = true;
+    wizardStep_ProviderInfo();
     return;
   }
 
@@ -3416,15 +3414,58 @@ function wizardStep_PropertyName() {
   html += '<div style="font-size:32px;margin-bottom:8px;">' + icon + '</div>';
   html += '<div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:4px;">Etape ' + step + '</div>';
   html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Ajoutez votre premiere propriete</div>';
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Nom du logement</label>';
   html += '<input id="wizPropName" type="text" placeholder="Ex: Appartement Nice Centre" value="" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
-  html += '<input id="wizPropAddress" type="text" placeholder="Adresse (optionnel)" value="" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:16px;">';
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Adresse</label>';
+  html += '<input id="wizPropAddress" type="text" placeholder="12 rue de France, Nice" value="" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
+  html += '<div id="wizMap" style="width:100%;height:180px;border-radius:8px;overflow:hidden;margin-bottom:16px;background:var(--surface2);"></div>';
   html += '<div style="display:flex;gap:10px;">';
   html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="' + (wizardData.roleId === 'concierge' ? 'wizardStep_ConciergeName()' : 'showOnboardingStep2()') + '">&#10094; Retour</button>';
   html += '<button class="btn btnPrimary" style="flex:1;padding:14px;font-size:14px;" onclick="wizardSaveProperty()">Suivant &#10140;</button>';
   html += '</div>';
   html += '</div>';
   document.getElementById('msgBody').innerHTML = html;
-  setTimeout(() => document.getElementById('wizPropName').focus(), 200);
+  setTimeout(async () => {
+    document.getElementById('wizPropName').focus();
+    // Init mini map
+    try {
+      await loadLeaflet();
+      const mapEl = document.getElementById('wizMap');
+      if (mapEl && window.L) {
+        const wm = L.map(mapEl).setView([46.6, 2.3], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(wm);
+        let marker = null;
+        wm.on('click', (e) => {
+          if (marker) wm.removeLayer(marker);
+          marker = L.marker(e.latlng).addTo(wm);
+          wizardData.lat = e.latlng.lat;
+          wizardData.lng = e.latlng.lng;
+        });
+        // Geocode when address changes
+        const addrInput = document.getElementById('wizPropAddress');
+        if (addrInput) {
+          addrInput.addEventListener('change', async () => {
+            const addr = addrInput.value.trim();
+            if (!addr) return;
+            try {
+              const resp = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(addr) + '&limit=1');
+              const results = await resp.json();
+              if (results.length) {
+                const lat = parseFloat(results[0].lat);
+                const lng = parseFloat(results[0].lon);
+                wm.setView([lat, lng], 14);
+                if (marker) wm.removeLayer(marker);
+                marker = L.marker([lat, lng]).addTo(wm);
+                wizardData.lat = lat;
+                wizardData.lng = lng;
+              }
+            } catch (e) { console.log('Geocode error:', e); }
+          });
+        }
+        wizardData._wizMap = wm;
+      }
+    } catch (e) { console.log('Map init error:', e); }
+  }, 300);
 }
 
 async function wizardSaveProperty() {
@@ -3437,7 +3478,10 @@ async function wizardSaveProperty() {
   const { data: props } = await sb.from('properties').select('id').eq('org_id', wizardData.orgId).limit(1);
   if (props && props.length) {
     wizardData.propId = props[0].id;
-    await sb.from('properties').update({ name, address }).eq('id', props[0].id);
+    const updateData = { name, address };
+    if (wizardData.lat) updateData.lat = wizardData.lat;
+    if (wizardData.lng) updateData.lng = wizardData.lng;
+    await sb.from('properties').update(updateData).eq('id', props[0].id);
   }
   wizardStep_IcalUrl();
 }
@@ -3512,6 +3556,69 @@ async function wizardSaveProvider() {
     await sb.from('properties').update({ providers }).eq('id', wizardData.propId);
   }
   wizardFinish();
+}
+
+// ── Wizard: Provider Step 1 — Your info ──
+function wizardStep_ProviderInfo() {
+  let html = '<div style="text-align:center;padding:10px;">';
+  html += '<div style="font-size:32px;margin-bottom:8px;">&#129529;</div>';
+  html += '<div style="font-size:16px;font-weight:700;color:#34d399;margin-bottom:4px;">Etape 1/2</div>';
+  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Vos informations</div>';
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Votre nom</label>';
+  html += '<input id="wizProvSelfName" type="text" placeholder="Prenom Nom" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Telephone</label>';
+  html += '<input id="wizProvSelfPhone" type="tel" placeholder="06 12 34 56 78" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Adresse (zone d\'intervention)</label>';
+  html += '<input id="wizProvSelfAddress" type="text" placeholder="Ville ou quartier" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:16px;">';
+  html += '<div style="display:flex;gap:10px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="showOnboardingStep2()">&#10094; Retour</button>';
+  html += '<button class="btn btnPrimary" style="flex:1;padding:14px;font-size:14px;" onclick="wizardSaveProviderInfo()">Suivant &#10140;</button>';
+  html += '</div>';
+  html += '</div>';
+  document.getElementById('msgBody').innerHTML = html;
+  setTimeout(() => document.getElementById('wizProvSelfName').focus(), 200);
+}
+
+async function wizardSaveProviderInfo() {
+  const name = document.getElementById('wizProvSelfName').value.trim();
+  const phone = document.getElementById('wizProvSelfPhone').value.trim();
+  const address = document.getElementById('wizProvSelfAddress').value.trim();
+  wizardData.provSelfName = name;
+  wizardData.provSelfPhone = phone;
+  wizardData.provSelfAddress = address;
+  // Save to profile
+  const { data: { user } } = await sb.auth.getUser();
+  if (user) {
+    await sb.from('profiles').update({ property_name: name }).eq('id', user.id);
+  }
+  wizardStep_ProviderReady();
+}
+
+function wizardStep_ProviderReady() {
+  let html = '<div style="text-align:center;padding:10px;">';
+  html += '<div style="font-size:48px;margin-bottom:12px;">&#9989;</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:#34d399;margin-bottom:12px;">Vous etes pret !</div>';
+  html += '<div style="color:var(--text2);font-size:13px;line-height:1.8;text-align:left;margin:12px 0;background:var(--surface2);padding:14px;border-radius:10px;">';
+  html += '<b>Comment ca marche :</b><br><br>';
+  html += '&#128276; Vous recevrez des notifications quand un menage vous est assigne<br>';
+  html += '&#10003; Acceptez ou refusez les missions<br>';
+  html += '&#127968; Signalez votre arrivee et depart<br>';
+  html += '&#128247; Prenez des photos avant/apres le menage<br>';
+  html += '&#128172; Discutez avec votre gestionnaire via le chat<br>';
+  html += '</div>';
+  if (wizardData.provSelfName) {
+    html += '<div style="color:var(--text3);font-size:12px;margin:8px 0;">Connecte en tant que : <b>' + esc(wizardData.provSelfName) + '</b></div>';
+  }
+  html += '<button class="btn btnPrimary" style="width:100%;padding:14px;font-size:14px;margin-top:8px;" onclick="wizardFinishProvider()">Commencer &#10140;</button>';
+  html += '</div>';
+  document.getElementById('msgBody').innerHTML = html;
+}
+
+function wizardFinishProvider() {
+  window._wizardActive = false;
+  closeMsg();
+  localStorage.setItem('mm_onboarded', '1');
+  showProviderMode();
 }
 
 async function wizardFinish() {
