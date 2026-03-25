@@ -3538,7 +3538,7 @@ function wizardStep_PropertyName() {
   let html = '<div style="text-align:center;padding:10px;">';
   html += '<div style="font-size:32px;margin-bottom:8px;">' + icon + '</div>';
   html += '<div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:4px;">Etape ' + step + '</div>';
-  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Ajoutez votre premiere propriete</div>';
+  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">' + (wizardData.roleId === 'concierge' ? 'Ajoutez votre premiere propriete' : 'Configurez votre propriete') + '</div>';
   html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Nom du logement</label>';
   html += '<input id="wizPropName" type="text" placeholder="Ex: Appartement Nice Centre" value="" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
   html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Adresse</label>';
