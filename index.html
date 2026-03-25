@@ -1376,18 +1376,24 @@ async function loadPDF() {
   </div>
 </div>
 
-<!-- Chat Modal -->
-<div class="modal" id="chatModal" style="max-width:480px;max-height:80vh;display:none;flex-direction:column;">
-  <div class="modalHeader" style="display:flex;justify-content:space-between;align-items:center;">
-    <span>&#128172; <span id="chatTitle">Chat</span></span>
-    <button class="modalClose" onclick="closeChatModal()">&times;</button>
+<!-- Chat Widget (floating bottom-right) -->
+<div id="chatWidget" style="display:none;position:fixed;bottom:70px;right:16px;width:340px;max-height:450px;background:var(--surface);border:1px solid var(--border2);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.5);z-index:100;flex-direction:column;overflow:hidden;">
+  <div style="background:linear-gradient(135deg,#6c63ff,#5a54e0);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;">&#128172;</span>
+      <select id="chatProvSelect" onchange="switchChatProvider(this.value)" style="background:rgba(255,255,255,0.15);color:#fff;border:none;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+        <option value="">-- Choisir --</option>
+      </select>
+    </div>
+    <button onclick="closeChatWidget()" style="background:none;border:none;color:rgba(255,255,255,0.8);font-size:18px;cursor:pointer;">&times;</button>
   </div>
-  <div id="chatMessages" style="flex:1;overflow-y:auto;padding:12px;min-height:200px;max-height:50vh;background:var(--bg);"></div>
-  <div style="padding:10px 12px;border-top:1px solid var(--border2);display:flex;gap:8px;">
-    <input type="text" id="chatInput" placeholder="Votre message..." onkeydown="if(event.key==='Enter')sendChatMessage()" style="flex:1;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;">
-    <button onclick="sendChatMessage()" style="background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:14px;cursor:pointer;">&#9993;</button>
+  <div id="chatMessages" style="flex:1;overflow-y:auto;padding:10px;min-height:180px;max-height:300px;background:var(--bg);"></div>
+  <div style="padding:8px 10px;border-top:1px solid var(--border2);display:flex;gap:6px;">
+    <input type="text" id="chatInput" placeholder="Message..." onkeydown="if(event.key==='Enter')sendChatMessage()" style="flex:1;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;">
+    <button onclick="sendChatMessage()" style="background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:14px;cursor:pointer;">&#9993;</button>
   </div>
 </div>
+<button id="chatFab" onclick="toggleChatWidget()" style="display:none;position:fixed;bottom:70px;right:16px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(108,99,255,0.4);z-index:99;">&#128172;</button>
 
 <!-- Add Provider Modal -->
 <div class="modal" id="addProviderModal" style="max-width:420px;">
@@ -1888,6 +1894,7 @@ async function init() {
   checkRentalNotifications();
   checkReminders();
   loadDashboard();
+  initChatWidget();
   // Onboarding for first visit — show immediately, hide main content
   if (!localStorage.getItem('mm_onboarded')) {
     document.querySelector('.content').style.display = 'none';
@@ -2140,27 +2147,69 @@ async function providerUploadPhotos(input, propId, date, provName) {
 let chatProviderName = '';
 let chatRealtimeSub = null;
 
-async function openChat(providerName) {
-  chatProviderName = providerName;
-  document.getElementById('chatTitle').textContent = 'Chat — ' + providerName;
-  document.getElementById('chatInput').value = '';
-  document.getElementById('overlay').style.display = 'block';
-  document.getElementById('chatModal').style.display = 'flex';
+function initChatWidget() {
+  // Show FAB for admin/manager with Business plan
+  const role = API.getRole();
+  const plan = API.getPlan();
+  if ((role === 'admin' || role === 'manager') && plan === 'business') {
+    document.getElementById('chatFab').style.display = '';
+    // Fill provider select
+    const sel = document.getElementById('chatProvSelect');
+    if (sel && config.providers) {
+      sel.innerHTML = '<option value="">-- Choisir --</option>';
+      config.providers.forEach(p => {
+        sel.innerHTML += `<option value="${esc(p.name)}">${esc(p.name)}</option>`;
+      });
+    }
+  }
+}
+
+function toggleChatWidget() {
+  const widget = document.getElementById('chatWidget');
+  const fab = document.getElementById('chatFab');
+  if (widget.style.display === 'flex') {
+    closeChatWidget();
+  } else {
+    widget.style.display = 'flex';
+    fab.style.display = 'none';
+  }
+}
+
+function closeChatWidget() {
+  document.getElementById('chatWidget').style.display = 'none';
+  document.getElementById('chatFab').style.display = '';
+  if (chatRealtimeSub) { sb.removeChannel(chatRealtimeSub); chatRealtimeSub = null; }
+}
+
+async function switchChatProvider(name) {
+  if (!name) return;
+  chatProviderName = name;
   await loadChatMessages();
-  // Subscribe to realtime updates
+  subscribeChat();
+  setTimeout(() => document.getElementById('chatInput').focus(), 200);
+}
+
+function subscribeChat() {
   if (chatRealtimeSub) sb.removeChannel(chatRealtimeSub);
   chatRealtimeSub = sb.channel('chat_' + chatProviderName)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'recipient_name=eq.' + chatProviderName }, () => loadChatMessages())
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'sender_name=eq.' + chatProviderName }, () => loadChatMessages())
     .subscribe();
+}
+
+async function openChat(providerName) {
+  chatProviderName = providerName;
+  const sel = document.getElementById('chatProvSelect');
+  if (sel) sel.value = providerName;
+  document.getElementById('chatWidget').style.display = 'flex';
+  document.getElementById('chatFab').style.display = 'none';
+  document.getElementById('chatInput').value = '';
+  await loadChatMessages();
+  subscribeChat();
   setTimeout(() => document.getElementById('chatInput').focus(), 200);
 }
 
-function closeChatModal() {
-  document.getElementById('overlay').style.display = 'none';
-  document.getElementById('chatModal').style.display = 'none';
-  if (chatRealtimeSub) { sb.removeChannel(chatRealtimeSub); chatRealtimeSub = null; }
-}
+function closeChatModal() { closeChatWidget(); }
 
 async function loadChatMessages() {
   const org = API.getOrg();
@@ -3870,12 +3919,12 @@ function selectSendProvider(name) {
 
   // Build channel buttons with disabled state
   const channels = [
+    { id:'chat', icon:'💬', name:'Chat interne', color:'#6c63ff', needs:null },
     { id:'whatsapp', icon:'💬', name:'WhatsApp', color:'#25D366', needs:'phone' },
     { id:'telegram', icon:'✈️', name:'Telegram', color:'#0088cc', needs:'phone' },
     { id:'sms', icon:'📱', name:'SMS', color:'#34d399', needs:'phone' },
     { id:'messenger', icon:'💭', name:'Messenger', color:'#0084FF', needs:null },
     { id:'email', icon:'📧', name:'Email', color:'#ea580c', needs:'email' },
-    { id:'chat', icon:'💬', name:'Chat interne', color:'#6c63ff', needs:null },
     { id:'copy', icon:'📋', name:t('send.copy')||'Copier le texte', color:null, needs:null },
   ];
   const listEl = document.getElementById('sendChannelList');
