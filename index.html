@@ -2873,17 +2873,23 @@ function updatePlanUI() {
   if (adBanner) adBanner.style.display = isPremium ? 'none' : 'block';
   const btnTeam = document.getElementById('btnTeam');
   if (btnTeam) btnTeam.style.display = isBusiness ? '' : 'none';
-  // Update header with premium badge
+  // Update header with plan + role badges
   const h1 = document.querySelector('.header h1');
   if (h1) {
-    const existing = h1.querySelector('.premiumBadge');
-    if (isPremium && !existing) {
-      const plan = API.getPlan();
+    // Remove existing badges
+    h1.querySelectorAll('.premiumBadge,.roleBadge').forEach(b => b.remove());
+    // Plan badge
+    if (isPremium) {
       const badgeText = plan === 'business' ? 'BUSINESS' : 'PRO';
       const badgeColor = plan === 'business' ? 'background:#6c63ff;' : '';
       h1.insertAdjacentHTML('beforeend', ' <span class="premiumBadge" style="' + badgeColor + '">' + badgeText + '</span>');
-    } else if (!isPremium && existing) {
-      existing.remove();
+    }
+    // Role badge
+    const role = API.getRole();
+    const roleLabels = { admin: 'Gestionnaire', manager: 'Gestionnaire', owner: 'Proprietaire', provider: 'Prestataire' };
+    const roleColors = { admin: '#e94560', manager: '#e94560', owner: '#f59e0b', provider: '#34d399' };
+    if (role && roleLabels[role]) {
+      h1.insertAdjacentHTML('beforeend', ' <span class="roleBadge" style="display:inline-block;font-size:9px;padding:2px 8px;border-radius:10px;background:' + (roleColors[role]||'#666') + '22;color:' + (roleColors[role]||'#666') + ';font-weight:600;vertical-align:middle;border:1px solid ' + (roleColors[role]||'#666') + '44;">' + roleLabels[role] + '</span>');
     }
   }
   // Communication section: blur premium features
