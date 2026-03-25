@@ -1103,6 +1103,7 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <button class="btn btnOutline" onclick="exportPDF()" style="padding:12px;">&#128462; <span data-i18n="results.pdf">PDF</span></button>
+            <button class="btn btnOutline" onclick="generateInvoice()" style="padding:12px;">&#128176; <span>Facture</span></button>
             <button class="btn btnOutline" onclick="showProviderLinks()" style="padding:12px;" translate="no">&#128279; <span data-i18n="comm.provlinks">Liens prestataires</span></button>
           </div>
         </div>
@@ -1463,10 +1464,29 @@
       <button class="btn btnSmall btnSuccess" onclick="addCheckItem()" style="padding:6px 14px;">+</button>
     </div>
 
+    <!-- Check-in / Check-out -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div>
+        <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Check-in</label>
+        <input type="time" id="propDetailCheckin" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Check-out</label>
+        <input type="time" id="propDetailCheckout" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;">
+      </div>
+    </div>
+
+    <!-- Access code -->
+    <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Code d'acces / Digicode</label>
+    <input type="text" id="propDetailAccessCode" placeholder="Ex: 1234B, boite a cles..." style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;box-sizing:border-box;margin-bottom:16px;">
+
+    <!-- Consignes -->
+    <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Consignes d'arrivee</label>
+    <textarea id="propDetailConsignes" rows="2" placeholder="Parking, wifi, instructions..." style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;resize:vertical;font-family:'Inter',sans-serif;box-sizing:border-box;margin-bottom:16px;"></textarea>
+
     <!-- Notes -->
     <label style="display:block;font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;" data-i18n="prop.detail.notes">Notes</label>
     <textarea id="propDetailNotes" rows="3" placeholder="Notes sur la propriete..." style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;resize:vertical;font-family:'Inter',sans-serif;box-sizing:border-box;margin-bottom:16px;"></textarea>
-
 
     <!-- Save button -->
     <button class="btn btnPrimary" style="width:100%;padding:14px;font-size:14px;" onclick="savePropDetail()" data-i18n="prop.detail.save">Enregistrer</button>
@@ -2512,6 +2532,10 @@ function openPropDetail() {
   document.getElementById('propDetailPrice').value = prop.cleaningPrice || '';
   document.getElementById('propDetailDuration').value = prop.cleaningDuration || '90';
   document.getElementById('propDetailNotes').value = prop.notes || '';
+  document.getElementById('propDetailCheckin').value = prop.checkinTime || '15:00';
+  document.getElementById('propDetailCheckout').value = prop.checkoutTime || '11:00';
+  document.getElementById('propDetailAccessCode').value = prop.accessCode || '';
+  document.getElementById('propDetailConsignes').value = prop.consignes || '';
   document.getElementById('propDetailTemplate').value = prop.messageTemplate || getDefaultTemplate();
   propCheckItems = (prop.checklist || []).slice();
   renderChecklist();
@@ -2585,6 +2609,10 @@ function savePropDetail() {
   prop.cleaningPrice = parseInt(document.getElementById('propDetailPrice').value) || 0;
   prop.cleaningDuration = parseInt(document.getElementById('propDetailDuration').value) || 90;
   prop.notes = document.getElementById('propDetailNotes').value;
+  prop.checkinTime = document.getElementById('propDetailCheckin').value;
+  prop.checkoutTime = document.getElementById('propDetailCheckout').value;
+  prop.accessCode = document.getElementById('propDetailAccessCode').value;
+  prop.consignes = document.getElementById('propDetailConsignes').value;
   const tpl = document.getElementById('propDetailTemplate').value.trim();
   prop.messageTemplate = tpl !== getDefaultTemplate() ? tpl : '';
   prop.checklist = propCheckItems.slice();
@@ -3151,6 +3179,112 @@ function exportPDF() {
   doc.textWithLink('Ouvrir',w-25,pageH-6,{url:'https://fabienlacaze.github.io/menage-manager-app/'});
   const fname=currentFilter?'planning_'+currentFilter+'.pdf':'planning.pdf';
   doc.save(fname);showToast(t('export.pdf.success')||'PDF exporte');
+}
+async function generateInvoice() {
+  if (!cleanings.length) { showMsg(t('export.empty')); return; }
+  const prop = API.getActiveProperty(fullConfig);
+  const propName = prop ? prop.name : 'Propriete';
+  const now = new Date();
+  const month = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+  // Group cleanings by provider
+  const byProvider = {};
+  cleanings.forEach(c => {
+    if (!byProvider[c.provider]) byProvider[c.provider] = [];
+    byProvider[c.provider].push(c);
+  });
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const w = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
+
+  // Header
+  doc.setFillColor(26, 26, 46); doc.rect(0, 0, w, 40, 'F');
+  doc.setFillColor(108, 99, 255); doc.rect(0, 40, w, 2, 'F');
+  doc.setFillColor(108, 99, 255); doc.roundedRect(12, 8, 24, 24, 4, 4, 'F');
+  doc.setFontSize(16); doc.setTextColor(255, 255, 255); doc.text('CM', 16, 23);
+  doc.setFontSize(18); doc.text('FACTURE', 42, 18);
+  doc.setFontSize(10); doc.setTextColor(180, 180, 200);
+  doc.text(propName, 42, 26);
+  doc.text(month.charAt(0).toUpperCase() + month.slice(1), 42, 33);
+  doc.text('N° ' + 'INV-' + now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'), w - 50, 18);
+  doc.text(now.toLocaleDateString('fr-FR'), w - 50, 25);
+
+  // Invoice details
+  let y = 52;
+  doc.setFontSize(11); doc.setTextColor(50, 50, 70);
+  doc.text('De : Cleaning Manager', 14, y);
+  doc.text('Pour : ' + propName, 14, y + 7);
+  y += 20;
+
+  // Table
+  const rows = [];
+  let grandTotal = 0;
+  Object.entries(byProvider).forEach(([provName, provCleanings]) => {
+    const prov = (config.providers || []).find(p => p.name === provName);
+    const price = prov ? (prov.price || 0) : 0;
+    const total = provCleanings.length * price;
+    grandTotal += total;
+    provCleanings.forEach((c, i) => {
+      rows.push([
+        c.cleaningDateFR || c.dateFR || '',
+        c.source || '',
+        provName,
+        price + ' EUR',
+      ]);
+    });
+  });
+
+  doc.autoTable({
+    startY: y,
+    head: [['Date', 'Source', 'Prestataire', 'Montant']],
+    body: rows,
+    foot: [['', '', 'TOTAL', grandTotal + ' EUR']],
+    styles: { fontSize: 9, cellPadding: 5 },
+    headStyles: { fillColor: [108, 99, 255], textColor: [255, 255, 255], fontStyle: 'bold' },
+    footStyles: { fillColor: [26, 26, 46], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11 },
+    alternateRowStyles: { fillColor: [245, 245, 252] },
+    bodyStyles: { textColor: [40, 40, 60] },
+  });
+
+  // Summary
+  const finalY = doc.lastAutoTable.finalY + 15;
+  doc.setFillColor(245, 245, 252); doc.roundedRect(w - 90, finalY, 76, 30, 4, 4, 'F');
+  doc.setFontSize(10); doc.setTextColor(100);
+  doc.text('Total HT', w - 85, finalY + 10);
+  doc.text('TVA (20%)', w - 85, finalY + 18);
+  doc.setFontSize(12); doc.setTextColor(108, 99, 255); doc.setFont(undefined, 'bold');
+  doc.text('Total TTC', w - 85, finalY + 27);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(50); doc.setFontSize(10);
+  doc.text(grandTotal.toFixed(2) + ' EUR', w - 25, finalY + 10, { align: 'right' });
+  doc.text((grandTotal * 0.2).toFixed(2) + ' EUR', w - 25, finalY + 18, { align: 'right' });
+  doc.setFontSize(12); doc.setTextColor(108, 99, 255); doc.setFont(undefined, 'bold');
+  doc.text((grandTotal * 1.2).toFixed(2) + ' EUR', w - 25, finalY + 27, { align: 'right' });
+
+  // Footer
+  doc.setFont(undefined, 'normal');
+  doc.setFillColor(26, 26, 46); doc.rect(0, pageH - 16, w, 16, 'F');
+  doc.setFontSize(8); doc.setTextColor(150, 150, 170);
+  doc.text('Cleaning Manager - Facture generee automatiquement', 14, pageH - 6);
+
+  const fname = 'facture_' + propName.replace(/\s/g, '_') + '_' + now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '.pdf';
+  doc.save(fname);
+  showToast(t('invoice.generated') || 'Facture generee : ' + fname);
+
+  // Save to Supabase if org exists
+  if (API.getOrg() && API.getMember()) {
+    try {
+      await sb.from('invoices').insert({
+        org_id: API.getOrg().id,
+        owner_member_id: API.getMember().id,
+        month: now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'),
+        total_amount: grandTotal,
+        details: Object.entries(byProvider).map(([name, cl]) => ({ provider: name, count: cl.length, price: (config.providers||[]).find(p=>p.name===name)?.price||0 })),
+        status: 'draft',
+      });
+    } catch (e) { console.error('Save invoice:', e); }
+  }
 }
 function copyPlanning() { if(!cleanings.length){showMsg('Aucun planning a copier.');return;} const filtered=currentFilter?cleanings.filter(c=>c.provider===currentFilter):cleanings; if(!filtered.length){showMsg(t('export.filter.empty'));return;} let txt=currentFilter?`PLANNING MENAGES - ${currentFilter.toUpperCase()}\n`:'PLANNING MENAGES\n'; txt+='='.repeat(txt.trim().length)+'\n\n'; filtered.forEach(c=>{txt+=`Menage: ${c.cleaningDateFR} (arrivee: ${c.dateFR})`;if(!currentFilter)txt+=` | ${c.provider}`;txt+='\n';}); navigator.clipboard.writeText(txt).then(()=>{showToast(currentFilter?`Liste de ${currentFilter} copiee (${filtered.length})`:`Planning copie (${filtered.length})`);}); }
 
