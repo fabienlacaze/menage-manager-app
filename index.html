@@ -3679,7 +3679,9 @@ function wizardStep_Provider() {
   html += '<div style="font-size:16px;font-weight:700;color:#34d399;margin-bottom:4px;">Etape ' + step + '</div>';
   html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Ajoutez votre premier prestataire de menage</div>';
   html += '<input id="wizProvName" type="text" placeholder="Nom du prestataire" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
-  html += '<input id="wizProvPhone" type="tel" placeholder="06 12 34 56 78" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:16px;">';
+  html += '<input id="wizProvPhone" type="tel" placeholder="06 12 34 56 78" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Email</label>';
+  html += '<input id="wizProvEmail" type="email" placeholder="prenom@email.com" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:16px;">';
   html += '<div style="display:flex;gap:10px;">';
   html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardStep_IcalUrl()">&#10094; Retour</button>';
   html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardFinish()">Passer</button>';
@@ -3693,10 +3695,11 @@ function wizardStep_Provider() {
 async function wizardSaveProvider() {
   const name = document.getElementById('wizProvName').value.trim();
   const phone = document.getElementById('wizProvPhone').value.trim();
+  const email = (document.getElementById('wizProvEmail') || {}).value?.trim() || '';
   if (name && wizardData.propId) {
     const { data: prop } = await sb.from('properties').select('providers').eq('id', wizardData.propId).single();
     const providers = prop ? (prop.providers || []) : [];
-    providers.push({ name, phone, percentage: 100, price: 0, vacations: '', waMode: 'direct' });
+    providers.push({ name, phone, email, percentage: 100, price: 0, vacations: '', waMode: 'direct' });
     await sb.from('properties').update({ providers }).eq('id', wizardData.propId);
   }
   wizardFinish();
@@ -3742,29 +3745,19 @@ function wizardStep_ProviderInfo() {
 }
 
 let _wizProvCircle = null;
+let _wizMaps = {}; // Store map instances by id
+
 function updateWizProvCircle() {
   const lat = wizardData.provSelf_lat;
   const lng = wizardData.provSelf_lng;
   const radius = parseInt((document.getElementById('wizRadius') || {}).value) || 15;
   if (!lat || !lng) return;
   try {
-    const mapEl = document.getElementById('wizProvMap');
-    if (!mapEl || !window.L) return;
-    // Find the map instance
-    const maps = Object.values(L.Map._instances || {});
-    let map = null;
-    document.querySelectorAll('.leaflet-container').forEach(c => {
-      if (c.closest('#wizProvMap') || c === mapEl) {
-        // Get map from element
-        for (const key of Object.keys(c)) {
-          if (key.startsWith('_leaflet_id')) { map = c._leaflet_map; break; }
-        }
-      }
-    });
+    const map = _wizMaps['wizProvMap'];
     if (!map) return;
     if (_wizProvCircle) map.removeLayer(_wizProvCircle);
     _wizProvCircle = L.circle([lat, lng], { radius: radius * 1000, color: '#6c63ff', fillColor: '#6c63ff', fillOpacity: 0.15, weight: 2 }).addTo(map);
-    map.fitBounds(_wizProvCircle.getBounds());
+    map.fitBounds(_wizProvCircle.getBounds(), { padding: [20, 20] });
   } catch (e) { console.log('Circle error:', e); }
 }
 
@@ -3815,13 +3808,16 @@ async function wizardFinishProvider() {
   document.getElementById('appMain').style.display = '';
   document.querySelector('.header').style.display = '';
 
+  // Show content
+  const content = document.querySelector('.content');
+  if (content) content.style.display = '';
+
   // Check if provider has an org
   const org = API.getOrg();
   if (org) {
     showProviderMode();
   } else {
     // No org = not invited yet, show waiting screen
-    const content = document.querySelector('.content');
     const { data: { user } } = await sb.auth.getUser();
     const email = user ? user.email : '';
     content.innerHTML = `<div style="text-align:center;padding:60px 20px;">
@@ -3849,7 +3845,7 @@ async function wizardFinish() {
   const content = document.querySelector('.content');
   if (content) content.style.display = '';
   showToast('Configuration terminee ! &#127881;');
-  location.reload();
+  setTimeout(() => location.reload(), 2000);
 }
 
 /* ── History/Pressing sub-tabs ── */
