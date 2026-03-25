@@ -1906,6 +1906,8 @@ async function init() {
 
   // ── FLOW 2: First time user (no org) → onboarding ──
   if (!org && !localStorage.getItem('mm_onboarded')) {
+    document.getElementById('appMain').style.display = '';
+    document.querySelector('.header').style.display = 'none';
     document.querySelector('.content').style.display = 'none';
     showOnboarding();
     return;
@@ -1913,17 +1915,20 @@ async function init() {
 
   // ── FLOW 3: Provider role → provider mode ──
   if (role === 'provider') {
+    document.getElementById('appMain').style.display = '';
     showProviderMode();
     return;
   }
 
   // ── FLOW 4: Owner role → owner mode ──
   if (role === 'owner') {
+    document.getElementById('appMain').style.display = '';
     showOwnerMode();
     return;
   }
 
   // ── FLOW 5: Admin/Manager → full mode ──
+  document.getElementById('appMain').style.display = '';
 
   fullConfig = await API.load_config();
   renderPropertySelector();
@@ -2620,7 +2625,7 @@ async function checkAuth() {
     const { data: { user } } = await sb.auth.getUser();
     if (user) {
       document.getElementById('authScreen').style.display = 'none';
-      document.getElementById('appMain').style.display = '';
+      // Don't show appMain yet — init() will decide (onboarding or app)
       const emailEl = document.getElementById('userEmail');
       if (emailEl) emailEl.textContent = user.email;
       init();
@@ -3690,6 +3695,7 @@ async function wizardFinish() {
   window._wizardActive = false;
   closeMsg();
   localStorage.setItem('mm_onboarded', '1');
+  document.querySelector('.header').style.display = '';
   const content = document.querySelector('.content');
   if (content) content.style.display = '';
   showToast('Configuration terminee ! &#127881;');
