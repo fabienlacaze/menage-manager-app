@@ -3341,6 +3341,101 @@ function selectRole(roleId) {
 let wizardData = {};
 window._wizardActive = false;
 
+// Reusable address autocomplete + map widget for wizards
+function wizAddressFieldHTML(inputId, mapId) {
+  return `<div style="position:relative;">
+    <input id="${inputId}" type="text" placeholder="Tapez une adresse..." autocomplete="off" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;box-sizing:border-box;">
+    <div id="${inputId}_suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:0 0 8px 8px;max-height:150px;overflow-y:auto;z-index:300;"></div>
+  </div>
+  <div id="${mapId}" style="width:100%;height:180px;border-radius:8px;overflow:hidden;margin-top:8px;background:var(--surface2);"></div>`;
+}
+
+let _autocompleteTimer = null;
+function initAddressAutocomplete(inputId, mapId, dataKey) {
+  const input = document.getElementById(inputId);
+  const sugDiv = document.getElementById(inputId + '_suggestions');
+  if (!input || !sugDiv) return;
+
+  let map = null, marker = null;
+
+  // Init map
+  setTimeout(async () => {
+    try {
+      await loadLeaflet();
+      const mapEl = document.getElementById(mapId);
+      if (mapEl && window.L) {
+        map = L.map(mapEl).setView([46.6, 2.3], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM', maxZoom: 18 }).addTo(map);
+        map.on('click', (e) => {
+          if (marker) map.removeLayer(marker);
+          marker = L.marker(e.latlng).addTo(map);
+          wizardData[dataKey + '_lat'] = e.latlng.lat;
+          wizardData[dataKey + '_lng'] = e.latlng.lng;
+        });
+      }
+    } catch (e) { console.log('Map error:', e); }
+  }, 300);
+
+  // Autocomplete on input
+  input.addEventListener('input', () => {
+    clearTimeout(_autocompleteTimer);
+    const q = input.value.trim();
+    if (q.length < 3) { sugDiv.style.display = 'none'; return; }
+    _autocompleteTimer = setTimeout(async () => {
+      try {
+        const resp = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q) + '&limit=5&addressdetails=1');
+        const results = await resp.json();
+        if (!results.length) { sugDiv.style.display = 'none'; return; }
+        sugDiv.innerHTML = results.map(r =>
+          `<div onclick="selectWizAddress('${inputId}','${mapId}','${dataKey}',${r.lat},${r.lon},'${esc(r.display_name).replace(/'/g, "\\'")}')" style="padding:10px 12px;cursor:pointer;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">${esc(r.display_name)}</div>`
+        ).join('');
+        sugDiv.style.display = 'block';
+      } catch (e) { sugDiv.style.display = 'none'; }
+    }, 400);
+  });
+
+  // Hide suggestions on blur (with delay for click)
+  input.addEventListener('blur', () => setTimeout(() => { sugDiv.style.display = 'none'; }, 300));
+}
+
+function selectWizAddress(inputId, mapId, dataKey, lat, lng, displayName) {
+  document.getElementById(inputId).value = displayName;
+  document.getElementById(inputId + '_suggestions').style.display = 'none';
+  wizardData[dataKey + '_lat'] = lat;
+  wizardData[dataKey + '_lng'] = lng;
+  wizardData[dataKey + '_address'] = displayName;
+  // Move map
+  try {
+    const mapEl = document.getElementById(mapId);
+    if (mapEl && mapEl._leaflet_id) {
+      // Find the map instance — use a stored reference
+    }
+    // Simpler: just reinit the view
+    if (window.L) {
+      const containers = document.querySelectorAll('.leaflet-container');
+      containers.forEach(c => {
+        if (c.id === mapId || c.parentElement.id === mapId) {
+          const m = c._leaflet;
+        }
+      });
+    }
+  } catch (e) {}
+  // Fallback: reload map section
+  setTimeout(async () => {
+    try {
+      await loadLeaflet();
+      const mapEl = document.getElementById(mapId);
+      if (mapEl && window.L) {
+        // Remove old map
+        if (mapEl._leaflet_id) { mapEl._leaflet_id = null; mapEl.innerHTML = ''; }
+        const m = L.map(mapEl).setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM', maxZoom: 18 }).addTo(m);
+        L.marker([lat, lng]).addTo(m);
+      }
+    } catch (e) {}
+  }, 100);
+}
+
 async function finishOnboarding(roleId) {
   localStorage.setItem('mm_user_role', roleId);
   wizardData = { roleId };
@@ -3417,55 +3512,18 @@ function wizardStep_PropertyName() {
   html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Nom du logement</label>';
   html += '<input id="wizPropName" type="text" placeholder="Ex: Appartement Nice Centre" value="" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
   html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Adresse</label>';
-  html += '<input id="wizPropAddress" type="text" placeholder="12 rue de France, Nice" value="" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
-  html += '<div id="wizMap" style="width:100%;height:180px;border-radius:8px;overflow:hidden;margin-bottom:16px;background:var(--surface2);"></div>';
+  html += wizAddressFieldHTML('wizPropAddress', 'wizPropMap');
+  html += '<div style="height:16px;"></div>';
   html += '<div style="display:flex;gap:10px;">';
   html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="' + (wizardData.roleId === 'concierge' ? 'wizardStep_ConciergeName()' : 'showOnboardingStep2()') + '">&#10094; Retour</button>';
   html += '<button class="btn btnPrimary" style="flex:1;padding:14px;font-size:14px;" onclick="wizardSaveProperty()">Suivant &#10140;</button>';
   html += '</div>';
   html += '</div>';
   document.getElementById('msgBody').innerHTML = html;
-  setTimeout(async () => {
+  setTimeout(() => {
     document.getElementById('wizPropName').focus();
-    // Init mini map
-    try {
-      await loadLeaflet();
-      const mapEl = document.getElementById('wizMap');
-      if (mapEl && window.L) {
-        const wm = L.map(mapEl).setView([46.6, 2.3], 5);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(wm);
-        let marker = null;
-        wm.on('click', (e) => {
-          if (marker) wm.removeLayer(marker);
-          marker = L.marker(e.latlng).addTo(wm);
-          wizardData.lat = e.latlng.lat;
-          wizardData.lng = e.latlng.lng;
-        });
-        // Geocode when address changes
-        const addrInput = document.getElementById('wizPropAddress');
-        if (addrInput) {
-          addrInput.addEventListener('change', async () => {
-            const addr = addrInput.value.trim();
-            if (!addr) return;
-            try {
-              const resp = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(addr) + '&limit=1');
-              const results = await resp.json();
-              if (results.length) {
-                const lat = parseFloat(results[0].lat);
-                const lng = parseFloat(results[0].lon);
-                wm.setView([lat, lng], 14);
-                if (marker) wm.removeLayer(marker);
-                marker = L.marker([lat, lng]).addTo(wm);
-                wizardData.lat = lat;
-                wizardData.lng = lng;
-              }
-            } catch (e) { console.log('Geocode error:', e); }
-          });
-        }
-        wizardData._wizMap = wm;
-      }
-    } catch (e) { console.log('Map init error:', e); }
-  }, 300);
+    initAddressAutocomplete('wizPropAddress', 'wizPropMap', 'prop');
+  }, 200);
 }
 
 async function wizardSaveProperty() {
@@ -3479,8 +3537,8 @@ async function wizardSaveProperty() {
   if (props && props.length) {
     wizardData.propId = props[0].id;
     const updateData = { name, address };
-    if (wizardData.lat) updateData.lat = wizardData.lat;
-    if (wizardData.lng) updateData.lng = wizardData.lng;
+    if (wizardData.prop_lat) updateData.lat = wizardData.prop_lat;
+    if (wizardData.prop_lng) updateData.lng = wizardData.prop_lng;
     await sb.from('properties').update(updateData).eq('id', props[0].id);
   }
   wizardStep_IcalUrl();
@@ -3569,14 +3627,18 @@ function wizardStep_ProviderInfo() {
   html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Telephone</label>';
   html += '<input id="wizProvSelfPhone" type="tel" placeholder="06 12 34 56 78" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
   html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Adresse (zone d\'intervention)</label>';
-  html += '<input id="wizProvSelfAddress" type="text" placeholder="Ville ou quartier" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:16px;">';
+  html += wizAddressFieldHTML('wizProvSelfAddress', 'wizProvMap');
+  html += '<div style="height:16px;"></div>';
   html += '<div style="display:flex;gap:10px;">';
   html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="showOnboardingStep2()">&#10094; Retour</button>';
   html += '<button class="btn btnPrimary" style="flex:1;padding:14px;font-size:14px;" onclick="wizardSaveProviderInfo()">Suivant &#10140;</button>';
   html += '</div>';
   html += '</div>';
   document.getElementById('msgBody').innerHTML = html;
-  setTimeout(() => document.getElementById('wizProvSelfName').focus(), 200);
+  setTimeout(() => {
+    document.getElementById('wizProvSelfName').focus();
+    initAddressAutocomplete('wizProvSelfAddress', 'wizProvMap', 'provSelf');
+  }, 200);
 }
 
 async function wizardSaveProviderInfo() {
@@ -3609,7 +3671,10 @@ function wizardStep_ProviderReady() {
   if (wizardData.provSelfName) {
     html += '<div style="color:var(--text3);font-size:12px;margin:8px 0;">Connecte en tant que : <b>' + esc(wizardData.provSelfName) + '</b></div>';
   }
-  html += '<button class="btn btnPrimary" style="width:100%;padding:14px;font-size:14px;margin-top:8px;" onclick="wizardFinishProvider()">Commencer &#10140;</button>';
+  html += '<div style="display:flex;gap:10px;margin-top:8px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardStep_ProviderInfo()">&#10094; Retour</button>';
+  html += '<button class="btn btnPrimary" style="flex:1;padding:14px;font-size:14px;" onclick="wizardFinishProvider()">Commencer &#10140;</button>';
+  html += '</div>';
   html += '</div>';
   document.getElementById('msgBody').innerHTML = html;
 }
