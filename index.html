@@ -3718,29 +3718,36 @@ async function finishOnboarding(roleId) {
     return;
   }
 
+  // Reload org to make sure we have the latest
+  await API.loadOrganization();
   let org = API.getOrg();
   let member = API.getMember();
 
-  // Create org + member if they don't exist (e.g. after account reset)
+  // Create org + member if they don't exist
   if (!org) {
     const orgName = roleId === 'concierge' ? 'Ma conciergerie' : 'Mon organisation';
-    const { data: newOrg } = await sb.from('organizations').insert({ name: orgName, plan: 'free', owner_id: user.id }).select().single();
+    const { data: newOrg, error: orgErr } = await sb.from('organizations').insert({ name: orgName, plan: 'free', owner_id: user.id }).select().single();
+    if (orgErr) console.error('Create org error:', orgErr);
     if (newOrg) {
       org = newOrg;
       const { data: newMember } = await sb.from('members').insert({ org_id: org.id, user_id: user.id, role: 'admin', accepted: true }).select().single();
       member = newMember;
-      // Create default property
       const { data: newProp } = await sb.from('properties').insert({ org_id: org.id, owner_member_id: member.id, name: 'Mon logement' }).select().single();
       if (newProp) wizardData.defaultPropId = newProp.id;
     }
+  } else {
+    // Org exists (created by trigger) — get existing property
+    const { data: existingProps } = await sb.from('properties').select('id').eq('org_id', org.id).limit(1);
+    if (existingProps && existingProps.length) {
+      wizardData.defaultPropId = existingProps[0].id;
+    }
+    // Update org name based on role
+    const orgName = roleId === 'concierge' ? 'Ma conciergerie' : 'Mon organisation';
+    await sb.from('organizations').update({ name: orgName }).eq('id', org.id);
   }
 
   if (org && member) {
-    if (roleId === 'owner') {
-      await sb.from('members').update({ role: 'admin' }).eq('id', member.id);
-    } else if (roleId === 'concierge') {
-      await sb.from('members').update({ role: 'admin' }).eq('id', member.id);
-    }
+    await sb.from('members').update({ role: 'admin' }).eq('id', member.id);
     wizardData.orgId = org.id;
     wizardData.memberId = member.id;
   }
