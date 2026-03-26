@@ -2815,8 +2815,9 @@ async function authRegister() {
     if (error) {
       // Handle rate limit with countdown
       const match = error.message.match(/after (\d+) second/);
-      if (match) {
-        let secs = parseInt(match[1]);
+      const isRateLimit = match || error.message.includes('rate limit');
+      if (isRateLimit) {
+        let secs = match ? parseInt(match[1]) : 60;
         submitBtn.disabled = true;
         const tick = () => {
           if (secs <= 0) {
