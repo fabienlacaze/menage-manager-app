@@ -1119,17 +1119,15 @@ async function loadPDF() {
           <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;">{total}</code>
           <code style="background:var(--surface2);padding:1px 4px;border-radius:3px;">{lien}</code>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;align-items:stretch;" class="templateGrid">
-          <div style="font-size:11px;color:var(--text3);font-weight:600;padding-bottom:4px;">Editeur</div>
-          <div style="font-size:11px;color:var(--text3);font-weight:600;padding-bottom:4px;">Apercu</div>
-          <div style="display:flex;flex-direction:column;">
-            <textarea id="propDetailTemplate" oninput="previewTemplate()" style="width:100%;flex:1;min-height:180px;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;resize:vertical;font-family:'Inter',sans-serif;box-sizing:border-box;margin-bottom:6px;"></textarea>
-            <button class="btn btnSmall btnOutline" onclick="resetTemplate();previewTemplate()" style="font-size:11px;padding:4px 10px;align-self:flex-start;">Reinitialiser</button>
-          </div>
-          <div style="display:flex;flex-direction:column;">
-            <div id="templatePreview" style="flex:1;min-height:180px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:11px;color:var(--text2);white-space:pre-wrap;line-height:1.5;overflow-y:auto;"></div>
-          </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;" class="templateGrid">
+          <div style="font-size:11px;color:var(--text3);font-weight:600;">Editeur</div>
+          <div style="font-size:11px;color:var(--text3);font-weight:600;">Apercu</div>
         </div>
+        <div style="display:flex;gap:12px;align-items:stretch;" class="templateGrid">
+          <textarea id="propDetailTemplate" oninput="previewTemplate()" style="flex:1;min-height:200px;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;resize:none;font-family:'Inter',sans-serif;box-sizing:border-box;"></textarea>
+          <div id="templatePreview" style="flex:1;min-height:200px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--text2);white-space:pre-wrap;line-height:1.5;overflow-y:auto;box-sizing:border-box;"></div>
+        </div>
+        <button class="btn btnSmall btnOutline" onclick="resetTemplate();previewTemplate()" style="font-size:11px;padding:4px 10px;margin-top:6px;">Reinitialiser</button>
       </div>
     </div>
   </div>
@@ -4832,18 +4830,6 @@ function previewTemplate() {
     .replace(/\{total\}/g, String(total))
     .replace(/\{lien\}/g, link);
   previewEl.textContent = result;
-  // Sync heights after render
-  requestAnimationFrame(() => {
-    const ta = document.getElementById('propDetailTemplate');
-    const prev = document.getElementById('templatePreview');
-    if (ta && prev) {
-      ta.style.height = 'auto';
-      prev.style.height = 'auto';
-      const maxH = Math.max(ta.scrollHeight, prev.scrollHeight, 180);
-      ta.style.height = maxH + 'px';
-      prev.style.height = maxH + 'px';
-    }
-  });
 }
 
 function buildWhatsAppText(provName) {
