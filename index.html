@@ -3030,15 +3030,16 @@ async function deleteAccount() {
 
     showToast('Suppression en cours...');
 
+    const session = (await sb.auth.getSession()).data.session;
+    if (!session) throw new Error('Session expirée');
     const resp = await fetch(SUPABASE_URL + '/functions/v1/delete-account', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + (await sb.auth.getSession()).data.session.access_token,
+        'Authorization': 'Bearer ' + session.access_token,
         'Content-Type': 'application/json',
         'apikey': SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
-        userId,
         deleteData,
         cancelSubscription: cancelSub,
         stripeSubscriptionId: org?.stripe_subscription_id || null,
