@@ -2840,7 +2840,9 @@ async function authRegister() {
     if (data.user && data.user.identities && data.user.identities.length === 0) {
       errEl.textContent = t('auth.email.taken'); return;
     }
-    if (data.user && !data.user.confirmed_at) {
+    // Show confirmation popup if email confirmation is pending or just sent
+    const needsConfirm = data.user && (!data.user.confirmed_at || !data.user.email_confirmed_at || (data.session === null));
+    if (needsConfirm) {
       errEl.textContent = '';
       showMsg('<div style="text-align:center;padding:10px;">'
         + '<div style="font-size:48px;margin-bottom:12px;">&#9993;</div>'
