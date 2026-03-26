@@ -2787,7 +2787,7 @@ async function authLogin() {
   errEl.textContent = ''; errEl.style.color = '#e94560';
   if (!email || !pass) { errEl.textContent = t('auth.fill.all'); return; }
   const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) { errEl.innerHTML = error.message === 'Invalid login credentials' ? (t('auth.login.invalid') + ' <a href="#" onclick="switchAuthMode(\'register\');return false;" style="color:var(--accent2);text-decoration:underline;">Creer un compte</a>') : esc(error.message); return; }
+  if (error) { errEl.textContent = error.message === 'Invalid login credentials' ? t('auth.login.invalid') : error.message; return; }
   // Remember credentials
   if (remember) {
     localStorage.setItem('mm_remember_email', email);
@@ -2817,8 +2817,14 @@ async function authRegister() {
       errEl.textContent = t('auth.email.taken'); return;
     }
     if (data.user && !data.user.confirmed_at) {
-      errEl.style.color = '#34d399';
-      errEl.innerHTML = '&#10003; ' + t('auth.register.success') + '<br><span style="font-size:12px;color:var(--text3);">' + t('auth.register.check_email', {email: email}) + '</span>';
+      errEl.textContent = '';
+      showMsg('<div style="text-align:center;padding:10px;">'
+        + '<div style="font-size:48px;margin-bottom:12px;">&#9993;</div>'
+        + '<div style="font-size:18px;font-weight:700;color:#34d399;margin-bottom:8px;">Compte cree !</div>'
+        + '<div style="font-size:14px;color:var(--text2);margin-bottom:12px;">Un email de confirmation a ete envoye a</div>'
+        + '<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px;">' + esc(email) + '</div>'
+        + '<div style="font-size:13px;color:var(--text3);line-height:1.6;">Cliquez sur le lien dans l\'email<br>puis revenez vous connecter.</div>'
+        + '</div>');
       submitBtn.style.display = 'none';
       return;
     }
