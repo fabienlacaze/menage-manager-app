@@ -972,7 +972,7 @@ async function loadPDF() {
     </div>
     <div id="rememberMeRow" style="display:flex;align-items:center;gap:8px;margin-top:12px;">
       <input type="checkbox" id="rememberMe" style="width:16px;height:16px;accent-color:var(--accent);" checked>
-      <label for="rememberMe" style="font-size:12px;color:var(--text3);cursor:pointer;">Se souvenir de moi</label>
+      <label for="rememberMe" style="font-size:12px;color:var(--text3);cursor:pointer;" data-i18n="auth.remember">Se souvenir de moi</label>
     </div>
     <button id="authSubmitBtn" onclick="authSubmit()" data-i18n="auth.login.btn" style="width:100%;padding:12px;background:linear-gradient(135deg,#e94560,#c73e54);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;border-radius:8px;margin-top:12px;">Se connecter</button>
     <div id="forgotPassLink" style="text-align:center;margin-top:10px;"><a href="#" onclick="forgotPassword();return false;" style="color:var(--accent2);font-size:12px;text-decoration:none;" data-i18n="auth.forgot">Mot de passe oublie ?</a></div>
@@ -2826,7 +2826,7 @@ async function authRegister() {
             submitBtn.textContent = t('auth.register.btn');
             return;
           }
-          errEl.innerHTML = '&#9203; Veuillez patienter <b>' + secs + 's</b>';
+          errEl.innerHTML = '&#9203; Trop de tentatives. Veuillez patienter <b>' + secs + 's</b>';
           submitBtn.textContent = secs + 's...';
           secs--;
           setTimeout(tick, 1000);
