@@ -3836,12 +3836,97 @@ async function wizardSaveProperty() {
     if (wizardData.prop_lng) updateData.lng = wizardData.prop_lng;
     await sb.from('properties').update(updateData).eq('id', props[0].id);
   }
+  wizardStep_PropertyDetails();
+}
+
+// ── Wizard: Property Details (type, rooms, m², tarif, duration, check-in/out, code, consignes) ──
+function wizardStep_PropertyDetails() {
+  const step = wizardData.roleId === 'concierge' ? '3/6' : '2/5';
+  let html = '<div style="padding:10px;max-height:60vh;overflow-y:auto;">';
+  html += '<div style="text-align:center;">';
+  html += '<div style="font-size:32px;margin-bottom:8px;">&#128736;</div>';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:4px;">Etape ' + step + '</div>';
+  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Details de la propriete</div>';
+  html += '</div>';
+
+  // Type + Rooms + Surface
+  html += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
+  html += '<div style="flex:2;"><label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Type</label>';
+  html += '<select id="wizPropType" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<option value="">--</option><option value="apartment">Appartement</option><option value="house">Maison</option><option value="studio">Studio</option><option value="villa">Villa</option><option value="chalet">Chalet</option><option value="other">Autre</option>';
+  html += '</select></div>';
+  html += '<div style="flex:1;"><label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Pieces</label>';
+  html += '<input id="wizPropRooms" type="number" min="1" max="20" placeholder="3" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '<div style="flex:1;"><label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">m²</label>';
+  html += '<input id="wizPropSurface" type="number" min="1" placeholder="65" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '</div>';
+
+  // Tarif + Duration
+  html += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
+  html += '<div style="flex:1;"><label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Tarif menage (€)</label>';
+  html += '<input id="wizPropTarif" type="number" min="0" placeholder="65" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '<div style="flex:1;"><label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Duree estimee</label>';
+  html += '<select id="wizPropDuration" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;box-sizing:border-box;">';
+  html += '<option value="">--</option><option value="0h30">30 min</option><option value="1h">1h</option><option value="1h30">1h30</option><option value="2h">2h</option><option value="2h30">2h30</option><option value="3h">3h</option><option value="3h30">3h30</option><option value="4h">4h</option>';
+  html += '</select></div>';
+  html += '</div>';
+
+  // Check-in / Check-out
+  html += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
+  html += '<div style="flex:1;"><label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Check-in</label>';
+  html += '<input id="wizPropCheckin" type="time" value="15:00" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '<div style="flex:1;"><label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Check-out</label>';
+  html += '<input id="wizPropCheckout" type="time" value="11:00" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+  html += '</div>';
+
+  // Access code
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Code d\'acces / Digicode</label>';
+  html += '<input id="wizPropCode" type="text" placeholder="Ex: 1234B, boite a cles..." style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:10px;">';
+
+  // Instructions
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Consignes / Notes</label>';
+  html += '<textarea id="wizPropNotes" placeholder="Instructions speciales pour le prestataire..." rows="3" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:\'Inter\',sans-serif;box-sizing:border-box;resize:vertical;margin-bottom:12px;"></textarea>';
+
+  html += '<div style="display:flex;gap:10px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardStep_PropertyName()">&#10094; Retour</button>';
+  html += '<button class="btn btnPrimary" style="flex:1;padding:14px;font-size:14px;" onclick="wizardSavePropertyDetails()">Suivant &#10140;</button>';
+  html += '</div>';
+  html += '</div>';
+  document.getElementById('msgBody').innerHTML = html;
+}
+
+async function wizardSavePropertyDetails() {
+  if (!wizardData.propId) return;
+  const updateData = {
+    type: document.getElementById('wizPropType')?.value || '',
+    rooms: parseInt(document.getElementById('wizPropRooms')?.value) || null,
+    surface: parseInt(document.getElementById('wizPropSurface')?.value) || null,
+    tarif: parseFloat(document.getElementById('wizPropTarif')?.value) || null,
+    duration: document.getElementById('wizPropDuration')?.value || '',
+    notes: document.getElementById('wizPropNotes')?.value?.trim() || '',
+    checklist: [],
+  };
+  // Store check-in/out and code in notes or checklist
+  const checkin = document.getElementById('wizPropCheckin')?.value || '15:00';
+  const checkout = document.getElementById('wizPropCheckout')?.value || '11:00';
+  const code = document.getElementById('wizPropCode')?.value?.trim() || '';
+  if (checkin || checkout || code) {
+    const items = [];
+    if (code) items.push('Code acces: ' + code);
+    if (checkin) items.push('Check-in: ' + checkin);
+    if (checkout) items.push('Check-out: ' + checkout);
+    updateData.checklist = items;
+  }
+  if (updateData.notes) {
+    updateData.checklist.push(updateData.notes);
+  }
+  await sb.from('properties').update(updateData).eq('id', wizardData.propId);
   wizardStep_IcalUrl();
 }
 
 // ── Wizard: iCal URL ──
 function wizardStep_IcalUrl() {
-  const step = wizardData.roleId === 'concierge' ? '3/4' : '2/3';
+  const step = wizardData.roleId === 'concierge' ? '4/6' : '3/5';
   const platforms = [
     { id: 'airbnb', name: 'Airbnb', color: '#e94560', url: 'https://www.airbnb.fr/hosting/listings', help: 'Calendrier > Tarifs et disponibilites > Exporter le calendrier', placeholder: 'https://www.airbnb.fr/calendar/ical/...' },
     { id: 'booking', name: 'Booking', color: '#003580', url: 'https://admin.booking.com/hotel/hoteladmin/extranet_ng/manage/calendar.html', help: 'Extranet > Tarifs > Sync calendrier > Exporter', placeholder: 'https://ical.booking.com/v1/export/...' },
@@ -3904,17 +3989,44 @@ async function wizardSaveIcal() {
   wizardStep_Provider();
 }
 
-// ── Wizard: First Provider ──
+// ── Wizard: First Provider (complete) ──
 function wizardStep_Provider() {
-  const step = wizardData.roleId === 'concierge' ? '4/4' : '3/3';
-  let html = '<div style="text-align:center;padding:10px;">';
+  const step = wizardData.roleId === 'concierge' ? '5/6' : '4/5';
+  let html = '<div style="padding:10px;max-height:60vh;overflow-y:auto;">';
+  html += '<div style="text-align:center;">';
   html += '<div style="font-size:32px;margin-bottom:8px;">&#129529;</div>';
   html += '<div style="font-size:16px;font-weight:700;color:#34d399;margin-bottom:4px;">Etape ' + step + '</div>';
-  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Ajoutez votre premier prestataire de menage</div>';
-  html += '<input id="wizProvName" type="text" placeholder="Nom du prestataire" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
-  html += '<input id="wizProvPhone" type="tel" placeholder="06 12 34 56 78" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
+  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:16px;">Ajoutez votre premier prestataire</div>';
+  html += '</div>';
+
+  // Name
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Nom</label>';
+  html += '<input id="wizProvName" type="text" placeholder="Nom du prestataire" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
+
+  // Phone
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Telephone</label>';
+  html += '<input id="wizProvPhone" type="tel" placeholder="06 12 34 56 78" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
+
+  // Email
   html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Email</label>';
-  html += '<input id="wizProvEmail" type="email" placeholder="prenom@email.com" style="width:100%;padding:12px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:16px;">';
+  html += '<input id="wizProvEmail" type="email" placeholder="prenom@email.com" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
+
+  // Address
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Adresse</label>';
+  html += '<input id="wizProvAddress" type="text" placeholder="Ville ou adresse" style="width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:\'Inter\',sans-serif;box-sizing:border-box;margin-bottom:10px;">';
+
+  // % + Tarif
+  html += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
+  html += '<div style="flex:1;"><label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">% repartition</label>';
+  html += '<input id="wizProvPct" type="number" min="0" max="100" value="100" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;box-sizing:border-box;"></div>';
+  html += '<div style="flex:1;"><label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Tarif (€)</label>';
+  html += '<input id="wizProvPrice" type="number" min="0" placeholder="65" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;box-sizing:border-box;"></div>';
+  html += '</div>';
+
+  // Max per day
+  html += '<label style="display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Max menages/jour</label>';
+  html += '<input id="wizProvMax" type="number" min="1" max="20" value="3" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:12px;">';
+
   html += '<div style="display:flex;gap:10px;">';
   html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardStep_IcalUrl()">&#10094; Retour</button>';
   html += '<button class="btn btnOutline" style="flex:1;padding:12px;font-size:13px;" onclick="wizardFinish()">Passer</button>';
@@ -3929,10 +4041,15 @@ async function wizardSaveProvider() {
   const name = document.getElementById('wizProvName').value.trim();
   const phone = document.getElementById('wizProvPhone').value.trim();
   const email = (document.getElementById('wizProvEmail') || {}).value?.trim() || '';
+  const address = (document.getElementById('wizProvAddress') || {}).value?.trim() || '';
+  const pct = parseInt(document.getElementById('wizProvPct')?.value) || 100;
+  const price = parseFloat(document.getElementById('wizProvPrice')?.value) || 0;
+  const maxPerDay = parseInt(document.getElementById('wizProvMax')?.value) || 3;
   if (name && wizardData.propId) {
     const { data: prop } = await sb.from('properties').select('providers').eq('id', wizardData.propId).single();
     const providers = prop ? (prop.providers || []) : [];
-    providers.push({ name, phone, email, percentage: 100, price: 0, vacations: '', waMode: 'direct' });
+    const secureToken = (len) => { const a = new Uint8Array(len); crypto.getRandomValues(a); return Array.from(a, b => b.toString(16).padStart(2,'0')).join(''); };
+    providers.push({ name, phone, email, address, percentage: pct, price, maxPerDay, vacations: '', waMode: 'direct', token: secureToken(16) });
     await sb.from('properties').update({ providers }).eq('id', wizardData.propId);
   }
   wizardFinish();
