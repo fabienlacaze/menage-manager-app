@@ -1319,7 +1319,7 @@ async function loadPDF() {
         <tr style="background:rgba(255,255,255,0.02);"><td style="padding:7px 8px;">Historique</td><td style="text-align:center;color:var(--accent);">&#10007;</td><td style="text-align:center;color:var(--success);background:rgba(233,69,96,0.04);">&#10003;</td><td style="text-align:center;color:var(--success);background:rgba(108,99,255,0.04);">&#10003;</td></tr>
         <tr><td style="padding:7px 8px;">Sans pub</td><td style="text-align:center;color:var(--accent);">&#10007;</td><td style="text-align:center;color:var(--success);background:rgba(233,69,96,0.04);">&#10003;</td><td style="text-align:center;color:var(--success);background:rgba(108,99,255,0.04);">&#10003;</td></tr>
         <tr style="background:rgba(255,255,255,0.02);"><td style="padding:7px 8px;">Geolocalisation</td><td style="text-align:center;color:var(--accent);">&#10007;</td><td style="text-align:center;color:var(--success);background:rgba(233,69,96,0.04);">&#10003;</td><td style="text-align:center;color:var(--success);background:rgba(108,99,255,0.04);">&#10003;</td></tr>
-        <tr><td style="padding:7px 8px;">Chat interne</td><td style="text-align:center;color:var(--accent);">&#10007;</td><td style="text-align:center;color:var(--success);background:rgba(233,69,96,0.04);">&#10003;</td><td style="text-align:center;color:var(--success);background:rgba(108,99,255,0.04);">&#10003;</td></tr>
+        <tr><td style="padding:7px 8px;">Chat interne</td><td style="text-align:center;font-size:11px;">3/jour</td><td style="text-align:center;color:var(--success);background:rgba(233,69,96,0.04);">&#8734;</td><td style="text-align:center;color:var(--success);background:rgba(108,99,255,0.04);">&#8734;</td></tr>
         <tr><td style="padding:7px 8px;font-weight:600;">Multi-proprietaires</td><td style="text-align:center;color:var(--accent);">&#10007;</td><td style="text-align:center;color:var(--accent);background:rgba(233,69,96,0.04);">&#10007;</td><td style="text-align:center;color:var(--success);background:rgba(108,99,255,0.04);">&#10003;</td></tr>
         <tr style="background:rgba(255,255,255,0.02);"><td style="padding:7px 8px;font-weight:600;">Dashboard</td><td style="text-align:center;color:var(--accent);">&#10007;</td><td style="text-align:center;color:var(--accent);background:rgba(233,69,96,0.04);">&#10007;</td><td style="text-align:center;color:var(--success);background:rgba(108,99,255,0.04);">&#10003;</td></tr>
         <tr><td style="padding:7px 8px;font-weight:600;">Gestion equipe</td><td style="text-align:center;color:var(--accent);">&#10007;</td><td style="text-align:center;color:var(--accent);background:rgba(233,69,96,0.04);">&#10007;</td><td style="text-align:center;color:var(--success);background:rgba(108,99,255,0.04);">&#10003;</td></tr>
@@ -2546,6 +2546,19 @@ async function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const body = input.value.trim();
   if (!body) return;
+
+  // Free plan: 3 messages/day limit
+  if (!API.isPremium()) {
+    const today = new Date().toISOString().split('T')[0];
+    const chatCountKey = 'mm_chat_count_' + today;
+    const count = parseInt(localStorage.getItem(chatCountKey) || '0');
+    if (count >= 3) {
+      showToast('Limite de 3 messages/jour atteinte. Passez a Pro pour un chat illimite.');
+      return;
+    }
+    localStorage.setItem(chatCountKey, String(count + 1));
+  }
+
   input.value = '';
 
   const org = API.getOrg();
