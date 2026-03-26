@@ -2764,7 +2764,7 @@ async function showAccountModal() {
 }
 async function showRoleChangeModal() {
   const roles = [
-    { id: 'admin', label: 'Gestionnaire', icon: '&#127970;', color: '#e94560', desc: 'Gerez les menages pour plusieurs proprietaires' },
+    { id: 'admin', label: 'Conciergerie', icon: '&#127970;', color: '#e94560', desc: 'Gerez les menages pour plusieurs proprietaires' },
     { id: 'owner', label: 'Proprietaire', icon: '&#127968;', color: '#f59e0b', desc: 'Gerez vos propres locations' },
     { id: 'provider', label: 'Prestataire', icon: '&#129529;', color: '#34d399', desc: 'Consultez et validez vos missions' },
   ];
@@ -2935,7 +2935,7 @@ function updatePlanUI() {
     }
     // Role badge
     const role = API.getRole();
-    const roleLabels = { admin: 'Gestionnaire', manager: 'Gestionnaire', owner: 'Proprietaire', provider: 'Prestataire' };
+    const roleLabels = { admin: 'Conciergerie', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
     const roleColors = { admin: '#e94560', manager: '#e94560', owner: '#f59e0b', provider: '#34d399' };
     if (role && roleLabels[role]) {
       h1.insertAdjacentHTML('beforeend', ' <span class="roleBadge" onclick="showRoleChangeModal()" style="display:inline-block;font-size:9px;padding:2px 8px;border-radius:10px;background:' + (roleColors[role]||'#666') + '22;color:' + (roleColors[role]||'#666') + ';font-weight:600;vertical-align:middle;border:1px solid ' + (roleColors[role]||'#666') + '44;cursor:pointer;" title="Changer de role">' + roleLabels[role] + '</span>');
@@ -4294,6 +4294,14 @@ function addProviderFromModal() {
   closeAddProviderModal();
   showToast(name + ' ajoute');
   autoRegenerateIfNeeded();
+  // Auto-invite provider if email provided
+  if (email && API.getOrg()) {
+    API.inviteMember(email, 'provider').then(result => {
+      if (result) {
+        showToast('Invitation envoyee a ' + email);
+      }
+    }).catch(() => {});
+  }
 }
 function addProvider() { showAddProviderModal(); }
 
