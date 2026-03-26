@@ -1250,6 +1250,7 @@ async function loadPDF() {
     <div style="display:flex;flex-direction:column;gap:10px;">
       <button class="btn btnOutline" style="padding:12px;font-size:13px;" onclick="changePassword()">&#128274; Changer le mot de passe</button>
       <button class="btn btnOutline" style="padding:12px;font-size:13px;" onclick="changeEmail()">&#9993; Changer l'email</button>
+      <button class="btn btnOutline" style="padding:12px;font-size:13px;" onclick="closeAccountModal();showRoleChangeModal()">&#128101; Changer de role</button>
       <button class="btn btnDanger" style="padding:12px;font-size:13px;margin-top:10px;" onclick="deleteAccount()">&#128465; Supprimer mon compte</button>
     </div>
   </div>
@@ -2761,6 +2762,39 @@ async function showAccountModal() {
   document.getElementById('overlay').style.display = 'block';
   document.getElementById('accountModal').style.display = 'block';
 }
+async function showRoleChangeModal() {
+  const roles = [
+    { id: 'admin', label: 'Gestionnaire', icon: '&#127970;', color: '#e94560', desc: 'Gerez les menages pour plusieurs proprietaires' },
+    { id: 'owner', label: 'Proprietaire', icon: '&#127968;', color: '#f59e0b', desc: 'Gerez vos propres locations' },
+    { id: 'provider', label: 'Prestataire', icon: '&#129529;', color: '#34d399', desc: 'Consultez et validez vos missions' },
+  ];
+  const currentRole = API.getRole();
+  let html = '<div style="padding:10px;">';
+  html += '<div style="font-size:14px;color:var(--text2);margin-bottom:14px;text-align:center;">Choisissez votre role :</div>';
+  roles.forEach(r => {
+    const isCurrent = r.id === currentRole || (r.id === 'admin' && currentRole === 'manager');
+    html += `<div onclick="changeRole('${r.id}')" style="display:flex;align-items:center;gap:12px;padding:12px;background:${isCurrent ? r.color + '15' : 'var(--surface2)'};border:${isCurrent ? '2px solid ' + r.color : '1px solid var(--border2)'};border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='${r.color}'" onmouseout="this.style.borderColor='${isCurrent ? r.color : 'var(--border2)'}'">`;
+    html += `<span style="font-size:24px;">${r.icon}</span>`;
+    html += `<div style="flex:1;"><div style="font-weight:700;color:${r.color};font-size:14px;">${r.label}${isCurrent ? ' <span style="font-size:10px;opacity:0.6;">(actuel)</span>' : ''}</div>`;
+    html += `<div style="font-size:11px;color:var(--text3);">${r.desc}</div></div>`;
+    html += '</div>';
+  });
+  html += '</div>';
+  document.getElementById('msgBody').innerHTML = html;
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('msgModal').style.display = 'block';
+}
+
+async function changeRole(newRole) {
+  const member = API.getMember();
+  if (member) {
+    await sb.from('members').update({ role: newRole }).eq('id', member.id);
+  }
+  closeMsg();
+  showToast('Role change !');
+  setTimeout(() => location.reload(), 1000);
+}
+
 function closeAccountModal() {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('accountModal').style.display = 'none';
@@ -2904,7 +2938,7 @@ function updatePlanUI() {
     const roleLabels = { admin: 'Gestionnaire', manager: 'Gestionnaire', owner: 'Proprietaire', provider: 'Prestataire' };
     const roleColors = { admin: '#e94560', manager: '#e94560', owner: '#f59e0b', provider: '#34d399' };
     if (role && roleLabels[role]) {
-      h1.insertAdjacentHTML('beforeend', ' <span class="roleBadge" style="display:inline-block;font-size:9px;padding:2px 8px;border-radius:10px;background:' + (roleColors[role]||'#666') + '22;color:' + (roleColors[role]||'#666') + ';font-weight:600;vertical-align:middle;border:1px solid ' + (roleColors[role]||'#666') + '44;">' + roleLabels[role] + '</span>');
+      h1.insertAdjacentHTML('beforeend', ' <span class="roleBadge" onclick="showRoleChangeModal()" style="display:inline-block;font-size:9px;padding:2px 8px;border-radius:10px;background:' + (roleColors[role]||'#666') + '22;color:' + (roleColors[role]||'#666') + ';font-weight:600;vertical-align:middle;border:1px solid ' + (roleColors[role]||'#666') + '44;cursor:pointer;" title="Changer de role">' + roleLabels[role] + '</span>');
     }
   }
   // Communication section: blur premium features
