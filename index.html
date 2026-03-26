@@ -884,6 +884,57 @@ async function loadPDF() {
 </head>
 <body>
 
+<!-- Splash Screen -->
+<div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
+  <div style="position:relative;width:120px;height:120px;margin-bottom:24px;">
+    <!-- Logo M -->
+    <div id="splashLogo" style="width:120px;height:120px;background:linear-gradient(135deg,#e94560,#6c63ff);border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:64px;font-weight:900;color:#fff;box-shadow:0 8px 40px rgba(233,69,96,0.4);transition:transform 0.3s ease;">M</div>
+    <!-- Broom that sweeps -->
+    <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">🧹</div>
+  </div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Cleaning Manager</div>
+  <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Gestion des menages</div>
+  <!-- Loading bar -->
+  <div style="width:200px;height:3px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:24px;overflow:hidden;">
+    <div id="splashBar" style="width:0%;height:100%;background:linear-gradient(90deg,#e94560,#6c63ff);border-radius:4px;transition:width 1.5s ease;"></div>
+  </div>
+</div>
+<script>
+(function(){
+  // Animate splash
+  setTimeout(function(){
+    var bar = document.getElementById('splashBar');
+    if(bar) bar.style.width = '100%';
+  }, 100);
+  // Broom sweep animation
+  setTimeout(function(){
+    var broom = document.getElementById('splashBroom');
+    if(broom){
+      broom.style.opacity = '1';
+      broom.style.left = '140px';
+      broom.style.transform = 'translateY(-50%) rotate(30deg)';
+    }
+  }, 800);
+  // Sparkle effect on logo after broom passes
+  setTimeout(function(){
+    var logo = document.getElementById('splashLogo');
+    if(logo){
+      logo.style.transform = 'scale(1.1)';
+      logo.style.boxShadow = '0 8px 60px rgba(108,99,255,0.6)';
+      setTimeout(function(){ logo.style.transform = 'scale(1)'; }, 200);
+    }
+  }, 1400);
+  // Hide splash
+  setTimeout(function(){
+    var splash = document.getElementById('splashScreen');
+    if(splash){
+      splash.style.opacity = '0';
+      setTimeout(function(){ splash.style.display = 'none'; }, 500);
+    }
+  }, 2200);
+})();
+</script>
+
 <!-- Auth Screen -->
 <div id="authScreen" style="display:none;justify-content:center;align-items:center;min-height:100vh;padding:20px;">
   <div style="background:var(--surface);padding:36px;border-radius:16px;width:380px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
@@ -2555,7 +2606,27 @@ async function sendChatMessage() {
     const chatCountKey = 'mm_chat_count_' + today;
     const count = parseInt(localStorage.getItem(chatCountKey) || '0');
     if (count >= 3) {
-      showToast('Limite de 3 messages/jour atteinte. Passez a Pro pour un chat illimite.');
+      // Calculate time until midnight
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const diffMs = midnight - now;
+      const h = Math.floor(diffMs / 3600000);
+      const m = Math.floor((diffMs % 3600000) / 60000);
+      const countdown = h + 'h ' + m + 'min';
+      input.value = '';
+      input.placeholder = 'Limite atteinte...';
+      input.disabled = true;
+      // Show message in chat
+      const chatEl = document.getElementById('chatMessages');
+      if (chatEl) {
+        chatEl.innerHTML += `<div style="text-align:center;margin:12px 0;padding:14px;background:rgba(233,69,96,0.1);border:1px solid rgba(233,69,96,0.2);border-radius:10px;">
+          <div style="font-size:13px;color:var(--accent);font-weight:600;">&#128274; Limite de 3 messages/jour atteinte</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px;">Prochain message dans <b style="color:var(--text);">${countdown}</b></div>
+          <button onclick="showPremiumModal()" style="margin-top:8px;background:linear-gradient(135deg,#e94560,#c73e54);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">&#11088; Chat illimite avec Pro</button>
+        </div>`;
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }
       return;
     }
     localStorage.setItem(chatCountKey, String(count + 1));
