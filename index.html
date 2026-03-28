@@ -2280,7 +2280,7 @@ async function showProviderMode() {
         } else {
           html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);text-align:center;">Le jour du menage, vous pourrez signaler votre arrivee ici</div>`;
         }
-        html += `<div style="text-align:center;margin-top:6px;"><button onclick="refuseCleaning('${c.propertyId}','${dateStr}','${esc(providerName)}')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;">Finalement refuser</button></div>`;
+        html += `<div style="text-align:center;margin-top:6px;"><button onclick="showChangeStatusPopup('${c.propertyId}','${dateStr}','${esc(providerName)}','refused','Refuser ce menage ?')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;">Finalement refuser</button></div>`;
       } else if (status === 'arrived') {
         // Step 3: Start cleaning
         html += `<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
@@ -2302,7 +2302,7 @@ async function showProviderMode() {
       } else if (status === 'refused') {
         // Refused: allow to change mind
         html += `<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
-          <button onclick="acceptCleaning('${c.propertyId}','${dateStr}','${esc(providerName)}')" style="flex:1;padding:10px;background:#34d399;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#10003; Finalement accepter</button>
+          <button onclick="showChangeStatusPopup('${c.propertyId}','${dateStr}','${esc(providerName)}','accepted','Accepter ce menage ?')" style="flex:1;padding:10px;background:#34d399;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#10003; Finalement accepter</button>
         </div>`;
       } else if (status === 'departed') {
         // Step 5: Confirm done
@@ -2795,6 +2795,34 @@ async function markCleaningAsSeen(propId, date, provName) {
   }, { onConflict: 'property_id,cleaning_date,provider_name' });
 }
 
+function showChangeStatusPopup(propId, date, provName, newStatus, title) {
+  const isAccept = newStatus === 'accepted';
+  const color = isAccept ? '#34d399' : '#ef4444';
+  const btnText = isAccept ? '&#10003; Confirmer l\'acceptation' : '&#10007; Confirmer le refus';
+  let html = '<div style="padding:10px;text-align:center;">';
+  html += '<div style="font-size:16px;font-weight:700;color:' + color + ';margin-bottom:12px;">' + title + '</div>';
+  html += '<div style="font-size:13px;color:var(--text2);margin-bottom:12px;">' + esc(provName) + ' — ' + fmtDate(date) + '</div>';
+  html += '<div style="text-align:left;margin-bottom:12px;">';
+  html += '<label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">Raison / commentaire (optionnel) :</label>';
+  html += '<textarea id="changeStatusReason" placeholder="Ex: imprevu, indisponibilite..." style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:Inter,sans-serif;resize:vertical;min-height:60px;box-sizing:border-box;"></textarea>';
+  html += '</div>';
+  html += '<div style="display:flex;gap:8px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;" onclick="closeMsg()">Annuler</button>';
+  html += '<button class="btn" style="flex:1;padding:12px;background:' + color + ';color:#fff;border:none;font-weight:600;" onclick="confirmChangeStatus(\'' + propId + '\',\'' + date + '\',\'' + esc(provName) + '\',\'' + newStatus + '\')">'+btnText+'</button>';
+  html += '</div></div>';
+  showMsg(html);
+}
+
+async function confirmChangeStatus(propId, date, provName, newStatus) {
+  const reason = document.getElementById('changeStatusReason')?.value?.trim() || '';
+  closeMsg();
+  if (newStatus === 'accepted') {
+    await acceptCleaning(propId, date, provName, reason);
+  } else {
+    await refuseCleaning(propId, date, provName, reason);
+  }
+}
+
 async function getGestionnaireName() {
   const org = API.getOrg();
   if (!org) return 'votre gestionnaire';
@@ -2805,32 +2833,34 @@ async function getGestionnaireName() {
   return 'votre gestionnaire';
 }
 
-async function acceptCleaning(propId, date, provName) {
+async function acceptCleaning(propId, date, provName, reason) {
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('cleaning_validations').upsert({
     property_id: propId, cleaning_date: date, provider_name: provName,
     status: 'accepted', validated_at: new Date().toISOString(), validated_by: user.id,
   }, { onConflict: 'property_id,cleaning_date,provider_name' });
-  // Send auto-message
   const org = API.getOrg();
   if (org) {
-    await sb.from('messages').insert({ org_id: org.id, property_id: propId, sender_id: user.id, sender_name: provName, sender_role: 'provider', recipient_name: 'gestionnaire', body: '✓✓ ' + provName + ' a accepte le menage du ' + fmtDate(date) });
+    let msg = '✓✓ ' + provName + ' a accepte le menage du ' + fmtDate(date);
+    if (reason) msg += ' — "' + reason + '"';
+    await sb.from('messages').insert({ org_id: org.id, property_id: propId, sender_id: user.id, sender_name: provName, sender_role: 'provider', recipient_name: 'gestionnaire', body: msg });
   }
   const gName = await getGestionnaireName();
   showToast('✓ Menage accepte — ' + gName + ' a ete notifie(e)');
   showProviderMode();
 }
 
-async function refuseCleaning(propId, date, provName) {
+async function refuseCleaning(propId, date, provName, reason) {
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('cleaning_validations').upsert({
     property_id: propId, cleaning_date: date, provider_name: provName,
     status: 'refused', validated_at: new Date().toISOString(), validated_by: user.id,
   }, { onConflict: 'property_id,cleaning_date,provider_name' });
-  // Send auto-message
   const org = API.getOrg();
   if (org) {
-    await sb.from('messages').insert({ org_id: org.id, property_id: propId, sender_id: user.id, sender_name: provName, sender_role: 'provider', recipient_name: 'gestionnaire', body: '❌ ' + provName + ' a refuse le menage du ' + fmtDate(date) });
+    let msg = '❌ ' + provName + ' a refuse le menage du ' + fmtDate(date);
+    if (reason) msg += ' — "' + reason + '"';
+    await sb.from('messages').insert({ org_id: org.id, property_id: propId, sender_id: user.id, sender_name: provName, sender_role: 'provider', recipient_name: 'gestionnaire', body: msg });
   }
   const gName = await getGestionnaireName();
   showToast('✗ Menage refuse — ' + gName + ' a ete notifie(e)');
