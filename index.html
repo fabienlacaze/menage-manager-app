@@ -2813,9 +2813,9 @@ async function authRegister() {
     const { data, error } = await sb.auth.signUp({ email, password: pass });
     submitBtn.disabled = false; submitBtn.textContent = t('auth.register.btn');
     if (error) {
-      // Handle rate limit with countdown
+      // Handle rate limit / too many requests
       const match = error.message.match(/after (\d+) second/);
-      const isRateLimit = match || error.message.includes('rate limit');
+      const isRateLimit = match || error.message.includes('rate limit') || error.message.includes('Too Many') || error.status === 429;
       if (isRateLimit) {
         // The account may have been created on a previous attempt — show confirmation popup
         errEl.textContent = '';
