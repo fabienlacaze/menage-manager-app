@@ -1093,12 +1093,12 @@ async function loadPDF() {
       </div>
       <!-- Property quick info -->
       <div id="propQuickInfo" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);"></div>
-      <!-- iCal URLs (dynamic) -->
-      <div class="lbl" style="margin-bottom:8px;" data-i18n="config.ical">Calendriers iCal</div>
-      <div id="icalList"></div>
-      <div style="margin-top:8px;">
-        <button class="btn btnSmall btnSuccess" onclick="showAddIcalModal()" style="padding:6px 14px;font-size:12px;">+ Ajouter un calendrier</button>
+      <!-- iCal button -->
+      <div style="margin-top:4px;">
+        <button class="btn btnSmall btnOutline" onclick="showIcalModal()" style="padding:8px 16px;font-size:12px;">&#128197; Calendriers iCal</button>
       </div>
+      <!-- Hidden iCal list (rendered in modal) -->
+      <div id="icalList" style="display:none;"></div>
     </div>
   </div>
 
@@ -3568,6 +3568,33 @@ function syncIcalToOldFormat(prop) {
   prop.bookingIcalUrl = booking ? booking.url : '';
   config.airbnbIcalUrl = prop.airbnbIcalUrl;
   config.bookingIcalUrl = prop.bookingIcalUrl;
+}
+
+function showIcalModal() {
+  const prop = API.getActiveProperty(fullConfig);
+  if (!prop) return;
+  if (!prop.icals) prop.icals = [];
+  let html = '<div style="padding:10px;">';
+  if (!prop.icals.length) {
+    html += '<div style="color:var(--text3);font-size:13px;padding:12px 0;text-align:center;">Aucun calendrier configure</div>';
+  } else {
+    prop.icals.forEach((ical, i) => {
+      const plat = ICAL_PLATFORMS.find(p => p.id === ical.platform) || ICAL_PLATFORMS[6];
+      html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span class="urlLabel ${plat.color}" style="min-width:80px;text-align:center;font-size:11px;">${plat.name}</span>
+        <input type="text" id="icalModal_${i}" value="${esc(ical.url)}" placeholder="URL iCal..." onchange="updateIcalUrl(${i}, this.value)" style="flex:1;padding:8px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:12px;">
+        <button class="btnIcon" onclick="pasteField('icalModal_${i}')" title="Coller" style="font-size:14px;">&#128203;</button>
+        <button class="btn btnSmall btnDanger" style="padding:4px 8px;" onclick="removeIcal(${i});showIcalModal();">&#10005;</button>
+      </div>`;
+    });
+  }
+  html += '<div style="margin-top:12px;text-align:center;"><button class="btn btnSmall btnSuccess" onclick="closeMsg();showAddIcalModal()" style="padding:8px 20px;font-size:12px;">+ Ajouter un calendrier</button></div>';
+  html += '</div>';
+  document.getElementById('msgBody').innerHTML = html;
+  document.getElementById('msgTitle').textContent = 'Calendriers iCal';
+  document.getElementById('msgModalBtns').style.display = '';
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('msgModal').style.display = 'block';
 }
 
 function showAddIcalModal() {
