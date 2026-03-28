@@ -378,6 +378,22 @@ const I18N = {
     'role.provider.title': 'Je suis prestataire de menage',
     'role.provider.desc': 'Vous faites les menages. Consultez votre planning, validez vos interventions.',
     'role.provider.plan': 'Gratuit (invite par un gerant)',
+
+    // Team
+    'team.email_required': 'Email requis',
+    'team.admin_only': 'Seuls les admins peuvent gerer l\'equipe',
+    'team.invite_error': 'Erreur lors de l\'invitation',
+    'team.remove_confirm': 'Retirer ce membre de l\'equipe ?',
+
+    // KPI
+    'kpi.properties': 'Proprietes',
+    'kpi.upcoming': 'Menages a venir',
+    'kpi.this_week': 'Cette semaine',
+    'kpi.providers': 'Prestataires',
+    'kpi.cost': 'Cout previsionnel',
+    'kpi.upcoming_provider': 'A venir',
+    'kpi.done': 'Termines',
+    'kpi.remaining': 'Restants',
   },
 
   en: {
@@ -754,6 +770,22 @@ const I18N = {
     'role.provider.title': 'I am a cleaning provider',
     'role.provider.desc': 'You do the cleanings. View your schedule, validate your work.',
     'role.provider.plan': 'Free (invited by a manager)',
+
+    // Team
+    'team.email_required': 'Email required',
+    'team.admin_only': 'Only admins can manage the team',
+    'team.invite_error': 'Error sending invitation',
+    'team.remove_confirm': 'Remove this member from the team?',
+
+    // KPI
+    'kpi.properties': 'Properties',
+    'kpi.upcoming': 'Upcoming cleanings',
+    'kpi.this_week': 'This week',
+    'kpi.providers': 'Providers',
+    'kpi.cost': 'Estimated cost',
+    'kpi.upcoming_provider': 'Upcoming',
+    'kpi.done': 'Done',
+    'kpi.remaining': 'Remaining',
   },
 
   // ═══ ESPAÑOL ═══

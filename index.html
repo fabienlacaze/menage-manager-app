@@ -2055,19 +2055,19 @@ async function loadKpiCards() {
     el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
       <div style="background:linear-gradient(135deg,#e94560,#c73e54);border-radius:12px;padding:16px;text-align:center;">
         <div style="font-size:24px;font-weight:800;color:#fff;">${(properties||[]).length}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.8);">Proprietes</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.properties')}</div>
       </div>
       <div style="background:linear-gradient(135deg,#6c63ff,#5a54e0);border-radius:12px;padding:16px;text-align:center;">
         <div style="font-size:24px;font-weight:800;color:#fff;">${future.length}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.8);">Menages a venir</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.upcoming')}</div>
       </div>
       <div style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;padding:16px;text-align:center;">
         <div style="font-size:24px;font-weight:800;color:#fff;">${week.length}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.8);">Cette semaine</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.this_week')}</div>
       </div>
       <div style="background:linear-gradient(135deg,#34d399,#059669);border-radius:12px;padding:16px;text-align:center;">
         <div style="font-size:24px;font-weight:800;color:#fff;">${provCount}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.8);">Prestataires</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.providers')}</div>
       </div>
     </div>`;
   } catch(e) { console.error('KPI error:', e); el.style.display = 'none'; }
@@ -2189,15 +2189,15 @@ async function showProviderMode() {
   html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
     <div style="background:linear-gradient(135deg,#6c63ff,#5a54e0);border-radius:12px;padding:16px;text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;">${allCleanings.length}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.8);">A venir</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.upcoming_provider')}</div>
     </div>
     <div style="background:linear-gradient(135deg,#34d399,#059669);border-radius:12px;padding:16px;text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;">${doneCount}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Termines</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.done')}</div>
     </div>
     <div style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;padding:16px;text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;">${allCleanings.length - doneCount}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Restants</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.remaining')}</div>
     </div>
   </div>`;
 
@@ -2390,19 +2390,19 @@ async function showOwnerMode() {
   html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
     <div style="background:linear-gradient(135deg,#e94560,#c73e54);border-radius:12px;padding:16px;text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;">${properties.length}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Proprietes</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.properties')}</div>
     </div>
     <div style="background:linear-gradient(135deg,#6c63ff,#5a54e0);border-radius:12px;padding:16px;text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;">${futureCleanings.length}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Menages a venir</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.upcoming')}</div>
     </div>
     <div style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;padding:16px;text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;">${weekCleanings.length}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Cette semaine</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.this_week')}</div>
     </div>
     <div style="background:linear-gradient(135deg,#34d399,#059669);border-radius:12px;padding:16px;text-align:center;">
       <div style="font-size:24px;font-weight:800;color:#fff;">${totalCost}€</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Cout previsionnel</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.cost')}</div>
     </div>
   </div>`;
 
