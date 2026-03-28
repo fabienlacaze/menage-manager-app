@@ -1150,7 +1150,6 @@ async function loadPDF() {
       <span class="panelChevron open" id="chevResults">&#9660;</span>
     </div>
     <div id="bodyResults">
-      <div id="filterBar" class="filterBar" style="padding: 0 18px; margin-top: 4px;"></div>
       <div class="tabBar">
         <button class="tabBtn active" id="tabList" onclick="switchTab('list')">&#128203; <span data-i18n="results.tab.list">Liste</span></button>
         <button class="tabBtn" id="tabCal" onclick="switchTab('calendar')">&#128197; <span data-i18n="results.tab.calendar">Calendrier</span></button>
@@ -1158,6 +1157,7 @@ async function loadPDF() {
       </div>
       <div class="tabContent">
         <div id="tabListContent">
+          <div id="filterBar" class="filterBar" style="padding: 0 18px; margin-top: 4px;"></div>
           <div id="resultDiv" class="resultScroll">
             <div class="emptyState" data-i18n="results.empty">Cliquez sur GENERER LE PLANNING pour afficher les menages</div>
           </div>
