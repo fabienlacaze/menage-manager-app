@@ -1241,7 +1241,7 @@ async function loadPDF() {
     <div style="margin-top:4px;">
       <a href="privacy.html" target="_blank" style="color:var(--text3);text-decoration:none;margin:0 8px;">Confidentialite</a>
       <span>•</span>
-      <a href="mailto:fabien65400@hotmail.fr" style="color:var(--text3);text-decoration:none;margin:0 8px;">Contact</a>
+      <a href="mailto:cleaningmanager.service@outlook.com" style="color:var(--text3);text-decoration:none;margin:0 8px;">Contact</a>
       <span>•</span>
       <a href="#" onclick="showPremiumModal();return false;" style="color:var(--accent2);text-decoration:none;margin:0 8px;">Premium</a>
     </div>
@@ -2841,23 +2841,17 @@ async function authRegister() {
     if (data.user && data.user.identities && data.user.identities.length === 0) {
       errEl.textContent = t('auth.email.taken'); return;
     }
-    // Show confirmation popup if email confirmation is pending or just sent
-    const needsConfirm = data.user && (!data.user.confirmed_at || !data.user.email_confirmed_at || (data.session === null));
-    if (needsConfirm) {
-      errEl.textContent = '';
-      showMsg('<div style="text-align:center;padding:10px;">'
-        + '<div style="font-size:48px;margin-bottom:12px;">&#9993;</div>'
-        + '<div style="font-size:18px;font-weight:700;color:#34d399;margin-bottom:8px;">Compte cree !</div>'
-        + '<div style="font-size:14px;color:var(--text2);margin-bottom:12px;">Un email de confirmation a ete envoye a</div>'
-        + '<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px;">' + esc(email) + '</div>'
-        + '<div style="font-size:13px;color:var(--text3);line-height:1.6;">Cliquez sur le lien dans l\'email<br>puis revenez vous connecter.</div>'
-        + '</div>');
-      submitBtn.style.display = 'none';
-      return;
-    }
-    errEl.style.color = '#34d399';
-    errEl.textContent = t('auth.register.connecting');
-    setTimeout(() => checkAuth(), 1000);
+    // Always show confirmation popup after successful signup
+    errEl.textContent = '';
+    await sb.auth.signOut();
+    showMsg('<div style="text-align:center;padding:10px;">'
+      + '<div style="font-size:48px;margin-bottom:12px;">&#9993;</div>'
+      + '<div style="font-size:18px;font-weight:700;color:#34d399;margin-bottom:8px;">Compte cree !</div>'
+      + '<div style="font-size:14px;color:var(--text2);margin-bottom:12px;">Un email de confirmation a ete envoye a</div>'
+      + '<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px;">' + esc(email) + '</div>'
+      + '<div style="font-size:13px;color:var(--text3);line-height:1.6;">Cliquez sur le lien dans l\'email<br>puis revenez vous connecter.<br><br><span style="font-size:11px;">Si vous ne trouvez pas l\'email, verifiez vos spams.</span></div>'
+      + '</div>');
+    return;
   } catch (e) {
     submitBtn.disabled = false; submitBtn.textContent = t('auth.register.btn');
     console.error('Register error:', e);
