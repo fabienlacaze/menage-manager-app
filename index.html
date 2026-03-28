@@ -4347,7 +4347,7 @@ async function wizardFinish() {
   const content = document.querySelector('.content');
   if (content) content.style.display = '';
   showToast('Configuration terminee ! &#127881;');
-  setTimeout(() => location.reload(), 2000);
+  setTimeout(() => init(), 1000);
 }
 
 /* ── History/Pressing sub-tabs ── */
