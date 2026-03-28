@@ -2225,8 +2225,6 @@ async function showProviderMode() {
       const statusLabel = statusLabels[status] || 'A faire';
       const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', pending: 'var(--text3)' };
       const statusColor = statusColors[status] || 'var(--text3)';
-      const source = (c.source || '').toLowerCase();
-      const badgeClass = source.includes('airbnb') ? 'background:#e94560;' : source.includes('booking') ? 'background:#003580;' : 'background:#666;';
 
       html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;${isToday ? 'border-left:3px solid #e94560;' : ''}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -2235,8 +2233,7 @@ async function showProviderMode() {
             <div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(c.propertyName)}</div>
           </div>
           <div style="text-align:right;">
-            <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;color:#fff;${badgeClass}">${esc(c.source || '')}</span>
-            <div style="font-size:12px;color:${statusColor};margin-top:4px;">${statusIcon} ${statusLabel}</div>
+            <div style="font-size:12px;color:${statusColor};">${statusIcon} ${statusLabel}</div>
           </div>
         </div>`;
 
