@@ -2855,8 +2855,10 @@ async function authRegister() {
       errEl.textContent = t('auth.email.taken'); return;
     }
     // Always show confirmation popup after successful signup
+    console.log('signUp: success, showing popup...');
     errEl.textContent = '';
-    await sb.auth.signOut();
+    try { await sb.auth.signOut(); } catch(e) { console.log('signOut error (ignored):', e); }
+    console.log('signUp: calling showMsg...');
     showMsg('<div style="text-align:center;padding:10px;">'
       + '<div style="font-size:48px;margin-bottom:12px;">&#9993;</div>'
       + '<div style="font-size:18px;font-weight:700;color:#34d399;margin-bottom:8px;">Compte cree !</div>'
