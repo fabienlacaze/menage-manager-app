@@ -885,7 +885,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v2.31</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v2.32</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -897,7 +897,7 @@ async function loadPDF() {
   </div>
   <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Cleaning Manager</div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Gestion des menages</div>
-  <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou &mdash; v2.31</div>
+  <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou &mdash; v2.32</div>
   <!-- Loading bar -->
   <div style="width:200px;height:3px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:24px;overflow:hidden;">
     <div id="splashBar" style="width:0%;height:100%;background:linear-gradient(90deg,#e94560,#6c63ff);border-radius:4px;transition:width 1.5s ease;"></div>
@@ -988,7 +988,7 @@ async function loadPDF() {
   <div class="header-left">
     <div class="header-logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 21V8l9-5 9 5v13H3z" stroke="#fff" stroke-width="1.5" fill="none"/><path d="M9 21v-6h6v6" stroke="#fff" stroke-width="1.5"/><path d="M7 11h2v2H7zM15 11h2v2h-2z" fill="#e94560"/></svg></div>
     <div>
-      <h1>Menage Manager <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v2.31</span></h1>
+      <h1>Menage Manager <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v2.32</span></h1>
       <div class="subtitle" data-i18n="header.subtitle">Gestion des menages</div>
     </div>
   </div>
@@ -999,6 +999,7 @@ async function loadPDF() {
     <button class="btnHelp" onclick="showHelp()" data-i18n-attr="title" data-i18n="header.help" title="Aide">?</button>
     <button class="btnHelp" id="btnTeam" onclick="showTeamModal()" title="Equipe" style="font-size:13px;display:none;">&#128101;</button>
     <button class="btnHelp" id="btnMarketplace" onclick="showMarketplace()" title="Annuaire" style="font-size:13px;display:none;">&#127758;</button>
+    <button class="btnHelp" onclick="showInviteModal()" title="Inviter" style="font-size:13px;">&#128279;</button>
     <button class="btnHelp" onclick="showAccountModal()" title="Mon compte" style="font-size:13px;">&#9881;</button>
     <button class="btnHelp" onclick="customConfirm(t('auth.logout.confirm')||'Se deconnecter ?','Deconnexion').then(ok=>{if(ok)authLogout()})" data-i18n-attr="title" data-i18n="header.logout" title="Deconnexion" style="font-size:13px;">&#9211;</button>
   </div>
@@ -1265,7 +1266,7 @@ async function loadPDF() {
 
   <!-- Footer -->
   <div translate="no" style="text-align:center;padding:20px 16px;color:var(--text3);font-size:11px;line-height:1.8;">
-    <div style="font-weight:600;color:var(--text2);margin-bottom:4px;">Cleaning Manager v2.31</div>
+    <div style="font-weight:600;color:var(--text2);margin-bottom:4px;">Cleaning Manager v2.32</div>
     <div>Made with ❤️ by <a href="https://github.com/fabienlacaze" target="_blank" style="color:var(--accent2);text-decoration:none;">Fabidou</a></div>
     <div style="margin-top:4px;">
       <a href="privacy.html" target="_blank" style="color:var(--text3);text-decoration:none;margin:0 8px;">Confidentialite</a>
@@ -6381,6 +6382,42 @@ function showToast(msg){
 function showMsg(msg){document.getElementById('msgBody').innerHTML=msg;document.getElementById('overlay').style.display='block';document.getElementById('msgModal').style.display='block';}
 function closeMsg(){document.getElementById('overlay').style.display='none';document.getElementById('msgModal').style.display='none';document.getElementById('msgModalBtns').style.display='';}
 function showHelp(){document.getElementById('overlay').style.display='block';document.getElementById('helpModal').style.display='block';}
+
+function showInviteModal() {
+  const appUrl = 'https://fabienlacaze.github.io/menage-manager-app/';
+  const role = API.getRole();
+  const roleTexts = {
+    admin: 'Je gere mes menages locatifs avec Cleaning Manager. Rejoins-moi !',
+    owner: 'Mon gestionnaire utilise Cleaning Manager pour organiser les menages. Essaie-le !',
+    provider: 'Je recois mes missions de menage via Cleaning Manager. Rejoins-moi !'
+  };
+  const msg = roleTexts[role] || 'Decouvre Cleaning Manager, l\'app de gestion des menages locatifs !';
+  const fullMsg = msg + '\n' + appUrl;
+  const encodedMsg = encodeURIComponent(fullMsg);
+  const encodedUrl = encodeURIComponent(appUrl);
+  const encodedSubject = encodeURIComponent('Decouvre Cleaning Manager');
+
+  let html = '<div style="padding:10px;text-align:center;">';
+  html += '<div style="font-size:20px;margin-bottom:8px;">&#128279;</div>';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:4px;">Inviter a rejoindre l\'app</div>';
+  html += '<div style="font-size:12px;color:var(--text3);margin-bottom:16px;">Plus on est nombreux, mieux c\'est !</div>';
+
+  // Share buttons
+  html += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">';
+  html += '<a href="https://wa.me/?text=' + encodedMsg + '" target="_blank" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#25D366;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;"><span style="font-size:20px;">&#128172;</span> Partager via WhatsApp</a>';
+  html += '<a href="sms:?body=' + encodedMsg + '" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#5B5EA6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;"><span style="font-size:20px;">&#128241;</span> Envoyer par SMS</a>';
+  html += '<a href="mailto:?subject=' + encodedSubject + '&body=' + encodedMsg + '" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#e94560;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;"><span style="font-size:20px;">&#9993;</span> Envoyer par Email</a>';
+  html += '<a href="https://t.me/share/url?url=' + encodedUrl + '&text=' + encodeURIComponent(msg) + '" target="_blank" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0088cc;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;"><span style="font-size:20px;">&#9993;</span> Partager via Telegram</a>';
+  html += '</div>';
+
+  // Copy link
+  html += '<div style="display:flex;gap:8px;align-items:center;">';
+  html += '<input type="text" value="' + appUrl + '" readonly style="flex:1;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;">';
+  html += '<button onclick="navigator.clipboard.writeText(\'' + appUrl + '\');this.textContent=\'Copie !\';setTimeout(()=>this.textContent=\'Copier\',2000)" style="padding:10px 16px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Copier</button>';
+  html += '</div>';
+  html += '</div>';
+  showMsg(html);
+}
 function showChangelog(){
   const log=JSON.parse(localStorage.getItem('mm_changelog')||'[]');
   let html='<div style="font-size:16px;font-weight:600;color:var(--accent);margin-bottom:14px;">Historique des modifications</div>';
