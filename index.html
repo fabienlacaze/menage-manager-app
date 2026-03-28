@@ -2842,7 +2842,7 @@ async function authRegister() {
     errEl.textContent = '';
     try { await sb.auth.signOut(); } catch(e) {}
     // Show inline confirmation in auth screen (modal is inside appMain which is hidden)
-    const authBox = document.querySelector('.authBox');
+    const authBox = document.querySelector('#authScreen > div');
     if (authBox) {
       authBox.innerHTML = '<div style="text-align:center;padding:30px 20px;">'
         + '<div style="font-size:48px;margin-bottom:12px;">&#9993;</div>'
