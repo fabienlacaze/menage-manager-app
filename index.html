@@ -2041,7 +2041,8 @@ async function loadKpiCards() {
     const org = API.getOrg();
     if (!org) { el.style.display = 'none'; return; }
     const { data: properties } = await sb.from('properties').select('id').eq('org_id', org.id);
-    const { data: plannings } = await sb.from('plannings').select('cleanings').eq('org_id', org.id);
+    const propIds = (properties || []).map(p => p.id);
+    const { data: plannings } = propIds.length ? await sb.from('plannings').select('cleanings').in('property_id', propIds) : { data: [] };
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     const weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate() + 7);
