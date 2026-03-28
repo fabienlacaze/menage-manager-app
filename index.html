@@ -290,8 +290,8 @@ async function loadPDF() {
   .provTable tr:last-child td { border-bottom: none; }
   .provTable tr:hover td { background: rgba(255,255,255,0.02); }
   .provInput { width: 100%; padding: 8px 10px; border: 1px solid var(--border2); background: rgba(255,255,255,0.04); color: var(--text); font-size: 13px; border-radius: 8px; font-family: 'Inter', sans-serif; }
-  .pctInput { width: 60px; text-align: center; padding: 6px 4px; }
-  .colPct { width: 65px; text-align: center; }
+  .pctInput { width: 80px; text-align: center; padding: 6px 4px; box-sizing: border-box; }
+  .colPct { width: 85px; text-align: center; }
   .colVac { width: 80px; text-align: center; }
   .colLink { width: 45px; text-align: center; }
   .colDel { width: 35px; }
@@ -885,7 +885,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v2.20</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v2.30</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -897,7 +897,7 @@ async function loadPDF() {
   </div>
   <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Cleaning Manager</div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Gestion des menages</div>
-  <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou &mdash; v2.20</div>
+  <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou &mdash; v2.30</div>
   <!-- Loading bar -->
   <div style="width:200px;height:3px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:24px;overflow:hidden;">
     <div id="splashBar" style="width:0%;height:100%;background:linear-gradient(90deg,#e94560,#6c63ff);border-radius:4px;transition:width 1.5s ease;"></div>
@@ -988,7 +988,7 @@ async function loadPDF() {
   <div class="header-left">
     <div class="header-logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 21V8l9-5 9 5v13H3z" stroke="#fff" stroke-width="1.5" fill="none"/><path d="M9 21v-6h6v6" stroke="#fff" stroke-width="1.5"/><path d="M7 11h2v2H7zM15 11h2v2h-2z" fill="#e94560"/></svg></div>
     <div>
-      <h1>Menage Manager <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v2.20</span></h1>
+      <h1>Menage Manager <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v2.30</span></h1>
       <div class="subtitle" data-i18n="header.subtitle">Gestion des menages</div>
     </div>
   </div>
@@ -998,6 +998,7 @@ async function loadPDF() {
     <button class="btnHelp" onclick="toggleTheme()" data-i18n-attr="title" data-i18n="header.theme" title="Theme clair/sombre" id="themeBtn" style="font-size:15px;">&#9788;</button>
     <button class="btnHelp" onclick="showHelp()" data-i18n-attr="title" data-i18n="header.help" title="Aide">?</button>
     <button class="btnHelp" id="btnTeam" onclick="showTeamModal()" title="Equipe" style="font-size:13px;display:none;">&#128101;</button>
+    <button class="btnHelp" id="btnMarketplace" onclick="showMarketplace()" title="Annuaire" style="font-size:13px;display:none;">&#127758;</button>
     <button class="btnHelp" onclick="showAccountModal()" title="Mon compte" style="font-size:13px;">&#9881;</button>
     <button class="btnHelp" onclick="customConfirm(t('auth.logout.confirm')||'Se deconnecter ?','Deconnexion').then(ok=>{if(ok)authLogout()})" data-i18n-attr="title" data-i18n="header.logout" title="Deconnexion" style="font-size:13px;">&#9211;</button>
   </div>
@@ -1235,9 +1236,36 @@ async function loadPDF() {
     </div>
   </div>
 
+  <!-- Marketplace Modal -->
+  <div id="marketplaceModal" class="modal" style="max-width:700px;display:none;">
+    <div class="modalHeader" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>&#127758; Annuaire des professionnels</span>
+      <button class="btn btnSmall" onclick="closeMarketplace()" style="padding:4px 10px;font-size:16px;">&#10005;</button>
+    </div>
+    <div class="modalBody" style="padding:16px;">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <select id="mkRoleFilter" onchange="filterMarketplace()" style="padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;">
+          <option value="">Tous les profils</option>
+          <option value="provider">Prestataires</option>
+          <option value="owner">Proprietaires</option>
+          <option value="admin">Conciergeries</option>
+        </select>
+        <input type="text" id="mkCityFilter" placeholder="Ville ou code postal..." oninput="filterMarketplace()" style="flex:1;min-width:150px;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;">
+        <select id="mkRadiusFilter" onchange="filterMarketplace()" style="padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;">
+          <option value="0">Toutes distances</option>
+          <option value="10">10 km</option>
+          <option value="20" selected>20 km</option>
+          <option value="50">50 km</option>
+          <option value="100">100 km</option>
+        </select>
+      </div>
+      <div id="mkResults" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div translate="no" style="text-align:center;padding:20px 16px;color:var(--text3);font-size:11px;line-height:1.8;">
-    <div style="font-weight:600;color:var(--text2);margin-bottom:4px;">Cleaning Manager v2.20</div>
+    <div style="font-weight:600;color:var(--text2);margin-bottom:4px;">Cleaning Manager v2.30</div>
     <div>Made with ❤️ by <a href="https://github.com/fabienlacaze" target="_blank" style="color:var(--accent2);text-decoration:none;">Fabidou</a></div>
     <div style="margin-top:4px;">
       <a href="privacy.html" target="_blank" style="color:var(--text3);text-decoration:none;margin:0 8px;">Confidentialite</a>
@@ -1304,6 +1332,17 @@ async function loadPDF() {
     <div style="margin-bottom:20px;">
       <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;">PLAN</label>
       <div id="accountPlan" style="padding:10px 14px;background:var(--surface2);border-radius:8px;color:var(--text);font-size:14px;margin-top:4px;"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--surface2);border-radius:8px;margin-bottom:8px;">
+      <div>
+        <div style="font-size:13px;font-weight:600;">&#127758; Visible dans l'annuaire</div>
+        <div style="font-size:11px;color:var(--text3);">Les autres utilisateurs peuvent vous trouver</div>
+      </div>
+      <label style="position:relative;width:44px;height:24px;cursor:pointer;">
+        <input type="checkbox" id="mkVisibleToggle" onchange="toggleMarketplaceVisibility(this.checked)" style="opacity:0;width:0;height:0;">
+        <span style="position:absolute;inset:0;background:var(--border2);border-radius:12px;transition:0.3s;"></span>
+        <span style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:0.3s;"></span>
+      </label>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <button class="btn btnOutline" style="padding:12px;font-size:13px;" onclick="changePassword()">&#128274; Changer le mot de passe</button>
@@ -3412,6 +3451,8 @@ function updatePlanUI() {
   if (adBanner) adBanner.style.display = isPremium ? 'none' : 'block';
   const btnTeam = document.getElementById('btnTeam');
   if (btnTeam) btnTeam.style.display = isBusiness ? '' : 'none';
+  const btnMk = document.getElementById('btnMarketplace');
+  if (btnMk) btnMk.style.display = isPremium ? '' : 'none';
   // Update header with plan + role badges
   const h1 = document.querySelector('.header h1');
   if (h1) {
@@ -6330,7 +6371,144 @@ function showChangelog(){
   document.getElementById('msgBody').innerHTML=html;document.getElementById('overlay').style.display='block';document.getElementById('msgModal').style.display='block';
 }
 function closeHelp(){document.getElementById('overlay').style.display='none';document.getElementById('helpModal').style.display='none';}
-function closeAllModals(){closeMsg();closeVacModal();closeHelp();closePremiumModal();closeAddProviderModal();closeAccount();document.querySelectorAll('.modal').forEach(m=>m.style.display='none');document.getElementById('overlay').style.display='none';}
+function closeAllModals(){closeMsg();closeVacModal();closeHelp();closePremiumModal();closeAddProviderModal();closeAccount();closeMarketplace();document.querySelectorAll('.modal').forEach(m=>m.style.display='none');document.getElementById('overlay').style.display='none';}
+// ═══ MARKETPLACE / ANNUAIRE ═══
+let _mkAllProfiles = [];
+
+async function showMarketplace() {
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('marketplaceModal').style.display = 'block';
+  document.getElementById('mkResults').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);">Chargement...</div>';
+  try {
+    const { data, error } = await sb
+      .from('marketplace_profiles')
+      .select('*')
+      .eq('visible', true);
+    if (error) throw error;
+    _mkAllProfiles = data || [];
+    filterMarketplace();
+  } catch (e) {
+    console.error('Marketplace load error:', e);
+    document.getElementById('mkResults').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);">Erreur de chargement</div>';
+  }
+}
+
+function closeMarketplace() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('marketplaceModal').style.display = 'none';
+}
+
+function filterMarketplace() {
+  const role = document.getElementById('mkRoleFilter').value;
+  const city = document.getElementById('mkCityFilter').value.trim().toLowerCase();
+  const radius = parseInt(document.getElementById('mkRadiusFilter').value) || 0;
+  let filtered = _mkAllProfiles;
+  if (role) filtered = filtered.filter(p => p.role === role);
+  if (city) filtered = filtered.filter(p => (p.city || '').toLowerCase().includes(city) || (p.postal_code || '').includes(city));
+  // Distance filtering (if user has coords and radius > 0)
+  if (radius > 0 && navigator.geolocation) {
+    // We'll do client-side distance calc if profiles have lat/lng
+    filtered = filtered.filter(p => {
+      if (!p.lat || !p.lng) return true; // show profiles without coords
+      return true; // distance calc requires async geolocation, done in renderMarketplaceResults
+    });
+  }
+  renderMarketplaceResults(filtered);
+}
+
+function renderMarketplaceResults(profiles) {
+  const container = document.getElementById('mkResults');
+  if (!profiles.length) {
+    container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);">Aucun profil trouve</div>';
+    return;
+  }
+  const roleColors = { provider: '#34d399', owner: '#f59e0b', admin: '#e94560' };
+  const roleLabels = { provider: 'Prestataire', owner: 'Proprietaire', admin: 'Conciergerie' };
+  let html = '';
+  profiles.forEach(p => {
+    const color = roleColors[p.role] || '#6c63ff';
+    const label = roleLabels[p.role] || p.role;
+    html += `<div style="padding:14px;margin-bottom:10px;background:var(--surface2);border-radius:10px;border-left:3px solid ${color};">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-weight:700;font-size:14px;color:var(--text);">${_escHtml(p.display_name || 'Sans nom')}</span>
+        <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${color};color:#fff;font-weight:600;">${label}</span>
+      </div>
+      ${p.city ? `<div style="font-size:12px;color:var(--text2);margin-bottom:4px;">&#128205; ${_escHtml(p.city)}${p.postal_code ? ' (' + _escHtml(p.postal_code) + ')' : ''}</div>` : ''}
+      ${p.tarif ? `<div style="font-size:12px;color:var(--text2);margin-bottom:4px;">&#128176; ${_escHtml(p.tarif)}</div>` : ''}
+      ${p.description ? `<div style="font-size:12px;color:var(--text3);margin-bottom:6px;">${_escHtml(p.description)}</div>` : ''}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        ${p.phone ? `<a href="tel:${_escHtml(p.phone)}" style="font-size:12px;color:var(--accent);text-decoration:none;">&#128222; ${_escHtml(p.phone)}</a>` : ''}
+        ${p.email ? `<a href="mailto:${_escHtml(p.email)}" style="font-size:12px;color:var(--accent);text-decoration:none;">&#9993; ${_escHtml(p.email)}</a>` : ''}
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function _escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function toggleMarketplaceVisibility(visible) {
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const toggle = document.getElementById('mkVisibleToggle');
+    // Update toggle visual
+    const spans = toggle.parentElement.querySelectorAll('span');
+    if (spans[0]) spans[0].style.background = visible ? 'var(--success)' : 'var(--border2)';
+    if (spans[1]) spans[1].style.left = visible ? '22px' : '2px';
+
+    const profileData = {
+      user_id: user.id,
+      visible: visible,
+      display_name: user.user_metadata?.display_name || user.email.split('@')[0],
+      email: user.email,
+      role: currentRole || 'admin',
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await sb
+      .from('marketplace_profiles')
+      .upsert(profileData, { onConflict: 'user_id' });
+    if (error) throw error;
+    showToast(visible ? 'Profil visible dans l\'annuaire' : 'Profil masque de l\'annuaire');
+  } catch (e) {
+    console.error('Marketplace toggle error:', e);
+    showToast('Erreur lors de la mise a jour');
+  }
+}
+
+async function loadMarketplaceProfile() {
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data, error } = await sb
+      .from('marketplace_profiles')
+      .select('visible')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const toggle = document.getElementById('mkVisibleToggle');
+    if (toggle) {
+      const isVisible = data?.visible || false;
+      toggle.checked = isVisible;
+      const spans = toggle.parentElement.querySelectorAll('span');
+      if (spans[0]) spans[0].style.background = isVisible ? 'var(--success)' : 'var(--border2)';
+      if (spans[1]) spans[1].style.left = isVisible ? '22px' : '2px';
+    }
+  } catch (e) {
+    console.error('Load marketplace profile error:', e);
+  }
+}
+
+// Hook into showAccountModal to load marketplace profile
+const _origShowAccountModal = showAccountModal;
+showAccountModal = async function() {
+  await _origShowAccountModal();
+  loadMarketplaceProfile();
+};
+
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(err=>console.log('SW:',err));}
 </script>
 </div><!-- /appMain -->
