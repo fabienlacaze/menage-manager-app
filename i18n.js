@@ -978,6 +978,14 @@ function setLang(lang) {
   });
   // Update lang button if exists
   if (typeof updateLangButton === 'function') updateLangButton();
+  // Update login flag selection
+  document.querySelectorAll('.lang-flag').forEach(el => {
+    const isActive = el.getAttribute('data-lang') === lang;
+    el.style.border = isActive ? '2px solid var(--accent)' : '2px solid transparent';
+    el.style.background = isActive ? 'rgba(233,69,96,0.15)' : 'none';
+    el.style.transform = isActive ? 'scale(1.1)' : 'scale(1)';
+    el.style.opacity = isActive ? '1' : '0.5';
+  });
   // Update auth tab text
   if (typeof switchAuthTab === 'function' && typeof authMode !== 'undefined') {
     const tabLogin = document.getElementById('tabLogin');
