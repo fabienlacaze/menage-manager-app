@@ -2030,6 +2030,15 @@ async function init() {
   }
 }
 
+function appendRoleBadge(h1) {
+  const role = API.getRole();
+  const roleLabels = { admin: 'Conciergerie', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
+  const roleColors = { admin: '#e94560', manager: '#e94560', owner: '#f59e0b', provider: '#34d399' };
+  if (role && roleLabels[role]) {
+    h1.insertAdjacentHTML('beforeend', ' <span class="roleBadge" onclick="showRoleChangeModal()" style="display:inline-block;font-size:9px;padding:2px 8px;border-radius:10px;background:' + (roleColors[role]||'#666') + '22;color:' + (roleColors[role]||'#666') + ';font-weight:600;vertical-align:middle;border:1px solid ' + (roleColors[role]||'#666') + '44;cursor:pointer;" title="Changer de role">' + roleLabels[role] + '</span>');
+  }
+}
+
 /* ── Provider Mode ── */
 async function showProviderMode() {
   const content = document.querySelector('.content');
@@ -2116,7 +2125,10 @@ async function showProviderMode() {
   const headerEl = document.querySelector('.header');
   if (headerEl) {
     const h1 = headerEl.querySelector('h1');
-    if (h1) h1.innerHTML = '&#128167; ' + esc(providerName);
+    if (h1) {
+      h1.innerHTML = '&#128167; ' + esc(providerName);
+      appendRoleBadge(h1);
+    }
     const sub = headerEl.querySelector('.sub-title');
     if (sub) sub.textContent = 'Mode prestataire';
     // Hide unnecessary header buttons
@@ -2291,7 +2303,10 @@ async function showOwnerMode() {
   const headerEl = document.querySelector('.header');
   if (headerEl) {
     const h1 = headerEl.querySelector('h1');
-    if (h1) h1.innerHTML = '&#127968; Mes proprietes';
+    if (h1) {
+      h1.innerHTML = '&#127968; Mes proprietes';
+      appendRoleBadge(h1);
+    }
     document.querySelectorAll('.header-actions .btnHelp').forEach(btn => {
       const onclick = btn.getAttribute('onclick') || '';
       if (!onclick.includes('authLogout') && !onclick.includes('toggleTheme') && !onclick.includes('showAccountModal')) {
@@ -3169,12 +3184,7 @@ function updatePlanUI() {
       h1.insertAdjacentHTML('beforeend', ' <span class="premiumBadge" style="' + badgeColor + '">' + badgeText + '</span>');
     }
     // Role badge
-    const role = API.getRole();
-    const roleLabels = { admin: 'Conciergerie', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
-    const roleColors = { admin: '#e94560', manager: '#e94560', owner: '#f59e0b', provider: '#34d399' };
-    if (role && roleLabels[role]) {
-      h1.insertAdjacentHTML('beforeend', ' <span class="roleBadge" onclick="showRoleChangeModal()" style="display:inline-block;font-size:9px;padding:2px 8px;border-radius:10px;background:' + (roleColors[role]||'#666') + '22;color:' + (roleColors[role]||'#666') + ';font-weight:600;vertical-align:middle;border:1px solid ' + (roleColors[role]||'#666') + '44;cursor:pointer;" title="Changer de role">' + roleLabels[role] + '</span>');
-    }
+    appendRoleBadge(h1);
   }
   // Communication section: blur premium features
   const commLock = document.getElementById('commPremLock');
