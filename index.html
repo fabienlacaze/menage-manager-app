@@ -2152,7 +2152,7 @@ async function showProviderMode() {
     if (planning && planning.cleanings) {
       planning.cleanings
         .filter(c => c.provider === providerName && (c.cleaningDate || c.date) >= today)
-        .forEach(c => allCleanings.push({ ...c, propertyId: prop.id, propertyName: prop.name, checklist: prop.checklist || [] }));
+        .forEach(c => allCleanings.push({ ...c, propertyId: prop.id, propertyName: prop.name, propertyAddress: prop.address || '', checklist: prop.checklist || [] }));
     }
   }
 
@@ -2235,7 +2235,7 @@ async function showProviderMode() {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div>
             <div style="font-weight:700;font-size:15px;color:var(--accent);">${c.dayName || ''} ${fmtDate(dateStr)}${isToday ? ' <span style="background:#e94560;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;">AUJOURD\'HUI</span>' : ''}</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(c.propertyName)}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(c.propertyName)}${c.propertyAddress ? ' — <span style="color:var(--text3);">' + esc(c.propertyAddress) + '</span>' : ''}</div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:12px;color:${statusColor};">${statusIcon} ${statusLabel}</div>
@@ -2271,10 +2271,14 @@ async function showProviderMode() {
           <button onclick="refuseCleaning('${c.propertyId}','${dateStr}','${esc(providerName)}')" style="flex:1;padding:10px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#10007; Refuser</button>
         </div>`;
       } else if (status === 'accepted') {
-        // Step 2: En route
-        html += `<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
-          <button onclick="providerValidate('${c.propertyId}','${dateStr}','${esc(providerName)}','arrived',this)" style="flex:1;padding:12px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#128692; En route / Je suis arrive</button>
-        </div>`;
+        // Step 2: En route — only on the day of cleaning
+        if (isToday) {
+          html += `<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+            <button onclick="providerValidate('${c.propertyId}','${dateStr}','${esc(providerName)}','arrived',this)" style="flex:1;padding:12px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">&#128692; En route / Je suis arrive</button>
+          </div>`;
+        } else {
+          html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);text-align:center;">Le jour du menage, vous pourrez signaler votre arrivee ici</div>`;
+        }
       } else if (status === 'arrived') {
         // Step 3: Start cleaning
         html += `<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
@@ -2784,13 +2788,29 @@ async function markCleaningAsSeen(propId, date, provName) {
   }, { onConflict: 'property_id,cleaning_date,provider_name' });
 }
 
+async function getGestionnaireName() {
+  const org = API.getOrg();
+  if (!org) return 'votre gestionnaire';
+  const { data: members } = await sb.from('members').select('*, profiles(email)').eq('org_id', org.id).in('role', ['admin','manager']).limit(1);
+  if (members && members.length) {
+    return members[0].profiles?.email?.split('@')[0] || 'votre gestionnaire';
+  }
+  return 'votre gestionnaire';
+}
+
 async function acceptCleaning(propId, date, provName) {
   const { data: { user } } = await sb.auth.getUser();
   await sb.from('cleaning_validations').upsert({
     property_id: propId, cleaning_date: date, provider_name: provName,
     status: 'accepted', validated_at: new Date().toISOString(), validated_by: user.id,
   }, { onConflict: 'property_id,cleaning_date,provider_name' });
-  showToast('Menage accepte ✓✓');
+  // Send auto-message
+  const org = API.getOrg();
+  if (org) {
+    await sb.from('messages').insert({ org_id: org.id, property_id: propId, sender_id: user.id, sender_name: provName, sender_role: 'provider', recipient_name: 'gestionnaire', body: '✓✓ ' + provName + ' a accepte le menage du ' + fmtDate(date) });
+  }
+  const gName = await getGestionnaireName();
+  showToast('✓ Menage accepte — ' + gName + ' a ete notifie(e)');
   showProviderMode();
 }
 
@@ -2800,7 +2820,13 @@ async function refuseCleaning(propId, date, provName) {
     property_id: propId, cleaning_date: date, provider_name: provName,
     status: 'refused', validated_at: new Date().toISOString(), validated_by: user.id,
   }, { onConflict: 'property_id,cleaning_date,provider_name' });
-  showToast('Menage refuse — le gestionnaire sera notifie');
+  // Send auto-message
+  const org = API.getOrg();
+  if (org) {
+    await sb.from('messages').insert({ org_id: org.id, property_id: propId, sender_id: user.id, sender_name: provName, sender_role: 'provider', recipient_name: 'gestionnaire', body: '❌ ' + provName + ' a refuse le menage du ' + fmtDate(date) });
+  }
+  const gName = await getGestionnaireName();
+  showToast('✗ Menage refuse — ' + gName + ' a ete notifie(e)');
   showProviderMode();
 }
 
