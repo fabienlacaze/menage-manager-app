@@ -2833,6 +2833,17 @@ async function authRegister() {
         submitBtn.textContent = t('auth.register.btn');
         return;
         tick();
+      } else if (error.message && (error.message.includes('504') || error.message.includes('timeout') || error.message.includes('Gateway'))) {
+        // SMTP timeout — account likely created but email failed
+        errEl.textContent = '';
+        showMsg('<div style="text-align:center;padding:10px;">'
+          + '<div style="font-size:48px;margin-bottom:12px;">&#9888;</div>'
+          + '<div style="font-size:18px;font-weight:700;color:#f59e0b;margin-bottom:8px;">Compte probablement cree</div>'
+          + '<div style="font-size:14px;color:var(--text2);margin-bottom:12px;">L\'envoi de l\'email a echoue (timeout serveur).</div>'
+          + '<div style="font-size:13px;color:var(--text3);line-height:1.6;">Essayez de vous connecter directement.<br>Si ca ne marche pas, re-essayez dans quelques minutes.</div>'
+          + '</div>');
+        submitBtn.disabled = false;
+        submitBtn.textContent = t('auth.register.btn');
       } else {
         errEl.textContent = error.message;
       }
