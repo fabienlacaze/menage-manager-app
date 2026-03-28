@@ -290,8 +290,8 @@ async function loadPDF() {
   .provTable tr:last-child td { border-bottom: none; }
   .provTable tr:hover td { background: rgba(255,255,255,0.02); }
   .provInput { width: 100%; padding: 8px 10px; border: 1px solid var(--border2); background: rgba(255,255,255,0.04); color: var(--text); font-size: 13px; border-radius: 8px; font-family: 'Inter', sans-serif; }
-  .pctInput { width: 90px; text-align: center; }
-  .colPct { width: 90px; text-align: center; }
+  .pctInput { width: 60px; text-align: center; padding: 6px 4px; }
+  .colPct { width: 65px; text-align: center; }
   .colVac { width: 80px; text-align: center; }
   .colLink { width: 45px; text-align: center; }
   .colDel { width: 35px; }
@@ -1082,20 +1082,17 @@ async function loadPDF() {
     <div class="panelBody" id="bodyConfig">
       <!-- Property name + actions -->
       <select id="propSelect" style="display:none;"></select>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <input type="text" id="propNameInput" placeholder="Nom du logement" onchange="updatePropName(this.value)" style="flex:1;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:15px;font-weight:600;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <input type="text" id="propNameInput" placeholder="Nom du logement" onchange="updatePropName(this.value)" style="flex:1;min-width:150px;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:15px;font-weight:600;">
         <button class="btnLocation" onclick="openPropDetail()" title="Details" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#9998;</button>
         <button class="btnLocation" onclick="openMapForProperty()" id="btnPropLocation" title="Position" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#128205;</button>
+        <button class="btnLocation" onclick="showIcalModal()" title="Calendriers iCal" style="font-size:16px;border-color:rgba(255,255,255,0.25);">&#128197;</button>
+        <!-- Property quick info (inline) -->
+        <span id="propQuickInfo" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></span>
       </div>
-      <div id="propertySelector" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+      <div id="propertySelector" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
         <button class="btn btnSmall btnSuccess" onclick="addNewProperty()" style="padding:6px 14px;font-size:12px;" data-i18n="property.add">+ Ajouter</button>
         <button class="btn btnSmall btnDanger" id="btnRemoveProp" onclick="removeCurrentProperty()" style="padding:6px 10px;font-size:12px;display:none;">&#128465;</button>
-      </div>
-      <!-- Property quick info -->
-      <div id="propQuickInfo" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);"></div>
-      <!-- iCal button -->
-      <div style="margin-top:4px;">
-        <button class="btn btnSmall btnOutline" onclick="showIcalModal()" style="padding:8px 16px;font-size:12px;">&#128197; Calendriers iCal</button>
       </div>
       <!-- Hidden iCal list (rendered in modal) -->
       <div id="icalList" style="display:none;"></div>
@@ -4828,10 +4825,8 @@ function renderProviders() {
     totalPct += parseInt(p.percentage) || 0;
   });
   html += '</table>';
-  if (providers.length > 0) {
-    html += totalPct === 100
-      ? `<div class="pctOk">&#10003; Total : ${totalPct}%</div>`
-      : `<div class="pctBad">&#10007; Total : ${totalPct}% (doit etre 100%)</div>`;
+  if (providers.length > 0 && totalPct !== 100) {
+    html += `<div class="pctBad">&#10007; Total : ${totalPct}% (doit etre 100%)</div>`;
   }
   document.getElementById('providerList').innerHTML = html;
 }
