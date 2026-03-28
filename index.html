@@ -1246,7 +1246,7 @@ async function loadPDF() {
       <span>•</span>
       <a href="mailto:cleaningmanager.service@outlook.com" style="color:var(--text3);text-decoration:none;margin:0 8px;">Contact</a>
       <span>•</span>
-      <a href="#" onclick="showPremiumModal();return false;" style="color:var(--accent2);text-decoration:none;margin:0 8px;">Premium</a>
+      <a href="#" id="footerPremiumLink" onclick="showPremiumModal();return false;" style="color:var(--accent2);text-decoration:none;margin:0 8px;">Premium</a>
     </div>
   </div>
 
@@ -2175,13 +2175,18 @@ async function showProviderMode() {
     }
     const sub = headerEl.querySelector('.sub-title');
     if (sub) sub.textContent = 'Mode prestataire';
-    // Hide unnecessary header buttons
+    // Hide unnecessary header buttons for provider
     document.querySelectorAll('.header-actions .btnHelp').forEach(btn => {
       if (!btn.onclick?.toString().includes('authLogout') && !btn.onclick?.toString().includes('toggleTheme')) {
         btn.style.display = 'none';
       }
     });
+    // Hide premium button for provider
+    const premBtn = headerEl.querySelector('.btnPremium');
+    if (premBtn) premBtn.style.display = 'none';
   }
+  const footerPrem = document.getElementById('footerPremiumLink');
+  if (footerPrem) footerPrem.style.display = 'none';
 
   let html = '';
 
@@ -3251,12 +3256,23 @@ function closePremiumModal() {
 function showPremiumModal(reason) {
   const reasonEl = document.getElementById('premiumReason');
   if (reasonEl) {
-    if (reason) {
-      reasonEl.textContent = reason;
-      reasonEl.style.display = 'block';
-    } else {
-      reasonEl.style.display = 'none';
-    }
+    if (reason) { reasonEl.textContent = reason; reasonEl.style.display = 'block'; }
+    else { reasonEl.style.display = 'none'; }
+  }
+  // Adapt pricing table based on role
+  const role = API.getRole();
+  const table = document.querySelector('#premiumModal table');
+  if (table) {
+    // Pro column = index 2, Business column = index 3
+    const showPro = (role === 'owner' || !role);
+    const showBiz = (role === 'admin' || role === 'manager' || !role);
+    table.querySelectorAll('tr').forEach(row => {
+      const cells = row.querySelectorAll('th, td');
+      if (cells.length >= 4) {
+        cells[2].style.display = showPro ? '' : 'none';
+        cells[3].style.display = showBiz ? '' : 'none';
+      }
+    });
   }
   document.getElementById('overlay').style.display = 'block';
   document.getElementById('premiumModal').style.display = 'block';
