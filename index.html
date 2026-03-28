@@ -1763,6 +1763,7 @@ async function loadActiveProperty() {
   if (tplEl) { tplEl.value = (prop.messageTemplate) || getDefaultTemplate(); previewTemplate(); }
   renderProviders();
   const saved = await API.load_planning();
+  reservations = await API.load_reservations();
   if (saved && saved.length > 0) {
     cleanings = saved;
     currentFilter = '';
@@ -4982,7 +4983,7 @@ function logAction(action, detail='') {
   localStorage.setItem('mm_changelog', JSON.stringify(log));
 }
 async function saveConfig() { const res = await syncAndSaveConfig(); if(res&&res.config) fullConfig=res.config; logAction('Config sauvegardee', (config.providers||[]).map(p=>p.name).join(', ')); showToast(t('config.saved')); }
-async function savePlanning() { if(cleanings.length>0) { await API.save_planning(cleanings); logAction('Planning sauvegarde', cleanings.length+' menage(s)'); } }
+async function savePlanning() { if(cleanings.length>0) { await API.save_planning(cleanings); await API.save_reservations(reservations); logAction('Planning sauvegarde', cleanings.length+' menage(s)'); } }
 
 /* ── Generate Planning ── */
 async function generatePlanning(isAuto) {

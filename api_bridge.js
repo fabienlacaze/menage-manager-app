@@ -375,6 +375,22 @@ const API = (function() {
       }
     },
 
+    // ─── Reservations ───
+    async load_reservations() {
+      if (!activePropertyId) return [];
+      if (currentOrg) {
+        const p = await loadPlanning(activePropertyId);
+        return p.reservations || [];
+      }
+      return [];
+    },
+    async save_reservations(reservations) {
+      if (!activePropertyId || !reservations) return;
+      if (currentOrg) {
+        await savePlanningData(activePropertyId, 'reservations', reservations);
+      }
+    },
+
     // ─── Transmitted ───
     async load_transmitted() {
       if (!activePropertyId) return [];
