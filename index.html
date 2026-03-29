@@ -910,7 +910,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.00</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.01</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -922,7 +922,7 @@ async function loadPDF() {
   </div>
   <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio</div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie</div>
-  <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou &mdash; v5.00</div>
+  <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou &mdash; v5.01</div>
   <!-- Loading bar -->
   <div style="width:200px;height:3px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:24px;overflow:hidden;">
     <div id="splashBar" style="width:0%;height:100%;background:linear-gradient(90deg,#e94560,#6c63ff);border-radius:4px;transition:width 1.5s ease;"></div>
@@ -1013,7 +1013,7 @@ async function loadPDF() {
   <div class="header-left">
     <div class="header-logo" style="width:28px;height:28px;background:linear-gradient(135deg,#e94560,#6c63ff);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff;">L</div>
     <div>
-      <h1>Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v5.00</span></h1>
+      <h1>Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v5.01</span></h1>
       <div class="subtitle" data-i18n="header.subtitle">Services et conciergerie</div>
     </div>
   </div>
@@ -1342,7 +1342,7 @@ async function loadPDF() {
 
   <!-- Footer -->
   <div translate="no" style="position:fixed;bottom:0;left:0;right:0;text-align:center;padding:4px 16px 2px;color:var(--text3);font-size:9px;line-height:1.4;background:linear-gradient(180deg,#0f0f1a 0%,#0a0a14 100%);z-index:101;">
-    <div style="font-weight:600;color:var(--text2);margin-bottom:4px;">Lokizio v5.00</div>
+    <div style="font-weight:600;color:var(--text2);margin-bottom:4px;">Lokizio v5.01</div>
     <div>Made with ❤️ by <a href="https://github.com/fabienlacaze" target="_blank" style="color:var(--accent2);text-decoration:none;">Fabidou</a></div>
     <div style="margin-top:4px;">
       <a href="privacy.html" target="_blank" style="color:var(--text3);text-decoration:none;margin:0 8px;">Confidentialite</a>
@@ -2481,7 +2481,7 @@ async function showProviderMode() {
   if (headerEl) {
     const h1 = headerEl.querySelector('h1');
     if (h1) {
-      h1.innerHTML = 'Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v5.00</span>';
+      h1.innerHTML = 'Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v5.01</span>';
       appendRoleBadge(h1);
     }
     const sub = headerEl.querySelector('.sub-title');
@@ -2970,7 +2970,7 @@ async function showOwnerMode() {
   if (headerEl) {
     const h1 = headerEl.querySelector('h1');
     if (h1) {
-      h1.innerHTML = 'Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v5.00</span>';
+      h1.innerHTML = 'Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v5.01</span>';
       appendRoleBadge(h1);
     }
     document.querySelectorAll('.header-actions .btnHelp').forEach(btn => {
@@ -8416,12 +8416,28 @@ showAccountModal = async function() {
 };
 
 // ─── Service Requests ───
-function showServiceRequestModal() {
-  const prop = API.getActiveProperty(fullConfig);
-  if (!prop) return showToast('Selectionnez une propriete');
+async function showServiceRequestModal() {
+  const org = API.getOrg();
+  if (!org) return showToast('Aucune organisation');
+  // Load properties for selector
+  let properties = [];
+  try {
+    const { data } = await sb.from('properties').select('id,name').eq('org_id', org.id).order('name');
+    properties = data || [];
+  } catch(e) {}
+  const activeProp = API.getActiveProperty ? API.getActiveProperty(fullConfig) : null;
+  if (properties.length === 0) return showToast('Aucune propriete');
   let html = '<div style="padding:10px;">';
   html += '<div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:12px;text-align:center;">Demander un service</div>';
-  html += '<div style="font-size:12px;color:var(--text3);margin-bottom:12px;text-align:center;">Choisissez le service et la date souhaitee</div>';
+  html += '<div style="font-size:12px;color:var(--text3);margin-bottom:12px;text-align:center;">Choisissez le bien, le service et la date</div>';
+  // Property selector
+  html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Bien</label>';
+  html += '<select id="svcReqProperty" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:10px;">';
+  properties.forEach(p => {
+    const selected = (activeProp && activeProp.id === p.id) ? ' selected' : (properties.length === 1 ? ' selected' : '');
+    html += '<option value="' + p.id + '"' + selected + '>' + (p.name || 'Sans nom') + '</option>';
+  });
+  html += '</select>';
   // Service selection by category
   html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Service</label>';
   html += '<select id="svcReqType" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:10px;">';
@@ -8461,13 +8477,17 @@ async function submitServiceRequest() {
   const priority = document.getElementById('svcReqPriority').value;
   const desc = document.getElementById('svcReqDesc').value.trim();
   if (!date) return showToast('Choisissez une date');
+  const propertyId = document.getElementById('svcReqProperty').value;
+  if (!propertyId) return showToast('Choisissez un bien');
   const org = API.getOrg();
-  const prop = API.getActiveProperty(fullConfig);
   const { data: { user } } = await sb.auth.getUser();
   const catObj = SERVICE_CATALOG.find(c => c.services.some(s => s.id === serviceType));
+  const propSelect = document.getElementById('svcReqProperty');
+  const propName = propSelect ? propSelect.options[propSelect.selectedIndex].text : '';
   const { error } = await sb.from('service_requests').insert({
     org_id: org.id,
-    property_id: prop.id,
+    property_id: propertyId,
+    property_name: propName,
     requester_id: user.id,
     service_type: serviceType,
     service_category: catObj ? catObj.cat : 'other',
