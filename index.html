@@ -910,7 +910,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.12</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.13</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -2688,6 +2688,9 @@ async function showProviderMode() {
   // ═══ TAB 2: Prestations (unified) ═══
   html += '<div id="provContentPrestations" style="display:none;">';
 
+  // Header
+  html += '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">📋 Mes prestations</div>';
+
   // Filter buttons
   html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">';
   html += '<button class="prestFilter active" onclick="filterPrestations(\'all\')">Tout (' + catCounts.all + ')</button>';
@@ -3249,6 +3252,12 @@ async function showOwnerMode() {
 
   // ═══ TAB 3: Prestations (unified) ═══
   html += '<div id="ownerContentPrestations" style="display:none;">';
+
+  // Header with + Demander button
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--text);">📋 Prestations</div>';
+  html += '<button class="btn btnSmall btnPrimary" onclick="showServiceRequestModal()" style="padding:8px 14px;font-size:12px;">+ Demander</button>';
+  html += '</div>';
 
   // Filter buttons
   html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">';
@@ -8876,11 +8885,69 @@ let _fullChatProvider = '';
 // Admin full chat
 async function initFullChat() {
   const sel = document.getElementById('fullChatProvSelect');
-  if (sel && config && config.providers) {
-    sel.innerHTML = '<option value="">-- Choisir un contact --</option>';
-    config.providers.forEach(p => {
-      sel.innerHTML += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>';
-    });
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- Choisir un contact --</option>';
+
+  // Load all members grouped by role
+  const org = API.getOrg();
+  if (!org) return;
+  try {
+    const members = await API.loadMembers();
+    const providers = members.filter(m => m.role === 'provider');
+    const owners = members.filter(m => m.role === 'owner');
+    const admins = members.filter(m => m.role === 'admin' || m.role === 'manager');
+
+    if (providers.length) {
+      sel.innerHTML += '<optgroup label="🧹 Prestataires">';
+      // Also add providers from config that may not be members
+      const provNames = new Set();
+      providers.forEach(m => {
+        const name = m.display_name || m.invited_email || 'Prestataire';
+        provNames.add(name);
+        sel.innerHTML += '<option value="' + esc(name) + '">🧹 ' + esc(name) + '</option>';
+      });
+      // Add config providers not yet as members
+      if (config && config.providers) {
+        config.providers.forEach(p => {
+          if (!provNames.has(p.name)) {
+            sel.innerHTML += '<option value="' + esc(p.name) + '">🧹 ' + esc(p.name) + '</option>';
+          }
+        });
+      }
+      sel.innerHTML += '</optgroup>';
+    } else if (config && config.providers && config.providers.length) {
+      sel.innerHTML += '<optgroup label="🧹 Prestataires">';
+      config.providers.forEach(p => {
+        sel.innerHTML += '<option value="' + esc(p.name) + '">🧹 ' + esc(p.name) + '</option>';
+      });
+      sel.innerHTML += '</optgroup>';
+    }
+
+    if (owners.length) {
+      sel.innerHTML += '<optgroup label="🏠 Proprietaires">';
+      owners.forEach(m => {
+        const name = m.display_name || m.invited_email || 'Proprietaire';
+        sel.innerHTML += '<option value="' + esc(name) + '">🏠 ' + esc(name) + '</option>';
+      });
+      sel.innerHTML += '</optgroup>';
+    }
+
+    if (admins.length > 1) {
+      sel.innerHTML += '<optgroup label="🏢 Gestionnaires">';
+      const { data: { user } } = await sb.auth.getUser();
+      admins.filter(m => m.user_id !== user.id).forEach(m => {
+        const name = m.display_name || m.invited_email || 'Gestionnaire';
+        sel.innerHTML += '<option value="' + esc(name) + '">🏢 ' + esc(name) + '</option>';
+      });
+      sel.innerHTML += '</optgroup>';
+    }
+  } catch(e) {
+    // Fallback to config providers
+    if (config && config.providers) {
+      config.providers.forEach(p => {
+        sel.innerHTML += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>';
+      });
+    }
   }
 }
 
