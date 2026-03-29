@@ -915,7 +915,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.13</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.14</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -925,7 +925,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.13</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.14</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -3472,6 +3472,128 @@ function switchOwnerProperty(idx) {
   if (btn) { btn.style.fontWeight='700'; btn.style.border='2px solid var(--accent)'; btn.style.background='rgba(233,69,96,0.15)'; btn.style.color='var(--accent)'; }
 }
 
+async function renderOwnerPropertyDetails() {
+  const org = API.getOrg();
+  if (!org) return;
+  const member = API.getMember();
+  const { data: allProps } = await sb.from('properties').select('*').eq('org_id', org.id);
+  let properties = (allProps || []).filter(p => p.owner_member_id === member.id || !p.owner_member_id);
+
+  // Render selector
+  const selContainer = document.getElementById('ownerBiensSelector');
+  if (selContainer && properties.length > 0) {
+    const activeId = window._ownerActivePropId || properties[0].id;
+    let sHtml = '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;">';
+    properties.forEach(p => {
+      const isActive = p.id === activeId;
+      sHtml += '<button onclick="window._ownerActivePropId=\'' + p.id + '\';renderOwnerPropertyDetails()" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:' + (isActive ? '700' : '500') + ';cursor:pointer;white-space:nowrap;border:' + (isActive ? '2px solid var(--accent)' : '1px solid var(--border2)') + ';background:' + (isActive ? 'rgba(233,69,96,0.15)' : 'var(--surface2)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--text)') + ';flex-shrink:0;">🏠 ' + esc(p.name) + '</button>';
+    });
+    sHtml += '</div>';
+    selContainer.innerHTML = sHtml;
+    if (!window._ownerActivePropId) window._ownerActivePropId = properties[0].id;
+  }
+
+  // Find active property
+  const activeProp = properties.find(p => p.id === window._ownerActivePropId) || properties[0];
+  if (!activeProp) return;
+
+  // Render same form as admin but owner can edit everything (no hasOwner restriction)
+  const detailContainer = document.getElementById('ownerPropertyDetailsInline');
+  if (!detailContainer) return;
+
+  // Temporarily set active property so renderPropertyDetailsInline works
+  // We'll build a simplified version here that the owner can edit
+  const prop = activeProp;
+  const sectionStyle = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;';
+  const labelStyle = 'font-size:11px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:4px;';
+  const inputStyle = 'width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;';
+
+  let html = '';
+
+  // Photo
+  html += '<div style="' + sectionStyle + '">';
+  html += '<div style="font-size:13px;font-weight:700;text-transform:uppercase;color:var(--text);margin-bottom:8px;">🏠 Informations</div>';
+  if (prop.photo) html += '<img src="' + esc(prop.photo) + '" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-bottom:12px;">';
+  html += '<div style="text-align:center;margin-bottom:12px;"><input type="file" id="ownerPropPhotoInput" accept="image/*" style="font-size:11px;color:var(--text3);" onchange="handleOwnerPropPhoto(this)"></div>';
+
+  // Name + Address
+  html += '<label style="' + labelStyle + '">Nom</label>';
+  html += '<input id="ownerPropName" type="text" value="' + esc(prop.name || '') + '" style="' + inputStyle + '">';
+  html += '<label style="' + labelStyle + '">Adresse</label>';
+  html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">';
+  html += '<input id="ownerPropAddress" type="text" value="' + esc(prop.address || '') + '" placeholder="12 rue de France, Nice" style="' + inputStyle + 'flex:1;margin-bottom:0;">';
+  html += '</div>';
+
+  // Type + Rooms + Surface
+  const typeOptions = [{ v:'apartment',l:'Appartement'},{v:'house',l:'Maison'},{v:'studio',l:'Studio'},{v:'villa',l:'Villa'},{v:'chalet',l:'Chalet'},{v:'other',l:'Autre'}];
+  html += '<div style="display:flex;gap:10px;flex-wrap:wrap;">';
+  html += '<div style="flex:1;min-width:100px;"><label style="' + labelStyle + '">Type</label><select id="ownerPropType" style="' + inputStyle + '">';
+  typeOptions.forEach(o => { html += '<option value="' + o.v + '" ' + (prop.type === o.v ? 'selected' : '') + '>' + o.l + '</option>'; });
+  html += '</select></div>';
+  html += '<div style="flex:0.5;min-width:70px;"><label style="' + labelStyle + '">Pieces</label><input id="ownerPropRooms" type="number" min="1" max="20" value="' + (prop.rooms || '') + '" style="' + inputStyle + '"></div>';
+  html += '<div style="flex:0.5;min-width:70px;"><label style="' + labelStyle + '">m²</label><input id="ownerPropSurface" type="number" min="1" max="1000" value="' + (prop.surface || '') + '" style="' + inputStyle + '"></div>';
+  html += '</div></div>';
+
+  // Hours + Access
+  html += '<div style="' + sectionStyle + '">';
+  html += '<div style="font-size:13px;font-weight:700;text-transform:uppercase;color:var(--text);margin-bottom:8px;">🕐 Horaires & Acces</div>';
+  html += '<div style="display:flex;gap:10px;flex-wrap:wrap;">';
+  html += '<div style="flex:1;min-width:100px;"><label style="' + labelStyle + '">Check-in</label><input id="ownerPropCheckin" type="time" value="' + (prop.checkinTime || '15:00') + '" style="' + inputStyle + '"></div>';
+  html += '<div style="flex:1;min-width:100px;"><label style="' + labelStyle + '">Check-out</label><input id="ownerPropCheckout" type="time" value="' + (prop.checkoutTime || '11:00') + '" style="' + inputStyle + '"></div>';
+  html += '</div>';
+  html += '<label style="' + labelStyle + '">Code d\'acces</label>';
+  html += '<input id="ownerPropAccessCode" type="text" value="' + esc(prop.accessCode || '') + '" placeholder="Ex: 1234" style="' + inputStyle + '">';
+  html += '<label style="' + labelStyle + '">Instructions d\'arrivee</label>';
+  html += '<textarea id="ownerPropArrival" rows="2" placeholder="Indications pour arriver..." style="' + inputStyle + 'resize:vertical;font-family:\'Inter\',sans-serif;">' + esc(prop.arrivalInstructions || '') + '</textarea>';
+  html += '</div>';
+
+  // Notes
+  html += '<div style="' + sectionStyle + '">';
+  html += '<div style="font-size:13px;font-weight:700;text-transform:uppercase;color:var(--text);margin-bottom:8px;">📝 Notes</div>';
+  html += '<textarea id="ownerPropNotes" rows="3" placeholder="Notes..." style="' + inputStyle + 'resize:vertical;font-family:\'Inter\',sans-serif;">' + esc(prop.notes || '') + '</textarea>';
+  html += '</div>';
+
+  // Save button
+  html += '<button class="btn btnSmall btnSuccess" onclick="saveOwnerPropDetail()" style="padding:12px 20px;font-size:14px;width:100%;">✓ Enregistrer</button>';
+
+  detailContainer.innerHTML = html;
+}
+
+async function saveOwnerPropDetail() {
+  const propId = window._ownerActivePropId;
+  if (!propId) return;
+  const org = API.getOrg();
+  const { error } = await sb.from('properties').update({
+    name: document.getElementById('ownerPropName')?.value || '',
+    address: document.getElementById('ownerPropAddress')?.value || '',
+    type: document.getElementById('ownerPropType')?.value || 'apartment',
+    rooms: parseInt(document.getElementById('ownerPropRooms')?.value) || 0,
+    surface: parseInt(document.getElementById('ownerPropSurface')?.value) || 0,
+    checkinTime: document.getElementById('ownerPropCheckin')?.value || '15:00',
+    checkoutTime: document.getElementById('ownerPropCheckout')?.value || '11:00',
+    accessCode: document.getElementById('ownerPropAccessCode')?.value || '',
+    arrivalInstructions: document.getElementById('ownerPropArrival')?.value || '',
+    notes: document.getElementById('ownerPropNotes')?.value || '',
+  }).eq('id', propId);
+  if (error) { showToast('Erreur: ' + error.message); return; }
+  showToast('Bien enregistre !');
+}
+
+async function handleOwnerPropPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 500000) return showToast('Photo trop grande (max 500KB)');
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const propId = window._ownerActivePropId;
+    if (!propId) return;
+    await sb.from('properties').update({ photo: e.target.result }).eq('id', propId);
+    showToast('Photo mise a jour !');
+    renderOwnerPropertyDetails();
+  };
+  reader.readAsDataURL(file);
+}
+
 function switchOwnerNav(tab) {
   const overview = document.getElementById('ownerContentOverview');
   const properties = document.getElementById('ownerContentProperties');
@@ -3479,7 +3601,7 @@ function switchOwnerNav(tab) {
   const billing = document.getElementById('ownerContentBilling');
   const chatPage = document.getElementById('ownerContentChat');
   if (overview) overview.style.display = tab === 'overview' ? '' : 'none';
-  if (properties) properties.style.display = tab === 'properties' ? '' : 'none';
+  if (properties) { properties.style.display = tab === 'properties' ? '' : 'none'; if (tab === 'properties') renderOwnerPropertyDetails(); }
   if (prestations) prestations.style.display = tab === 'prestations' ? '' : 'none';
   if (billing) billing.style.display = tab === 'billing' ? '' : 'none';
   if (chatPage) chatPage.style.display = tab === 'chat' ? '' : 'none';
@@ -3737,110 +3859,10 @@ async function showOwnerMode() {
 
   html += '</div>'; // close ownerContentOverview
 
-  // ═══ TAB 2: Biens (Properties) ═══
+  // ═══ TAB 2: Biens (Properties) — uses same inline form as admin ═══
   html += '<div id="ownerContentProperties" style="display:none;">';
-
-  // Property slider
-  if (properties.length > 1) {
-    html += '<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;">';
-    properties.forEach((p, i) => {
-      const isFirst = i === 0;
-      html += '<button onclick="switchOwnerProperty(' + i + ')" class="ownerPropBtn" data-idx="' + i + '" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:' + (isFirst ? '700' : '500') + ';cursor:pointer;white-space:nowrap;border:' + (isFirst ? '2px solid var(--accent)' : '1px solid var(--border2)') + ';background:' + (isFirst ? 'rgba(233,69,96,0.15)' : 'var(--surface2)') + ';color:' + (isFirst ? 'var(--accent)' : 'var(--text)') + ';transition:all 0.2s;flex-shrink:0;">🏠 ' + esc(p.name) + '</button>';
-    });
-    html += '</div>';
-  }
-
-  // Property details cards (one per property, only first visible)
-  properties.forEach((prop, idx) => {
-    const propCleanings = futureCleanings.filter(c => c.propertyId === prop.id);
-    const sectionStyle = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;';
-    const labelStyle = 'font-size:11px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:4px;';
-    const valStyle = 'font-size:14px;color:var(--text);font-weight:500;';
-
-    html += '<div class="ownerPropCard" data-idx="' + idx + '" style="' + (idx > 0 ? 'display:none;' : '') + '">';
-
-    // General info
-    html += '<div style="' + sectionStyle + '">';
-    if (prop.photo) html += '<img src="' + esc(prop.photo) + '" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-bottom:12px;">';
-    html += '<div style="font-size:18px;font-weight:700;margin-bottom:4px;">' + esc(prop.name) + '</div>';
-    if (prop.address) html += '<div style="font-size:13px;color:var(--text3);margin-bottom:12px;">📍 <a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(prop.address) + '" target="_blank" style="color:var(--accent2);text-decoration:none;">' + esc(prop.address) + '</a></div>';
-    html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;">';
-    const typeLabels = { apartment: 'Appartement', house: 'Maison', studio: 'Studio', villa: 'Villa', chalet: 'Chalet', other: 'Autre' };
-    if (prop.type) html += '<div><span style="' + labelStyle + '">Type</span><span style="' + valStyle + '">' + (typeLabels[prop.type] || prop.type) + '</span></div>';
-    if (prop.rooms) html += '<div><span style="' + labelStyle + '">Pieces</span><span style="' + valStyle + '">' + prop.rooms + '</span></div>';
-    if (prop.surface) html += '<div><span style="' + labelStyle + '">Surface</span><span style="' + valStyle + '">' + prop.surface + ' m²</span></div>';
-    html += '</div>';
-    // Check-in / Check-out
-    html += '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
-    html += '<div><span style="' + labelStyle + '">Check-in</span><span style="' + valStyle + '">' + (prop.checkinTime || '15:00') + '</span></div>';
-    html += '<div><span style="' + labelStyle + '">Check-out</span><span style="' + valStyle + '">' + (prop.checkoutTime || '11:00') + '</span></div>';
-    if (prop.accessCode) html += '<div><span style="' + labelStyle + '">Code acces</span><span style="' + valStyle + '">' + esc(prop.accessCode) + '</span></div>';
-    html += '</div>';
-    html += '</div>';
-
-    // Services configured
-    const svcConfig = prop.serviceConfig || {};
-    const enabledServices = Object.keys(svcConfig).filter(k => svcConfig[k].enabled);
-    if (enabledServices.length) {
-      html += '<div style="' + sectionStyle + '">';
-      html += '<div style="font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;margin-bottom:8px;">🔧 Services configures</div>';
-      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-      enabledServices.forEach(sId => {
-        const cfg = svcConfig[sId];
-        const freqLabels = { booking_start: 'Debut loc.', booking_end: 'Fin loc.', per_booking: 'Chaque loc.', weekly: 'Hebdo', biweekly: 'Bi-mens.', monthly: 'Mensuel', one_time: 'Ponctuel' };
-        html += '<span style="padding:4px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:11px;color:var(--text);">' + getServiceLabel(sId) + ' <span style="color:var(--text3);">(' + (freqLabels[cfg.frequency] || cfg.frequency) + (cfg.price ? ' · ' + cfg.price + '€' : '') + ')</span></span>';
-      });
-      html += '</div></div>';
-    }
-
-    // Checklist
-    if (prop.checklist && prop.checklist.length) {
-      html += '<div style="' + sectionStyle + '">';
-      html += '<div style="font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;margin-bottom:8px;">📋 Checklist</div>';
-      prop.checklist.forEach(item => {
-        const txt = typeof item === 'string' ? item : (item.text || item.name || '');
-        html += '<div style="font-size:13px;color:var(--text);padding:4px 0;">☐ ' + esc(txt) + '</div>';
-      });
-      html += '</div>';
-    }
-
-    // Upcoming cleanings
-    html += '<div style="' + sectionStyle + '">';
-    html += '<div style="font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;margin-bottom:8px;">📅 Prochains menages <span style="color:var(--accent);font-weight:400;">(' + propCleanings.length + ')</span></div>';
-    if (propCleanings.length === 0) {
-      html += '<div style="color:var(--text3);font-size:12px;">Aucun menage prevu.</div>';
-    } else {
-      propCleanings.sort((a, b) => (a.cleaningDate || a.date || '').localeCompare(b.cleaningDate || b.date || ''));
-      propCleanings.slice(0, 8).forEach(c => {
-        const key = prop.id + '_' + (c.cleaningDate || c.date) + '_' + (c.provider || '');
-        const v = validations[key];
-        const status = v ? v.status : 'pending';
-        const statusLabels = { done: 'Termine', in_progress: 'En cours', accepted: 'Accepte', seen: 'Lu', refused: 'Refuse', pending: 'En attente' };
-        const statusColors = { done: '#34d399', in_progress: '#f59e0b', accepted: '#34d399', seen: '#6c63ff', refused: '#ef4444', pending: 'var(--text3)' };
-        html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px;">';
-        html += '<div style="min-width:90px;font-weight:600;">' + fmtDate(c.cleaningDate || c.date) + '</div>';
-        html += '<div style="flex:1;color:var(--text2);">' + esc(c.provider || '?') + '</div>';
-        if (c.source) html += '<span class="srcBadge ' + getSourceClass(c.source) + '" style="display:inline-block;min-width:50px;text-align:center;flex-shrink:0;">' + esc(c.source) + '</span>';
-        html += '<span style="font-size:11px;color:' + (statusColors[status] || 'var(--text3)') + ';white-space:nowrap;">' + (statusLabels[status] || '') + '</span>';
-        html += '</div>';
-      });
-      if (propCleanings.length > 8) html += '<div style="text-align:center;color:var(--text3);font-size:11px;padding-top:6px;">+ ' + (propCleanings.length - 8) + ' autre(s)</div>';
-    }
-
-    // Photos
-    const recentPhotos = [];
-    propCleanings.forEach(c => { const key = prop.id + '_' + (c.cleaningDate || c.date) + '_' + (c.provider || ''); const v = validations[key]; if (v && v.photos && v.photos.length) recentPhotos.push(...v.photos.slice(0, 3)); });
-    if (recentPhotos.length) {
-      html += '<div style="font-size:11px;color:var(--text3);margin-top:8px;margin-bottom:4px;">Photos recentes</div>';
-      html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
-      recentPhotos.slice(0, 6).forEach(p => { html += '<img src="' + esc(p) + '" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">'; });
-      html += '</div>';
-    }
-    html += '</div>';
-
-    html += '</div>'; // close ownerPropCard
-  });
-
+  html += '<div id="ownerBiensSelector" style="margin-bottom:8px;"></div>';
+  html += '<div id="ownerPropertyDetailsInline"></div>';
   html += '</div>'; // close ownerContentProperties
 
   // ═══ TAB 3: Prestations (unified) ═══
