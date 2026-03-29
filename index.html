@@ -910,7 +910,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.10</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.11</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -1013,7 +1013,7 @@ async function loadPDF() {
   <div class="header-left">
     <div class="header-logo" style="width:28px;height:28px;background:linear-gradient(135deg,#e94560,#6c63ff);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff;">L</div>
     <div>
-      <h1>Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v5.10</span></h1>
+      <h1>Lokizio</h1>
       <div class="subtitle" data-i18n="header.subtitle">Services et conciergerie</div>
     </div>
   </div>
@@ -4442,8 +4442,64 @@ async function doChangeRole(newRole, subscriptionAction) {
   closeMsg();
   localStorage.removeItem('mm_cache_config');
   localStorage.removeItem('mm_panels_revealed');
-  showToast('Role change en ' + ({admin:'Conciergerie',owner:'Proprietaire',provider:'Prestataire'}[newRole] || newRole) + ' !');
-  setTimeout(() => location.reload(), 1500);
+  showRoleTransition(currentRole, newRole);
+  setTimeout(() => location.reload(), 2500);
+}
+
+function showRoleTransition(fromRole, toRole) {
+  const labels = { admin: 'Conciergerie', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
+  const colors = { admin: '#e94560', manager: '#e94560', owner: '#f59e0b', provider: '#34d399' };
+  const icons = { admin: '🏢', manager: '🏢', owner: '🏠', provider: '🧹' };
+  const fromLabel = labels[fromRole] || fromRole;
+  const toLabel = labels[toRole] || toRole;
+  const fromColor = colors[fromRole] || '#666';
+  const toColor = colors[toRole] || '#666';
+  const fromIcon = icons[fromRole] || '👤';
+  const toIcon = icons[toRole] || '👤';
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);animation:fadeIn 0.3s;';
+
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--surface);border-radius:20px;padding:32px 40px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.5);animation:scaleIn 0.4s ease;';
+  card.innerHTML = `
+    <div style="font-size:13px;color:var(--text3);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Changement de role</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;">
+      <div id="roleFrom" style="text-align:center;transition:all 0.6s ease;">
+        <div style="font-size:36px;margin-bottom:6px;">${fromIcon}</div>
+        <div style="font-size:13px;font-weight:700;color:${fromColor};padding:4px 12px;background:${fromColor}20;border-radius:8px;">${fromLabel}</div>
+      </div>
+      <div id="roleArrow" style="font-size:24px;color:var(--text3);transition:all 0.6s ease;">→</div>
+      <div id="roleTo" style="text-align:center;opacity:0.4;transform:scale(0.8);transition:all 0.6s ease;">
+        <div style="font-size:36px;margin-bottom:6px;">${toIcon}</div>
+        <div style="font-size:13px;font-weight:700;color:${toColor};padding:4px 12px;background:${toColor}20;border-radius:8px;">${toLabel}</div>
+      </div>
+    </div>
+    <div id="roleCheck" style="margin-top:16px;font-size:28px;opacity:0;transform:scale(0);transition:all 0.4s ease;">✅</div>
+  `;
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+
+  // Animate: fade out "from", grow "to", show check
+  setTimeout(() => {
+    const from = document.getElementById('roleFrom');
+    const to = document.getElementById('roleTo');
+    const arrow = document.getElementById('roleArrow');
+    if (from) { from.style.opacity = '0.3'; from.style.transform = 'scale(0.8)'; }
+    if (arrow) { arrow.style.color = 'var(--accent)'; arrow.textContent = '→'; }
+    if (to) { to.style.opacity = '1'; to.style.transform = 'scale(1.1)'; }
+  }, 500);
+
+  setTimeout(() => {
+    const check = document.getElementById('roleCheck');
+    if (check) { check.style.opacity = '1'; check.style.transform = 'scale(1)'; }
+  }, 1200);
+
+  setTimeout(() => {
+    overlay.style.transition = 'opacity 0.5s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 500);
+  }, 2200);
 }
 
 function closeAccountModal() {

@@ -1,4 +1,4 @@
-const APP_VERSION = '5.10';
+const APP_VERSION = '5.11';
 const CACHE_NAME = 'lokizio-v' + APP_VERSION;
 
 // Only cache static assets, never JS files or API calls
