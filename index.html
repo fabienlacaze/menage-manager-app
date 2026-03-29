@@ -915,7 +915,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.16</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.17</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -925,7 +925,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.16</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.17</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -3513,7 +3513,7 @@ async function renderOwnerPropertyDetails() {
   html += '<div style="' + sectionStyle + '">';
   html += '<div style="font-size:13px;font-weight:700;text-transform:uppercase;color:var(--text);margin-bottom:8px;">🏠 Informations</div>';
   if (prop.photo) html += '<img src="' + esc(prop.photo) + '" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-bottom:12px;">';
-  html += '<div style="text-align:center;margin-bottom:12px;"><input type="file" id="ownerPropPhotoInput" accept="image/*" style="font-size:11px;color:var(--text3);" onchange="handleOwnerPropPhoto(this)"></div>';
+  html += '<div style="text-align:center;margin-bottom:12px;cursor:pointer;" onclick="document.getElementById(\'ownerPropPhotoInput\').click()"><div style="padding:10px 16px;background:var(--surface2);border:1px dashed var(--border2);border-radius:8px;color:var(--text3);font-size:12px;">📷 Cliquez pour ' + (prop.photo ? 'changer' : 'ajouter') + ' la photo</div><input type="file" id="ownerPropPhotoInput" accept="image/*" style="display:none;" onchange="handleOwnerPropPhoto(this)"></div>';
 
   // Name + Address
   html += '<label style="' + labelStyle + '">Nom</label>';
@@ -3554,6 +3554,10 @@ async function renderOwnerPropertyDetails() {
   html += '</div>';
 
   // Save button
+  // "Trouver une conciergerie" button (if no org or owner wants to find one)
+  const ownerAddr = (prop.address || '').replace(/'/g, "\\'");
+  html += '<div style="margin-bottom:12px;"><button onclick="showMarketplace(\'' + ownerAddr + '\').then(()=>{document.getElementById(\'mkRoleFilter\').value=\'admin\';filterMarketplace();})" style="width:100%;padding:12px 20px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">🏢 Trouver une conciergerie</button></div>';
+
   html += '<button class="btn btnSmall btnSuccess" onclick="saveOwnerPropDetail()" style="padding:12px 20px;font-size:14px;width:100%;">✓ Enregistrer</button>';
 
   detailContainer.innerHTML = html;
@@ -3862,15 +3866,7 @@ async function showOwnerMode() {
       const selected = m.org_id === org.id ? ' selected' : '';
       html += `<option value="${m.org_id}"${selected}>${_escHtml(orgName)}</option>`;
     });
-    const _ownerAddr = (properties[0] && properties[0].address) ? properties[0].address.replace(/'/g, "\\'") : '';
-    html += `</select>
-      <button onclick="showMarketplace('${_ownerAddr}').then(()=>{document.getElementById('mkRoleFilter').value='admin';filterMarketplace();})" style="padding:10px 20px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">&#127970; Trouver une conciergerie</button>
-    </div>`;
-  } else {
-    const _ownerAddr2 = (properties[0] && properties[0].address) ? properties[0].address.replace(/'/g, "\\'") : '';
-    html += `<div style="text-align:right;margin-bottom:8px;">
-      <button onclick="showMarketplace('${_ownerAddr2}').then(()=>{document.getElementById('mkRoleFilter').value='admin';filterMarketplace();})" style="padding:10px 20px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">&#127970; Trouver une conciergerie</button>
-    </div>`;
+    html += `</select></div>`;
   }
 
   // KPI cards - clickable to navigate to planning/overview tabs
@@ -9499,6 +9495,8 @@ async function submitServiceRequest() {
   }
   loadServiceRequests();
   loadAdminPrestations(true);
+  // Refresh owner mode if applicable
+  if (role === 'owner') setTimeout(() => showOwnerMode(), 500);
   } catch(err) { console.error('submitServiceRequest error:', err); showToast('Erreur: ' + (err.message || 'Probleme de connexion')); }
 }
 
@@ -9619,6 +9617,9 @@ async function updateServiceRequest(id, status, provider) {
         // Concierge marks done -> notify owner
         await sendAutoMessage(org.id, 'Gestionnaire', 'admin', 'proprietaire',
           '✅ ' + svcLabel + ' termine pour ' + propName);
+        // Show rating modal
+        const provName = req.assigned_provider || provider || '';
+        if (provName) setTimeout(() => showRatingModal(id, provName), 500);
       }
     }
     loadServiceRequests();
@@ -10104,6 +10105,92 @@ async function updateUnreadBadge() {
 // Check unread after app loads
 setTimeout(updateUnreadBadge, 5000);
 setInterval(updateUnreadBadge, 30000);
+
+// ── Rating System ──
+function showRatingModal(requestId, providerName) {
+  let html = '<div style="padding:16px;text-align:center;">';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:8px;">⭐ Noter la prestation</div>';
+  html += '<div style="font-size:13px;color:var(--text3);margin-bottom:16px;">Comment s\'est passee la prestation de <b>' + esc(providerName) + '</b> ?</div>';
+  html += '<div id="ratingStars" style="font-size:36px;margin-bottom:16px;cursor:pointer;">';
+  for (let i = 1; i <= 5; i++) {
+    html += '<span onclick="selectRatingStar(' + i + ')" onmouseover="hoverRatingStar(' + i + ')" onmouseout="hoverRatingStar(0)" data-star="' + i + '" style="transition:transform 0.2s;display:inline-block;">☆</span>';
+  }
+  html += '</div>';
+  html += '<input type="hidden" id="ratingValue" value="0">';
+  html += '<textarea id="ratingComment" rows="2" placeholder="Commentaire (optionnel)..." style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:14px;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>';
+  html += '<div style="display:flex;gap:8px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;" onclick="closeMsg()">Plus tard</button>';
+  html += '<button class="btn btnPrimary" style="flex:1;padding:12px;" onclick="submitRating(\'' + requestId + '\',\'' + esc(providerName).replace(/'/g, "\\'") + '\')">Envoyer</button>';
+  html += '</div></div>';
+  showMsg(html, true);
+}
+
+function selectRatingStar(n) {
+  document.getElementById('ratingValue').value = n;
+  document.querySelectorAll('#ratingStars span').forEach(s => {
+    s.textContent = parseInt(s.dataset.star) <= n ? '⭐' : '☆';
+  });
+}
+
+function hoverRatingStar(n) {
+  const current = parseInt(document.getElementById('ratingValue').value) || 0;
+  document.querySelectorAll('#ratingStars span').forEach(s => {
+    const star = parseInt(s.dataset.star);
+    if (n > 0) {
+      s.textContent = star <= n ? '⭐' : '☆';
+      s.style.transform = star <= n ? 'scale(1.2)' : '';
+    } else {
+      s.textContent = star <= current ? '⭐' : '☆';
+      s.style.transform = '';
+    }
+  });
+}
+
+async function submitRating(requestId, providerName) {
+  const rating = parseInt(document.getElementById('ratingValue').value) || 0;
+  if (rating === 0) return showToast('Selectionnez une note');
+  const comment = document.getElementById('ratingComment')?.value?.trim() || '';
+  const role = API.getRole();
+  const org = API.getOrg();
+
+  try {
+    // Store rating on the service request
+    const ratingField = (role === 'owner') ? 'rating_owner' : 'rating_concierge';
+    const commentField = (role === 'owner') ? 'comment_owner' : 'comment_concierge';
+    const update = {};
+    update[ratingField] = rating;
+    update[commentField] = comment;
+    await sb.from('service_requests').update(update).eq('id', requestId);
+
+    // Update provider's average rating in config
+    if (role === 'admin' || role === 'manager') {
+      const prop = API.getActiveProperty(fullConfig);
+      if (prop && prop.providers) {
+        const prov = prop.providers.find(p => p.name === providerName);
+        if (prov) {
+          if (!prov.ratings) prov.ratings = [];
+          prov.ratings.push(rating);
+          prov._avg_rating = prov.ratings.reduce((s, r) => s + r, 0) / prov.ratings.length;
+          _debouncedSaveConfig();
+        }
+      }
+    }
+
+    // Send auto-message with rating
+    const stars = '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
+    const member = API.getMember();
+    const senderName = member?.display_name || 'Utilisateur';
+    await sendAutoMessage(org.id, senderName, role, providerName,
+      '⭐ Note: ' + stars + (comment ? ' — ' + comment : ''));
+
+    closeMsg();
+    showToast('Merci pour votre note !');
+    loadAdminPrestations(true);
+  } catch(e) {
+    console.error('submitRating error:', e);
+    showToast('Erreur: ' + (e.message || ''));
+  }
+}
 
 async function forceUpdate() {
   // 1. Fetch remote version FIRST (before clearing anything)
