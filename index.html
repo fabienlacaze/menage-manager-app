@@ -915,7 +915,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.07</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.08</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -925,7 +925,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.07</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.08</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2228,12 +2228,11 @@ function renderPropertyDetailsInline() {
         const price = cfg ? cfg.price : 0;
         const checked = isEnabled ? 'checked' : '';
         const detailDisplay = isEnabled ? 'flex' : 'none';
-        shtml += `<div class="svcConfigCard" style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px;background:var(--surface2);">`;
-        shtml += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:${isEnabled ? '6' : '0'}px;">`;
+        shtml += `<div class="svcConfigCard" style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;background:var(--surface2);">`;
+        shtml += `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">`;
         shtml += `<input type="checkbox" class="svcConfigCb" data-svc="${s.id}" ${checked} style="accent-color:#6c63ff;cursor:pointer;">`;
-        shtml += `<span style="font-size:13px;font-weight:500;">${s.icon} ${s.label}</span>`;
-        shtml += `</div>`;
-        shtml += `<div class="svcConfigDetails" style="display:${detailDisplay};gap:8px;flex-wrap:wrap;padding-left:26px;align-items:center;">`;
+        shtml += `<span style="font-size:13px;font-weight:500;min-width:120px;">${s.icon} ${s.label}</span>`;
+        shtml += `<div class="svcConfigDetails" style="display:${detailDisplay};gap:6px;align-items:center;flex-wrap:wrap;">`;
         // Frequency select
         shtml += `<select class="svcFreq" data-svc="${s.id}" style="padding:4px 8px;background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:12px;">`;
         freqOptions.forEach(o => { shtml += `<option value="${o.v}" ${freq === o.v ? 'selected' : ''}>${o.l}</option>`; });
@@ -2245,8 +2244,9 @@ function renderPropertyDetailsInline() {
         shtml += `</select>`;
         // Price input
         shtml += `<input type="number" class="svcPrice" data-svc="${s.id}" placeholder="Prix \u20ac" value="${price || ''}" min="0" step="1" style="width:70px;padding:4px 8px;background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:12px;">`;
-        shtml += `</div>`;
-        shtml += `</div>`;
+        shtml += `</div>`; // close svcConfigDetails
+        shtml += `</div>`; // close flex row
+        shtml += `</div>`; // close svcConfigCard
       });
       shtml += `</div>`;
     });
@@ -9171,6 +9171,15 @@ async function showServiceRequestModal() {
   // Date
   html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Date souhaitee</label>';
   html += '<input type="date" id="svcReqDate" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">';
+  // Frequency
+  html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Frequence</label>';
+  html += '<select id="svcReqFrequency" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:10px;">';
+  html += '<option value="one_time" selected>Ponctuel</option>';
+  html += '<option value="per_booking">A chaque location</option>';
+  html += '<option value="weekly">Hebdomadaire</option>';
+  html += '<option value="biweekly">Bi-mensuel</option>';
+  html += '<option value="monthly">Mensuel</option>';
+  html += '</select>';
   // Priority
   html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Priorite</label>';
   html += '<select id="svcReqPriority" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:10px;">';
@@ -9179,10 +9188,13 @@ async function showServiceRequestModal() {
   html += '<option value="high">Haute - Urgent</option>';
   html += '</select>';
   // Provider selector
-  html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Prestataire (optionnel)</label>';
+  html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Prestataire</label>';
   html += '<select id="svcReqProvider" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:10px;">';
   html += '<option value="">-- Non assigne --</option>';
   html += '</select>';
+  // Price
+  html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Prix (€)</label>';
+  html += '<input type="number" id="svcReqPrice" placeholder="0" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">';
   // Description
   html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Description (optionnel)</label>';
   html += '<textarea id="svcReqDesc" rows="3" placeholder="Details sur la demande..." style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:14px;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>';
@@ -9223,6 +9235,16 @@ function updateSvcReqProviders() {
     sel.innerHTML += '<optgroup label="Autres">';
     others.forEach(p => { sel.innerHTML += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; });
     sel.innerHTML += '</optgroup>';
+  }
+  // Pre-fill from serviceConfig if available
+  const svcConfig = prop.serviceConfig || {};
+  const cfg = svcConfig[serviceType];
+  if (cfg) {
+    const freqEl = document.getElementById('svcReqFrequency');
+    if (freqEl && cfg.frequency) freqEl.value = cfg.frequency;
+    if (cfg.provider && sel) sel.value = cfg.provider;
+    const priceEl = document.getElementById('svcReqPrice');
+    if (priceEl && cfg.price) priceEl.value = cfg.price;
   }
 }
 
