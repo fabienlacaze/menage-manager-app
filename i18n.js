@@ -6,7 +6,7 @@ const I18N = {
   fr: {
     // Auth
     'auth.title': 'Lokizio',
-    'auth.subtitle': 'Gestion des menages locatifs',
+    'auth.subtitle': 'Services et conciergerie pour locations',
     'auth.tab.login': 'Se connecter',
     'auth.tab.register': 'Creer un compte',
     'auth.email': 'Email',
@@ -31,7 +31,7 @@ const I18N = {
     'auth.reset.sent': 'Email de reinitialisation envoye ! Verifiez votre boite mail.',
 
     // Header
-    'header.subtitle': 'Gestion des menages',
+    'header.subtitle': 'Services et conciergerie',
     'header.share': 'Partager en lecture seule',
     'header.changelog': 'Historique modifications',
     'header.theme': 'Theme clair/sombre',
@@ -399,7 +399,7 @@ const I18N = {
   en: {
     // Auth
     'auth.title': 'Lokizio',
-    'auth.subtitle': 'Rental cleaning management',
+    'auth.subtitle': 'Services & concierge for rentals',
     'auth.tab.login': 'Sign in',
     'auth.tab.register': 'Create account',
     'auth.email': 'Email',
@@ -424,7 +424,7 @@ const I18N = {
     'auth.reset.sent': 'Reset email sent! Check your inbox.',
 
     // Header
-    'header.subtitle': 'Cleaning management',
+    'header.subtitle': 'Services & concierge',
     'header.share': 'Share read-only link',
     'header.changelog': 'Change log',
     'header.theme': 'Light/dark theme',
