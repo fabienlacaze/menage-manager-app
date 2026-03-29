@@ -910,7 +910,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.21</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.22</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -920,7 +920,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v5.21</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v5.22</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2032,15 +2032,18 @@ function selectPropFromDropdown(propId) {
   switchProperty(propId);
 }
 
+let _filterPropertyId = null; // null = all properties
+
 function renderTabPropertySelector(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const props = fullConfig.properties || [];
-  const activePropId = API.getActivePropertyId();
-  if (props.length <= 1) { container.innerHTML = ''; return; }
+  if (props.length <= 1) { container.innerHTML = ''; _filterPropertyId = props[0]?.id || null; return; }
+  const isAll = _filterPropertyId === null;
   let html = '<div style="display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:4px;">';
+  html += '<button onclick="switchTabProperty(null)" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:' + (isAll ? '700' : '500') + ';cursor:pointer;white-space:nowrap;border:' + (isAll ? '2px solid #6c63ff' : '1px solid var(--border2)') + ';background:' + (isAll ? 'rgba(108,99,255,0.15)' : 'var(--surface2)') + ';color:' + (isAll ? '#6c63ff' : 'var(--text)') + ';transition:all 0.2s;">📋 Tous</button>';
   props.forEach(p => {
-    const isActive = p.id === activePropId;
+    const isActive = !isAll && _filterPropertyId === p.id;
     html += '<button onclick="switchTabProperty(\'' + p.id + '\')" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:' + (isActive ? '700' : '500') + ';cursor:pointer;white-space:nowrap;border:' + (isActive ? '2px solid var(--accent)' : '1px solid var(--border2)') + ';background:' + (isActive ? 'rgba(233,69,96,0.15)' : 'var(--surface2)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--text)') + ';transition:all 0.2s;">🏠 ' + esc(p.name) + '</button>';
   });
   html += '</div>';
@@ -2050,14 +2053,21 @@ function renderTabPropertySelector(containerId) {
 function renderTeamPropertySelector() { renderTabPropertySelector('teamPropertySelector'); }
 
 function switchTabProperty(propId) {
-  API.setActiveProperty(propId);
-  loadActiveProperty().then(() => {
-    renderTabPropertySelector('teamPropertySelector');
-    renderTabPropertySelector('prestPropertySelector');
-    renderTabPropertySelector('planningPropertySelector');
-    renderPropertySelector();
+  _filterPropertyId = propId;
+  if (propId) API.setActiveProperty(propId);
+  // Re-render all property selectors
+  renderTabPropertySelector('teamPropertySelector');
+  renderTabPropertySelector('prestPropertySelector');
+  renderTabPropertySelector('planningPropertySelector');
+  renderPropertySelector();
+  // Reload content if a specific property is selected
+  if (propId) {
+    loadActiveProperty().then(() => {
+      loadAdminPrestations();
+    });
+  } else {
     loadAdminPrestations();
-  });
+  }
 }
 
 async function loadActiveProperty() {
@@ -8882,11 +8892,13 @@ async function loadAdminPrestations() {
     if (vals) vals.forEach(v => { validations[v.property_id + '_' + v.cleaning_date + '_' + v.provider_name] = v; });
   }
 
-  // Build unified array
+  // Build unified array (filtered by property if selected)
+  const filterProp = _filterPropertyId;
   const unified = [];
   (plannings || []).forEach(plan => {
     const prop = propMap[plan.property_id];
     if (!plan.cleanings || !prop) return;
+    if (filterProp && prop.id !== filterProp) return;
     plan.cleanings.forEach(c => {
       const dateStr = c.cleaningDate || c.date;
       if (dateStr < today) return;
@@ -8906,6 +8918,7 @@ async function loadAdminPrestations() {
     });
   });
   svcRequests.forEach(r => {
+    if (filterProp && r.property_id !== filterProp) return;
     const prop = propMap[r.property_id];
     unified.push({
       _source: 'service_request',
