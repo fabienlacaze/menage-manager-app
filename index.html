@@ -910,7 +910,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.17</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v5.18</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -920,7 +920,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v5.17</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v5.18</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1139,6 +1139,9 @@ async function loadPDF() {
 
   <!-- ═══ TAB: TEAM ═══ -->
   <div class="tab-content" id="tabTeam">
+
+  <!-- Property selector for team tab -->
+  <div id="teamPropertySelector" style="margin-bottom:12px;"></div>
 
   <!-- ═══ SECTION 2: ÉQUIPE MÉNAGE ═══ -->
   <div class="panel">
@@ -2022,6 +2025,29 @@ function closePropDropdown() {
 function selectPropFromDropdown(propId) {
   closePropDropdown();
   switchProperty(propId);
+}
+
+function renderTeamPropertySelector() {
+  const container = document.getElementById('teamPropertySelector');
+  if (!container) return;
+  const props = fullConfig.properties || [];
+  const activePropId = API.getActivePropertyId();
+  if (props.length <= 1) { container.innerHTML = ''; return; }
+  let html = '<div style="display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:4px;">';
+  props.forEach(p => {
+    const isActive = p.id === activePropId;
+    html += '<button onclick="selectTeamProperty(\'' + p.id + '\')" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:' + (isActive ? '700' : '500') + ';cursor:pointer;white-space:nowrap;border:' + (isActive ? '2px solid var(--accent)' : '1px solid var(--border2)') + ';background:' + (isActive ? 'var(--accent)15' : 'var(--surface2)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--text)') + ';transition:all 0.2s;">🏠 ' + esc(p.name) + '</button>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function selectTeamProperty(propId) {
+  API.setActivePropertyId(propId);
+  loadActiveProperty().then(() => {
+    renderTeamPropertySelector();
+    renderPropertySelector();
+  });
 }
 
 async function loadActiveProperty() {
@@ -7689,6 +7715,7 @@ function switchMainTab(tabId) {
   // Refresh content when switching tabs
   if (tabId === 'dashboard') renderDashboardContent();
   if (tabId === 'prestations') loadAdminPrestations();
+  if (tabId === 'team') renderTeamPropertySelector();
   if (tabId === 'messages') initFullChat();
 }
 
@@ -8654,6 +8681,11 @@ async function showServiceRequestModal() {
   html += '<option value="normal" selected>Normale</option>';
   html += '<option value="high">Haute - Urgent</option>';
   html += '</select>';
+  // Provider selector
+  html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Prestataire (optionnel)</label>';
+  html += '<select id="svcReqProvider" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:10px;">';
+  html += '<option value="">-- Non assigne --</option>';
+  html += '</select>';
   // Description
   html += '<label style="font-size:11px;color:var(--text3);text-transform:uppercase;">Description (optionnel)</label>';
   html += '<textarea id="svcReqDesc" rows="3" placeholder="Details sur la demande..." style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:14px;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>';
@@ -8666,6 +8698,35 @@ async function showServiceRequestModal() {
   // Set default date to tomorrow
   const tom = new Date(); tom.setDate(tom.getDate() + 1);
   document.getElementById('svcReqDate').value = tom.toISOString().split('T')[0];
+  // Update provider list when property or service changes
+  window._svcReqProperties = properties;
+  document.getElementById('svcReqProperty').addEventListener('change', updateSvcReqProviders);
+  document.getElementById('svcReqType').addEventListener('change', updateSvcReqProviders);
+  updateSvcReqProviders();
+}
+
+function updateSvcReqProviders() {
+  const propId = document.getElementById('svcReqProperty')?.value;
+  const serviceType = document.getElementById('svcReqType')?.value;
+  const sel = document.getElementById('svcReqProvider');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- Non assigne --</option>';
+  // Find providers for selected property
+  const props = window._svcReqProperties || [];
+  const prop = props.find(p => p.id === propId);
+  if (!prop || !prop.providers) return;
+  const matching = prop.providers.filter(p => p.services && p.services.includes(serviceType));
+  const others = prop.providers.filter(p => !p.services || !p.services.includes(serviceType));
+  if (matching.length) {
+    sel.innerHTML += '<optgroup label="⭐ Competents">';
+    matching.forEach(p => { sel.innerHTML += '<option value="' + esc(p.name) + '">⭐ ' + esc(p.name) + '</option>'; });
+    sel.innerHTML += '</optgroup>';
+  }
+  if (others.length) {
+    sel.innerHTML += '<optgroup label="Autres">';
+    others.forEach(p => { sel.innerHTML += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; });
+    sel.innerHTML += '</optgroup>';
+  }
 }
 
 async function submitServiceRequest() {
@@ -8688,7 +8749,8 @@ async function submitServiceRequest() {
     description: desc,
     requested_date: date,
     priority: priority,
-    status: 'pending'
+    assigned_provider: document.getElementById('svcReqProvider')?.value || null,
+    status: document.getElementById('svcReqProvider')?.value ? 'accepted' : 'pending'
   });
   if (error) { console.error('Service request error:', error); return showToast('Erreur: ' + error.message); }
   closeMsg();
