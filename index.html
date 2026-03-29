@@ -915,7 +915,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.00</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.01</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -925,7 +925,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.00</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.01</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1110,35 +1110,31 @@ async function loadPDF() {
   <!-- ═══ TAB: PROPERTIES ═══ -->
   <div class="tab-content" id="tabProperties">
 
-  <!-- ═══ SECTION 1: PROPRIÉTÉ ═══ -->
-  <div class="panel" id="panelConfig" style="position:relative;z-index:10;">
-    <div class="panelHeader" onclick="togglePanel('config')">
-      <div class="panelLeft">
-        <div class="stepBadge">1</div>
-        <div class="panelTitle" style="display:flex;align-items:center;gap:8px;">&#127968;
-          <div id="propDropdown" style="position:relative;" onclick="event.stopPropagation()">
-            <div id="propDropdownBtn" onclick="togglePropDropdown()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;padding:6px 12px;max-width:240px;border-radius:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;"><span style="overflow:hidden;text-overflow:ellipsis;">Mon logement</span><span style="font-size:10px;opacity:0.6;flex-shrink:0;">&#9660;</span></div>
-            <div id="propDropdownMenu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:220px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:200;overflow:hidden;"></div>
-          </div>
-          <select id="propSelectTitle" style="display:none;"></select>
-          <span class="helpTip" onclick="event.stopPropagation()">?<span class="helpBubble">Configurez votre logement : nom, adresse, calendriers iCal (Airbnb, Booking...). Cliquez sur le nom pour changer de propriete.</span></span>
-        </div>
-      </div>
-      <span class="panelChevron" id="chevConfig">&#9660;</span>
-    </div>
-    <div class="panelBody" id="bodyConfig">
-      <select id="propSelect" style="display:none;"></select>
-      <input type="hidden" id="propNameInput">
-      <span id="propQuickInfo" style="display:none;"></span>
-      <button id="btnPropLocation" style="display:none;"></button>
-      <button id="btnRemoveProp" style="display:none;"></button>
-      <div id="propertyListView"></div>
-      <div style="margin-top:10px;">
-        <button class="btn btnSmall btnSuccess" onclick="addNewProperty()" style="padding:6px 14px;font-size:12px;" data-i18n="property.add">+ Ajouter</button>
-      </div>
-      <div id="icalList" style="display:none;"></div>
-    </div>
+  <!-- Hidden backward-compat elements -->
+  <div style="display:none;">
+    <div id="propDropdown"><div id="propDropdownBtn"></div><div id="propDropdownMenu"></div></div>
+    <select id="propSelectTitle"></select>
+    <select id="propSelect"></select>
+    <input type="hidden" id="propNameInput">
+    <span id="propQuickInfo"></span>
+    <button id="btnPropLocation"></button>
+    <button id="btnRemoveProp"></button>
+    <div id="icalList"></div>
+    <div id="propertyListView"></div>
+    <div id="bodyConfig"></div>
+    <span id="chevConfig"></span>
   </div>
+
+  <!-- Property selector slider -->
+  <div id="biensPropertySelector" style="margin-bottom:12px;"></div>
+
+  <!-- Add new property button -->
+  <div style="margin-bottom:12px;">
+    <button class="btn btnSmall btnSuccess" onclick="addNewProperty()" style="padding:8px 16px;font-size:12px;">+ Nouveau bien</button>
+  </div>
+
+  <!-- Property details form (inline, no modal) -->
+  <div id="propertyDetailsInline"></div>
 
   </div><!-- /tabProperties -->
 
@@ -1994,6 +1990,299 @@ function renderPropertySelector() {
   if (nameInput && activeProp) nameInput.value = activeProp.name || '';
 }
 
+/* ── Biens Property Selector (slider) ── */
+let _biensActivePropertyId = null;
+
+function renderBiensPropertySelector() {
+  const container = document.getElementById('biensPropertySelector');
+  if (!container) return;
+  const props = fullConfig.properties || [];
+  const activePropId = API.getActivePropertyId();
+  _biensActivePropertyId = activePropId;
+  if (props.length === 0) { container.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px;">Aucun bien configure. Cliquez "+ Nouveau bien" pour commencer.</div>'; return; }
+  let html = '<div style="display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">';
+  props.forEach(p => {
+    const isActive = p.id === activePropId;
+    html += `<button onclick="switchBiensProperty('${p.id}')" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:${isActive ? '700' : '500'};cursor:pointer;white-space:nowrap;border:${isActive ? '2px solid var(--accent)' : '1px solid var(--border2)'};background:${isActive ? 'rgba(233,69,96,0.15)' : 'var(--surface2)'};color:${isActive ? 'var(--accent)' : 'var(--text)'};transition:all 0.2s;flex-shrink:0;">&#127968; ${esc(p.name)}</button>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function switchBiensProperty(propId) {
+  _biensActivePropertyId = propId;
+  API.setActiveProperty(propId);
+  inlinePropCheckItems = [];
+  renderBiensPropertySelector();
+  renderPropertySelector();
+  renderPropertyDetailsInline();
+  loadActiveProperty();
+}
+
+/* ── Inline Property Details ── */
+function renderPropertyDetailsInline() {
+  const container = document.getElementById('propertyDetailsInline');
+  if (!container) return;
+  const prop = API.getActiveProperty(fullConfig);
+  if (!prop) { container.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">Selectionnez un bien pour voir ses details.</div>'; return; }
+
+  const hasOwner = prop.owner_id || prop.owner_email;
+  const readonlyAttr = hasOwner ? 'readonly disabled style="opacity:0.6;"' : '';
+  const typeOptions = [
+    { v: 'apartment', l: 'Appartement' }, { v: 'house', l: 'Maison' }, { v: 'studio', l: 'Studio' },
+    { v: 'villa', l: 'Villa' }, { v: 'chalet', l: 'Chalet' }, { v: 'other', l: 'Autre' }
+  ];
+  const durationOptions = [
+    { v: '30', l: '30 min' }, { v: '45', l: '45 min' }, { v: '60', l: '1h' }, { v: '90', l: '1h30' },
+    { v: '120', l: '2h' }, { v: '150', l: '2h30' }, { v: '180', l: '3h' }, { v: '240', l: '4h' }
+  ];
+
+  const inputStyle = 'width:100%;padding:10px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;box-sizing:border-box;';
+  const labelStyle = 'display:block;font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;';
+  const sectionStyle = 'background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:12px;';
+  const sectionTitleStyle = 'font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:700;display:flex;align-items:center;gap:6px;';
+
+  let html = '';
+
+  // Owner info banner (if has owner)
+  if (hasOwner) {
+    html += `<div style="${sectionStyle}background:rgba(108,99,255,0.06);">`;
+    html += `<div style="${sectionTitleStyle}">&#128100; Proprietaire</div>`;
+    html += '<div style="display:flex;flex-direction:column;gap:4px;font-size:13px;">';
+    html += '<div style="color:var(--text);">' + (prop.owner_name || prop.owner_email || 'Non renseigne') + '</div>';
+    if (prop.owner_phone) html += '<div><a href="tel:' + prop.owner_phone + '" style="color:var(--accent2);text-decoration:none;">&#128222; ' + prop.owner_phone + '</a></div>';
+    if (prop.owner_email) html += '<div><a href="mailto:' + prop.owner_email + '" style="color:var(--accent2);text-decoration:none;">&#9993; ' + prop.owner_email + '</a></div>';
+    html += '</div></div>';
+  }
+
+  // SECTION: Photo + General Info
+  html += `<div style="${sectionStyle}">`;
+  html += `<div style="${sectionTitleStyle}">&#127968; Informations generales</div>`;
+  // Photo
+  html += `<div style="text-align:center;margin-bottom:16px;">
+    <div id="inlinePropPhotoPreview" style="width:100%;max-height:200px;border-radius:12px;overflow:hidden;background:var(--surface2);display:flex;align-items:center;justify-content:center;margin-bottom:8px;min-height:100px;cursor:pointer;" onclick="document.getElementById('inlinePropPhotoInput').click()">
+      <span id="inlinePropPhotoPlaceholder" style="color:var(--text3);font-size:13px;${prop.photo ? 'display:none;' : ''}">&#128247; Cliquez pour ajouter une photo</span>
+      <img id="inlinePropPhotoImg" src="${prop.photo ? esc(prop.photo) : ''}" style="width:100%;object-fit:cover;${prop.photo ? '' : 'display:none;'}">
+    </div>
+    <input type="file" id="inlinePropPhotoInput" accept="image/*" style="display:none;" onchange="handleInlinePropPhoto(this)">
+  </div>`;
+  // Name
+  html += `<div style="margin-bottom:12px;"><label style="${labelStyle}">Nom</label>
+    <input id="inlinePropName" type="text" value="${esc(prop.name || '')}" ${hasOwner ? 'readonly disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}"></div>`;
+  // Address
+  html += `<div style="margin-bottom:12px;"><label style="${labelStyle}">Adresse</label>
+    <input id="inlinePropAddress" type="text" value="${esc(prop.address || '')}" placeholder="12 rue de France, Nice" ${hasOwner ? 'readonly disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}"></div>`;
+  // Type + Rooms + Surface
+  html += `<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">`;
+  html += `<div style="flex:1;min-width:120px;"><label style="${labelStyle}">Type</label>
+    <select id="inlinePropType" ${hasOwner ? 'disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}">`;
+  typeOptions.forEach(o => { html += `<option value="${o.v}" ${prop.type === o.v ? 'selected' : ''}>${o.l}</option>`; });
+  html += `</select></div>`;
+  html += `<div style="flex:0.5;min-width:80px;"><label style="${labelStyle}">Pieces</label>
+    <input id="inlinePropRooms" type="number" min="1" max="20" value="${prop.rooms || ''}" ${hasOwner ? 'readonly disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}"></div>`;
+  html += `<div style="flex:0.5;min-width:80px;"><label style="${labelStyle}">m&sup2;</label>
+    <input id="inlinePropSurface" type="number" min="1" max="1000" value="${prop.surface || ''}" ${hasOwner ? 'readonly disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}"></div>`;
+  html += `</div>`;
+  html += `</div>`; // end general info section
+
+  // SECTION: Tarification
+  html += `<div style="${sectionStyle}">`;
+  html += `<div style="${sectionTitleStyle}">&#128176; Tarification</div>`;
+  html += `<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">`;
+  html += `<div style="flex:1;min-width:120px;"><label style="${labelStyle}">Tarif menage (&euro;)</label>
+    <input id="inlinePropPrice" type="number" min="0" step="5" placeholder="65" value="${prop.cleaningPrice || ''}" style="${inputStyle}"></div>`;
+  html += `<div style="flex:1;min-width:120px;"><label style="${labelStyle}">Duree estimee</label>
+    <select id="inlinePropDuration" style="${inputStyle}">`;
+  durationOptions.forEach(o => { html += `<option value="${o.v}" ${String(prop.cleaningDuration || '90') === o.v ? 'selected' : ''}>${o.l}</option>`; });
+  html += `</select></div>`;
+  html += `</div>`;
+  html += `<div style="margin-bottom:4px;"><label style="${labelStyle}">Tarif proprietaire (&euro;/menage)</label>
+    <input id="inlinePropOwnerPrice" type="number" min="0" step="5" placeholder="Ex: 50" value="${prop.ownerPrice || ''}" style="${inputStyle}">
+    <div style="font-size:10px;color:var(--text3);margin-top:4px;">Montant facture au proprietaire pour chaque menage</div></div>`;
+  html += `</div>`; // end tarification
+
+  // SECTION: Services
+  html += `<div style="${sectionStyle}">`;
+  html += `<div style="${sectionTitleStyle}">&#128736; Services requis</div>`;
+  html += `<div id="inlinePropServicesChecks" style="display:flex;flex-wrap:wrap;gap:6px;"></div>`;
+  html += `</div>`;
+
+  // SECTION: Checklist
+  html += `<div style="${sectionStyle}">`;
+  html += `<div style="${sectionTitleStyle}">&#9745; Instructions de menage</div>`;
+  html += `<div id="inlinePropChecklist" style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px;margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>`;
+  html += `<div style="display:flex;gap:8px;">
+    <input id="inlinePropNewCheckItem" type="text" placeholder="Nouvelle instruction..." style="flex:1;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;" onkeydown="if(event.key==='Enter')addInlineCheckItem()">
+    <button class="btn btnSmall btnSuccess" onclick="addInlineCheckItem()" style="padding:6px 14px;">+</button>
+  </div>`;
+  html += `</div>`;
+
+  // SECTION: Horaires & Acces
+  html += `<div style="${sectionStyle}">`;
+  html += `<div style="${sectionTitleStyle}">&#128272; Horaires & Acces</div>`;
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">`;
+  html += `<div><label style="${labelStyle}">Check-in</label>
+    <input type="time" id="inlinePropCheckin" value="${prop.checkinTime || '15:00'}" style="${inputStyle}font-family:'Inter',sans-serif;"></div>`;
+  html += `<div><label style="${labelStyle}">Check-out</label>
+    <input type="time" id="inlinePropCheckout" value="${prop.checkoutTime || '11:00'}" style="${inputStyle}font-family:'Inter',sans-serif;"></div>`;
+  html += `</div>`;
+  html += `<div style="margin-bottom:12px;"><label style="${labelStyle}">Code d'acces / Digicode</label>
+    <input type="text" id="inlinePropAccessCode" value="${esc(prop.accessCode || '')}" placeholder="Ex: 1234B, boite a cles..." style="${inputStyle}font-family:'Inter',sans-serif;"></div>`;
+  html += `<div style="margin-bottom:12px;"><label style="${labelStyle}">Consignes d'arrivee</label>
+    <textarea id="inlinePropConsignes" rows="2" placeholder="Parking, wifi, instructions..." style="${inputStyle}resize:vertical;font-family:'Inter',sans-serif;">${esc(prop.consignes || '')}</textarea></div>`;
+  html += `</div>`;
+
+  // SECTION: Calendriers iCal
+  html += `<div style="${sectionStyle}">`;
+  html += `<div style="${sectionTitleStyle}">&#128197; Calendriers iCal</div>`;
+  const icals = prop.icals || [];
+  if (icals.length === 0) {
+    html += `<div style="color:var(--text3);font-size:12px;text-align:center;padding:8px;">Aucun calendrier configure</div>`;
+  } else {
+    icals.forEach((ical, i) => {
+      const platformLabels = { airbnb: 'Airbnb', booking: 'Booking', vrbo: 'VRBO', other: 'Autre' };
+      html += `<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:600;color:var(--text3);min-width:60px;">${platformLabels[ical.platform] || ical.platform}</span>
+        <input type="text" id="inlineIcal_${i}" value="${esc(ical.url)}" placeholder="URL iCal..." style="flex:1;padding:8px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:12px;box-sizing:border-box;" onchange="updateInlineIcalUrl(${i}, this.value)">
+        <button class="btn btnSmall btnDanger" style="padding:4px 8px;" onclick="removeInlineIcal(${i})">&#10005;</button>
+      </div>`;
+    });
+  }
+  html += `<button class="btn btnSmall btnSuccess" onclick="showAddIcalModal()" style="padding:6px 14px;font-size:12px;margin-top:4px;">+ Ajouter un calendrier</button>`;
+  html += `</div>`;
+
+  // SECTION: Notes
+  html += `<div style="${sectionStyle}">`;
+  html += `<div style="${sectionTitleStyle}">&#128221; Notes</div>`;
+  html += `<textarea id="inlinePropNotes" rows="3" placeholder="Notes sur la propriete..." style="${inputStyle}resize:vertical;font-family:'Inter',sans-serif;">${esc(prop.notes || '')}</textarea>`;
+  html += `</div>`;
+
+  // SECTION: Actions (Map + Save + Delete)
+  html += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">`;
+  html += `<button class="btn btnSmall" onclick="selectPropFromDropdown('${prop.id}');setTimeout(openMapForProperty,100)" style="padding:10px 16px;font-size:13px;flex:1;min-width:120px;">&#128205; Position sur carte</button>`;
+  html += `<button class="btn btnSmall btnSuccess" onclick="saveInlinePropDetail()" style="padding:10px 16px;font-size:13px;flex:1;min-width:120px;">&#10003; Enregistrer</button>`;
+  if ((fullConfig.properties || []).length > 1) {
+    html += `<button class="btn btnSmall btnDanger" onclick="removeCurrentProperty();setTimeout(()=>{inlinePropCheckItems=[];renderBiensPropertySelector();renderPropertyDetailsInline()},300)" style="padding:10px 16px;font-size:13px;flex:1;min-width:120px;">&#128465; Supprimer</button>`;
+  }
+  html += `</div>`;
+
+  container.innerHTML = html;
+
+  // Render services checkboxes
+  const svcDiv = document.getElementById('inlinePropServicesChecks');
+  if (svcDiv) {
+    const propServices = prop.required_services || [];
+    let shtml = '';
+    SERVICE_CATALOG.forEach(cat => {
+      cat.services.forEach(s => {
+        const checked = propServices.includes(s.id) ? 'checked' : '';
+        shtml += `<label style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;font-size:12px;cursor:pointer;"><input type="checkbox" class="inlinePropSvcCheck" value="${s.id}" ${checked} style="accent-color:#6c63ff;"> ${s.icon} ${s.label}</label>`;
+      });
+    });
+    svcDiv.innerHTML = shtml;
+  }
+
+  // Render checklist
+  renderInlineChecklist();
+}
+
+let inlinePropCheckItems = [];
+
+function renderInlineChecklist() {
+  const prop = API.getActiveProperty(fullConfig);
+  if (!prop) return;
+  if (!inlinePropCheckItems.length || inlinePropCheckItems._propId !== prop.id) {
+    inlinePropCheckItems = (prop.checklist || []).slice();
+    inlinePropCheckItems._propId = prop.id;
+  }
+  const div = document.getElementById('inlinePropChecklist');
+  if (!div) return;
+  if (!inlinePropCheckItems.length) {
+    div.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:8px;">Aucune instruction</div>';
+    return;
+  }
+  div.innerHTML = inlinePropCheckItems.map((item, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border);">
+      <span style="flex:1;font-size:13px;color:var(--text);">${esc(item)}</span>
+      <button class="btn btnSmall btnDanger" style="padding:2px 8px;font-size:11px;" onclick="removeInlineCheckItem(${i})">&#10005;</button>
+    </div>
+  `).join('');
+}
+
+function addInlineCheckItem() {
+  const input = document.getElementById('inlinePropNewCheckItem');
+  const val = input.value.trim();
+  if (!val) return;
+  inlinePropCheckItems.push(val);
+  input.value = '';
+  renderInlineChecklist();
+}
+
+function removeInlineCheckItem(idx) {
+  inlinePropCheckItems.splice(idx, 1);
+  renderInlineChecklist();
+}
+
+function handleInlinePropPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 500000) { showToast(t('property.image.toolarge') || 'Image trop lourde (max 500KB)'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('inlinePropPhotoImg');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('inlinePropPhotoPlaceholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateInlineIcalUrl(idx, url) {
+  const prop = API.getActiveProperty(fullConfig);
+  if (!prop || !prop.icals || !prop.icals[idx]) return;
+  prop.icals[idx].url = url.trim();
+  syncIcalToOldFormat(prop);
+  syncAndSaveConfig();
+}
+
+function removeInlineIcal(idx) {
+  const prop = API.getActiveProperty(fullConfig);
+  if (!prop || !prop.icals) return;
+  prop.icals.splice(idx, 1);
+  syncIcalToOldFormat(prop);
+  syncAndSaveConfig();
+  renderPropertyDetailsInline();
+}
+
+function saveInlinePropDetail() {
+  const prop = API.getActiveProperty(fullConfig);
+  if (!prop) return;
+  prop.name = (document.getElementById('inlinePropName').value || '').trim() || 'Mon logement';
+  prop.address = (document.getElementById('inlinePropAddress').value || '').trim();
+  prop.type = document.getElementById('inlinePropType').value;
+  prop.rooms = parseInt(document.getElementById('inlinePropRooms').value) || 0;
+  prop.surface = parseInt(document.getElementById('inlinePropSurface').value) || 0;
+  prop.cleaningPrice = parseInt(document.getElementById('inlinePropPrice').value) || 0;
+  prop.ownerPrice = parseInt(document.getElementById('inlinePropOwnerPrice').value) || 0;
+  prop.cleaningDuration = parseInt(document.getElementById('inlinePropDuration').value) || 90;
+  prop.notes = (document.getElementById('inlinePropNotes') || {}).value || '';
+  prop.checkinTime = document.getElementById('inlinePropCheckin').value;
+  prop.checkoutTime = document.getElementById('inlinePropCheckout').value;
+  prop.accessCode = (document.getElementById('inlinePropAccessCode').value || '').trim();
+  prop.consignes = (document.getElementById('inlinePropConsignes').value || '').trim();
+  prop.checklist = inlinePropCheckItems.slice();
+  prop.required_services = [...document.querySelectorAll('.inlinePropSvcCheck:checked')].map(c => c.value);
+  // Photo
+  const img = document.getElementById('inlinePropPhotoImg');
+  if (img && img.style.display !== 'none' && img.src && img.src.startsWith('data:')) {
+    prop.photo = img.src;
+  }
+  syncAndSaveConfig();
+  renderPropertySelector();
+  renderBiensPropertySelector();
+  showToast(t('prop.detail.saved') || 'Propriete enregistree');
+}
+
 function togglePropDropdown() {
   const menu = document.getElementById('propDropdownMenu');
   if (!menu) return;
@@ -2099,6 +2388,7 @@ async function loadActiveProperty() {
   const nameInput = document.getElementById('propNameInput');
   if (nameInput) nameInput.value = prop.name || '';
   renderPropertySelector();
+  renderBiensPropertySelector();
   renderIcalList();
   renderPropQuickInfo();
   // Load message template
@@ -5311,6 +5601,8 @@ function addIcalPlatform(platformId) {
   if (!prop.icals) prop.icals = [];
   prop.icals.push({ platform: platformId, url: '' });
   renderIcalList();
+  // Refresh inline property details if visible
+  if (document.getElementById('propertyDetailsInline')) renderPropertyDetailsInline();
 }
 
 function updateIcalUrl(idx, url) {
@@ -5330,6 +5622,7 @@ async function removeIcal(idx) {
   prop.icals.splice(idx, 1);
   syncIcalToOldFormat(prop);
   renderIcalList();
+  if (document.getElementById('propertyDetailsInline')) renderPropertyDetailsInline();
 }
 
 /* ── Language Modal ── */
@@ -7694,15 +7987,14 @@ function navTo(section) {
     more: 'prestSubComm',
   };
   const targetId = targets[section];
-  // Switch to prestations tab and appropriate sub-tab
+  // Switch to appropriate tab
+  if (section === 'config') { switchMainTab('properties'); return; }
   if (section === 'generate' || section === 'results') { switchMainTab('prestations'); switchPrestSubTab('list'); }
   if (section === 'stats') { switchMainTab('prestations'); switchPrestSubTab('stats'); }
   if (section === 'more') { switchMainTab('prestations'); switchPrestSubTab('comm'); }
   const el = document.getElementById(targetId);
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    // Open panel if collapsed
-    if (section === 'config') { const body = document.getElementById('bodyConfig'); if (body && body.classList.contains('collapsed')) togglePanel('config'); }
   }
 }
 
@@ -7743,6 +8035,7 @@ function switchMainTab(tabId) {
   if (tabId === 'dashboard') renderDashboardContent();
   if (tabId === 'prestations') { renderTabPropertySelector('prestPropertySelector'); loadAdminPrestations(); }
   if (tabId === 'team') renderTabPropertySelector('teamPropertySelector');
+  if (tabId === 'properties') { renderBiensPropertySelector(); inlinePropCheckItems = []; renderPropertyDetailsInline(); }
   if (tabId === 'messages') initFullChat();
 }
 
@@ -8276,7 +8569,10 @@ async function saveNewProperty() {
     await API.save_config(fullConfig);
   }
   renderPropertySelector();
+  renderBiensPropertySelector();
   switchProperty(API.getActivePropertyId());
+  // Refresh inline details after a short delay (switchProperty is async)
+  setTimeout(() => { inlinePropCheckItems = []; renderPropertyDetailsInline(); }, 300);
   showToast('Propriete "' + name + '" creee !');
 }
 
