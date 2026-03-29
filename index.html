@@ -915,7 +915,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.09</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.10</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -925,7 +925,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.09</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.10</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1137,11 +1137,6 @@ async function loadPDF() {
 
   <!-- Property selector slider -->
   <div id="biensPropertySelector" style="margin-bottom:12px;"></div>
-
-  <!-- Add new property button -->
-  <div style="margin-bottom:12px;">
-    <button class="btn btnSmall btnSuccess" onclick="addNewProperty()" style="padding:8px 16px;font-size:12px;">+ Nouveau bien</button>
-  </div>
 
   <!-- Property details form (inline, no modal) -->
   <div id="propertyDetailsInline"></div>
@@ -2040,6 +2035,7 @@ function renderBiensPropertySelector() {
     const isActive = p.id === activePropId;
     html += `<button onclick="switchBiensProperty('${p.id}')" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:${isActive ? '700' : '500'};cursor:pointer;white-space:nowrap;border:${isActive ? '2px solid var(--accent)' : '1px solid var(--border2)'};background:${isActive ? 'rgba(233,69,96,0.15)' : 'var(--surface2)'};color:${isActive ? 'var(--accent)' : 'var(--text)'};transition:all 0.2s;flex-shrink:0;">&#127968; ${esc(p.name)}</button>`;
   });
+  html += `<button onclick="addNewProperty()" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px dashed var(--success);background:transparent;color:var(--success);transition:all 0.2s;flex-shrink:0;">+ Nouveau bien</button>`;
   html += '</div>';
   container.innerHTML = html;
 }
@@ -2113,23 +2109,23 @@ function renderPropertyDetailsInline() {
   // Type + Rooms + Surface
   html += `<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">`;
   html += `<div style="flex:1;min-width:120px;"><label style="${labelStyle}">Type</label>
-    <select id="inlinePropType" ${hasOwner ? 'disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}">`;
+    <select id="inlinePropType" onchange="recalcEstimate()" ${hasOwner ? 'disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}">`;
   typeOptions.forEach(o => { html += `<option value="${o.v}" ${prop.type === o.v ? 'selected' : ''}>${o.l}</option>`; });
   html += `</select></div>`;
   html += `<div style="flex:0.5;min-width:80px;"><label style="${labelStyle}">Pieces</label>
-    <input id="inlinePropRooms" type="number" min="1" max="20" value="${prop.rooms || ''}" ${hasOwner ? 'readonly disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}"></div>`;
+    <input id="inlinePropRooms" type="number" min="1" max="20" value="${prop.rooms || ''}" oninput="recalcEstimate()" ${hasOwner ? 'readonly disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}"></div>`;
   html += `<div style="flex:0.5;min-width:80px;"><label style="${labelStyle}">m&sup2;</label>
-    <input id="inlinePropSurface" type="number" min="1" max="1000" value="${prop.surface || ''}" ${hasOwner ? 'readonly disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}"></div>`;
+    <input id="inlinePropSurface" type="number" min="1" max="1000" value="${prop.surface || ''}" oninput="recalcEstimate()" ${hasOwner ? 'readonly disabled' : ''} style="${inputStyle}${hasOwner ? 'opacity:0.6;' : ''}"></div>`;
   html += `</div>`;
   html += `</div>`; // end general info section
 
   // SECTION: Tarification
   html += `<div style="${sectionStyle}">`;
-  html += `<div style="${sectionTitleStyle}">&#128176; Tarification</div>`;
+  html += `<div style="${sectionTitleStyle}">&#128176; Tarification estimative</div>`;
   html += `<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">`;
-  html += `<div style="flex:1;min-width:120px;"><label style="${labelStyle}">Tarif menage (&euro;)</label>
-    <input id="inlinePropPrice" type="number" min="0" step="5" placeholder="65" value="${prop.cleaningPrice || ''}" style="${inputStyle}"></div>`;
-  html += `<div style="flex:1;min-width:120px;"><label style="${labelStyle}">Duree estimee</label>
+  html += `<div style="flex:1;min-width:120px;"><label style="${labelStyle}">Tarif estimatif (&euro;)</label>
+    <input id="inlinePropPrice" type="number" min="0" step="5" placeholder="65" value="${prop.cleaningPrice || ''}" oninput="this.dataset.auto='0'" style="${inputStyle}"></div>`;
+  html += `<div style="flex:1;min-width:120px;"><label style="${labelStyle}">Duree estimative</label>
     <select id="inlinePropDuration" style="${inputStyle}">`;
   durationOptions.forEach(o => { html += `<option value="${o.v}" ${String(prop.cleaningDuration || '90') === o.v ? 'selected' : ''}>${o.l}</option>`; });
   html += `</select></div>`;
@@ -2345,6 +2341,53 @@ function removeInlineIcal(idx) {
   syncIcalToOldFormat(prop);
   _debouncedSaveConfig();
   renderPropertyDetailsInline();
+}
+
+function recalcEstimate() {
+  const type = document.getElementById('inlinePropType')?.value || 'apartment';
+  const rooms = parseInt(document.getElementById('inlinePropRooms')?.value) || 0;
+  const surface = parseInt(document.getElementById('inlinePropSurface')?.value) || 0;
+  if (!rooms && !surface) return;
+
+  // Base prices by type
+  const basePrices = { studio: 30, apartment: 40, house: 55, villa: 80, chalet: 70, other: 45 };
+  const baseDurations = { studio: 45, apartment: 60, house: 90, villa: 120, chalet: 105, other: 75 };
+
+  let price = basePrices[type] || 45;
+  let duration = baseDurations[type] || 75;
+
+  // Adjust for rooms
+  if (rooms > 1) { price += (rooms - 1) * 8; duration += (rooms - 1) * 15; }
+  // Adjust for surface
+  if (surface > 50) { price += Math.floor((surface - 50) / 25) * 5; duration += Math.floor((surface - 50) / 25) * 10; }
+
+  // Round to nearest 5
+  price = Math.round(price / 5) * 5;
+  duration = Math.round(duration / 15) * 15;
+
+  // Update fields only if they're empty or were auto-filled
+  const priceEl = document.getElementById('inlinePropPrice');
+  const durationEl = document.getElementById('inlinePropDuration');
+  if (priceEl && (!priceEl.value || priceEl.dataset.auto === '1')) {
+    priceEl.value = price;
+    priceEl.dataset.auto = '1';
+  }
+  if (durationEl && durationEl.dataset.auto !== '0') {
+    // Find closest duration option
+    const opts = Array.from(durationEl.options).map(o => parseInt(o.value));
+    const closest = opts.reduce((a, b) => Math.abs(b - duration) < Math.abs(a - duration) ? b : a);
+    durationEl.value = String(closest);
+  }
+
+  // Also update service config prices if they're empty
+  document.querySelectorAll('.svcPrice').forEach(input => {
+    if (!input.value || input.dataset.auto === '1') {
+      const svcId = input.dataset.svc;
+      // Ménage standard = full price, others = fraction
+      const svcPrices = { cleaning_standard: price, cleaning_deep: Math.round(price * 1.5 / 5) * 5, windows: Math.round(price * 0.4 / 5) * 5, laundry: 15, ironing: 15, pressing: 25, checkin: 20, checkout: 15, key_handover: 10, gardening: 30, pool: 25, snow: 35, shopping: 20, handyman: 40, cooking: 50, childcare: 25, petcare: 20 };
+      if (svcPrices[svcId] !== undefined) { input.value = svcPrices[svcId]; input.dataset.auto = '1'; }
+    }
+  });
 }
 
 function saveInlinePropDetail() {
