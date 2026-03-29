@@ -131,6 +131,30 @@ async function loadPDF() {
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border2);
   }
+  /* ── Bottom Navigation Bar ── */
+  .bottomNav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+    border-top: 1px solid var(--border2);
+    display: none; justify-content: space-around; align-items: center;
+    padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  }
+  .bottomNav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 6px 8px; border-radius: 10px; cursor: pointer;
+    transition: all 0.2s; color: var(--text3); font-size: 10px; font-weight: 600;
+    min-width: 50px; position: relative;
+  }
+  .bottomNav-item.active { color: var(--accent); }
+  .bottomNav-item .nav-icon { font-size: 20px; }
+  .bottomNav-item .nav-badge {
+    position: absolute; top: 0; right: 2px;
+    background: #e94560; color: #fff; font-size: 9px; font-weight: 700;
+    min-width: 16px; height: 16px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
   .header-left { display: flex; align-items: center; gap: 12px; }
   .header-logo {
     width: 40px; height: 40px;
@@ -581,6 +605,8 @@ async function loadPDF() {
     .colPct { width: 100px; }
     .colVac { width: 90px; }
     .provTable select { font-size: 14px !important; padding: 10px 6px !important; }
+    .bottomNav-item { font-size: 9px; }
+    .bottomNav-item .nav-icon { font-size: 18px; }
   }
 
   /* ── Pressing ── */
@@ -848,14 +874,7 @@ async function loadPDF() {
   .fab:active { transform:scale(0.95); }
   .fab.loading { animation:pulse 1s infinite; pointer-events:none; }
 
-  /* Bottom Navigation Bar (mobile) */
-  .bottomNav { display:none; position:fixed; bottom:0; left:0; right:0; background:var(--surface); border-top:1px solid var(--border2); padding:6px 0; padding-bottom:env(safe-area-inset-bottom, 6px); z-index:100; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
-  .bottomNav-inner { display:flex; justify-content:space-around; align-items:center; max-width:500px; margin:0 auto; }
-  .bottomNav-item { display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px 12px; border-radius:12px; cursor:pointer; transition:all 0.2s ease; color:var(--text3); text-decoration:none; border:none; background:none; font-family:inherit; }
-  .bottomNav-item.active { color:var(--accent); }
-  .bottomNav-item .navIcon { font-size:20px; line-height:1; }
-  .bottomNav-item .navLabel { font-size:10px; font-weight:600; }
-  .bottomNav-item:active { transform:scale(0.9); }
+  /* Bottom Navigation Bar — overridden by new tab-based nav styles above */
 
   /* Tablet layout */
   @media (min-width:768px) and (max-width:1024px) {
@@ -864,9 +883,8 @@ async function loadPDF() {
     .tabletGrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   }
 
-  /* Mobile: show bottom nav, FAB, add bottom padding */
+  /* Mobile: show FAB, add bottom padding */
   @media (max-width:768px) {
-    .bottomNav { display:block; }
     .fab { display:flex; }
     body { padding-bottom: 70px; }
     .statusBar { bottom: 60px; }
@@ -883,7 +901,6 @@ async function loadPDF() {
 
   /* Hide header actions text on small screens */
   @media (max-width:400px) {
-    .bottomNav-item .navLabel { font-size: 9px; }
     .fab { bottom: 74px; right: 14px; width: 50px; height: 50px; font-size: 18px; }
   }
 </style>
@@ -891,7 +908,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v3.34</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v4.00</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -903,7 +920,7 @@ async function loadPDF() {
   </div>
   <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio</div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie</div>
-  <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou &mdash; v3.34</div>
+  <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou &mdash; v4.00</div>
   <!-- Loading bar -->
   <div style="width:200px;height:3px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:24px;overflow:hidden;">
     <div id="splashBar" style="width:0%;height:100%;background:linear-gradient(90deg,#e94560,#6c63ff);border-radius:4px;transition:width 1.5s ease;"></div>
@@ -989,12 +1006,12 @@ async function loadPDF() {
 </div>
 
 <!-- App Main (hidden until auth) -->
-<div id="appMain" style="display:none;padding-top:68px;">
+<div id="appMain" style="display:none;padding-top:68px;padding-bottom:70px;">
 <div class="header">
   <div class="header-left">
     <div class="header-logo" style="width:28px;height:28px;background:linear-gradient(135deg,#e94560,#6c63ff);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff;">L</div>
     <div>
-      <h1>Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v3.34</span></h1>
+      <h1>Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v4.00</span></h1>
       <div class="subtitle" data-i18n="header.subtitle">Services et conciergerie</div>
     </div>
   </div>
@@ -1036,6 +1053,9 @@ async function loadPDF() {
     <button class="btnDismiss" onclick="dismissInstall()">&times;</button>
   </div>
 
+  <!-- ═══ TAB: DASHBOARD ═══ -->
+  <div class="tab-content active" id="tabDashboard">
+
   <!-- KPI Cards (all modes) -->
   <div id="kpiCards" style="display:none;"></div>
 
@@ -1074,6 +1094,15 @@ async function loadPDF() {
     </div>
   </div>
 
+  <div id="dashTodayCleanings" style="margin-top:16px;"></div>
+  <div id="dashPendingRequests" style="margin-top:16px;"></div>
+  <div id="dashRecentActivity" style="margin-top:16px;"></div>
+
+  </div><!-- /tabDashboard -->
+
+  <!-- ═══ TAB: PROPERTIES ═══ -->
+  <div class="tab-content" id="tabProperties">
+
   <!-- ═══ SECTION 1: PROPRIÉTÉ ═══ -->
   <div class="panel" id="panelConfig" style="position:relative;z-index:10;">
     <div class="panelHeader" onclick="togglePanel('config')">
@@ -1103,6 +1132,11 @@ async function loadPDF() {
       <div id="icalList" style="display:none;"></div>
     </div>
   </div>
+
+  </div><!-- /tabProperties -->
+
+  <!-- ═══ TAB: TEAM ═══ -->
+  <div class="tab-content" id="tabTeam">
 
   <!-- ═══ SECTION 2: ÉQUIPE MÉNAGE ═══ -->
   <div class="panel">
@@ -1144,6 +1178,11 @@ async function loadPDF() {
     </div>
   </div>
 
+  </div><!-- /tabTeam -->
+
+  <!-- ═══ TAB: SERVICES ═══ -->
+  <div class="tab-content" id="tabServices">
+
   <!-- ═══ SECTION: SERVICES ═══ -->
   <div class="panel" id="panelServices">
     <div class="panelHeader" onclick="togglePanel('services')">
@@ -1161,6 +1200,11 @@ async function loadPDF() {
       <div id="serviceRequestsList"></div>
     </div>
   </div>
+
+  </div><!-- /tabServices -->
+
+  <!-- ═══ TAB: BILLING ═══ -->
+  <div class="tab-content" id="tabBilling">
 
   <!-- ═══ SECTION: FACTURATION ═══ -->
   <div class="panel" id="panelBilling">
@@ -1191,6 +1235,11 @@ async function loadPDF() {
       <div id="invoiceSummary" style="margin-top:12px;"></div>
     </div>
   </div>
+
+  </div><!-- /tabBilling -->
+
+  <!-- ═══ TAB: PLANNING ═══ -->
+  <div class="tab-content" id="tabPlanning">
 
   <!-- ═══ SECTION 3: PLANNING ═══ -->
   <div class="panel">
@@ -1287,9 +1336,11 @@ async function loadPDF() {
     </div>
   </div>
 
+  </div><!-- /tabPlanning -->
+
   <!-- Footer -->
   <div translate="no" style="text-align:center;padding:20px 16px;color:var(--text3);font-size:11px;line-height:1.8;">
-    <div style="font-weight:600;color:var(--text2);margin-bottom:4px;">Lokizio v3.34</div>
+    <div style="font-weight:600;color:var(--text2);margin-bottom:4px;">Lokizio v4.00</div>
     <div>Made with ❤️ by <a href="https://github.com/fabienlacaze" target="_blank" style="color:var(--accent2);text-decoration:none;">Fabidou</a></div>
     <div style="margin-top:4px;">
       <a href="privacy.html" target="_blank" style="color:var(--text3);text-decoration:none;margin:0 8px;">Confidentialite</a>
@@ -1791,27 +1842,29 @@ async function loadPDF() {
 
 <!-- Bottom Navigation Bar (mobile) -->
 <nav class="bottomNav" id="bottomNav">
-  <div class="bottomNav-inner">
-    <button class="bottomNav-item active" onclick="navTo('config')" id="navConfig">
-      <span class="navIcon">&#9881;</span>
-      <span class="navLabel" data-i18n="nav.config">Config</span>
-    </button>
-    <button class="bottomNav-item" onclick="navTo('generate')" id="navGenerate">
-      <span class="navIcon">&#9654;</span>
-      <span class="navLabel" data-i18n="nav.generate">Generer</span>
-    </button>
-    <button class="bottomNav-item" onclick="navTo('results')" id="navResults">
-      <span class="navIcon">&#128203;</span>
-      <span class="navLabel" data-i18n="nav.results">Planning</span>
-    </button>
-    <button class="bottomNav-item" onclick="navTo('stats')" id="navStats">
-      <span class="navIcon">&#128200;</span>
-      <span class="navLabel" data-i18n="nav.stats">Stats</span>
-    </button>
-    <button class="bottomNav-item" onclick="navTo('more')" id="navMore">
-      <span class="navIcon">&#8943;</span>
-      <span class="navLabel" data-i18n="nav.more">Plus</span>
-    </button>
+  <div class="bottomNav-item active" onclick="switchMainTab('dashboard')" id="navDashboard">
+    <span class="nav-icon">&#128202;</span>
+    <span>Dashboard</span>
+  </div>
+  <div class="bottomNav-item" onclick="switchMainTab('properties')" id="navProperties">
+    <span class="nav-icon">&#127968;</span>
+    <span>Biens</span>
+  </div>
+  <div class="bottomNav-item" onclick="switchMainTab('team')" id="navTeam">
+    <span class="nav-icon">&#128101;</span>
+    <span>Equipe</span>
+  </div>
+  <div class="bottomNav-item" onclick="switchMainTab('planning')" id="navPlanning">
+    <span class="nav-icon">&#128197;</span>
+    <span>Planning</span>
+  </div>
+  <div class="bottomNav-item" onclick="switchMainTab('services')" id="navServices">
+    <span class="nav-icon">&#128203;</span>
+    <span>Services</span>
+  </div>
+  <div class="bottomNav-item" onclick="switchMainTab('billing')" id="navBilling">
+    <span class="nav-icon">&#128176;</span>
+    <span>Factures</span>
   </div>
 </nav>
 
@@ -1989,6 +2042,7 @@ async function loadActiveProperty() {
   calYear = now.getFullYear();
   calMonth = now.getMonth();
   restorePanelStates();
+  renderDashboardContent();
   // Auto-generate if URLs configured but no planning
   const hasUrls = config.airbnbIcalUrl || config.bookingIcalUrl || (prop && prop.icals && prop.icals.some(i => i.url));
   const hasProviders = (config.providers || []).length > 0;
@@ -2242,6 +2296,8 @@ async function init() {
 
   // ── FLOW 5: Admin/Manager → full mode ──
   document.getElementById('appMain').style.display = '';
+  const bottomNav = document.getElementById('bottomNav');
+  if (bottomNav) bottomNav.style.display = 'flex';
 
   fullConfig = await API.load_config();
   renderPropertySelector();
@@ -2321,6 +2377,8 @@ function appendRoleBadge(h1) {
 
 /* ── Provider Mode ── */
 async function showProviderMode() {
+  const bottomNav = document.getElementById('bottomNav');
+  if (bottomNav) bottomNav.style.display = 'none';
   const content = document.querySelector('.content');
   if (!content) return;
 
@@ -2406,7 +2464,7 @@ async function showProviderMode() {
   if (headerEl) {
     const h1 = headerEl.querySelector('h1');
     if (h1) {
-      h1.innerHTML = 'Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v3.34</span>';
+      h1.innerHTML = 'Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v4.00</span>';
       appendRoleBadge(h1);
     }
     const sub = headerEl.querySelector('.sub-title');
@@ -2602,6 +2660,8 @@ async function showProviderMode() {
 
 /* ── Owner Mode ── */
 async function showOwnerMode() {
+  const bottomNav = document.getElementById('bottomNav');
+  if (bottomNav) bottomNav.style.display = 'none';
   const content = document.querySelector('.content');
   if (!content) return;
   content.innerHTML = '';
@@ -2632,7 +2692,7 @@ async function showOwnerMode() {
   if (headerEl) {
     const h1 = headerEl.querySelector('h1');
     if (h1) {
-      h1.innerHTML = 'Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v3.34</span>';
+      h1.innerHTML = 'Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);vertical-align:middle;">v4.00</span>';
       appendRoleBadge(h1);
     }
     document.querySelectorAll('.header-actions .btnHelp').forEach(btn => {
@@ -6985,7 +7045,48 @@ function checkReminders() {
   localStorage.setItem('mm_reminders', JSON.stringify(remaining));
 }
 
-/* ── Tabs ── */
+/* ── Main Tab Navigation (bottom nav) ── */
+function switchMainTab(tabId) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  // Deactivate all nav items
+  document.querySelectorAll('.bottomNav-item').forEach(n => n.classList.remove('active'));
+  // Show selected tab
+  const tab = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
+  if (tab) tab.classList.add('active');
+  // Activate nav item
+  const nav = document.getElementById('nav' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
+  if (nav) nav.classList.add('active');
+  // Scroll to top
+  window.scrollTo(0, 0);
+  // Refresh dashboard content when switching to dashboard
+  if (tabId === 'dashboard') renderDashboardContent();
+}
+
+function renderDashboardContent() {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const todayCleanings = (cleanings || []).filter(c => (c.date || c.cleaningDate) === todayStr);
+  const div1 = document.getElementById('dashTodayCleanings');
+  if (div1) {
+    let html = '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">&#128197; Aujourd\'hui</div>';
+    if (todayCleanings.length === 0) {
+      html += '<div style="color:var(--text3);font-size:13px;">Aucune prestation aujourd\'hui</div>';
+    } else {
+      todayCleanings.forEach(c => {
+        const statusIcons = { done: '&#9989;', in_progress: '&#128260;', accepted: '&#10003;', pending: '&#9203;', refused: '&#10060;' };
+        html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px;">';
+        html += '<span>' + (statusIcons[c._status] || '&#128203;') + '</span>';
+        html += '<span style="font-weight:600;">' + esc(c.provider || 'Non assigne') + '</span>';
+        html += '<span style="color:var(--text3);font-size:12px;">' + esc(c.source || '') + '</span>';
+        html += '</div>';
+      });
+    }
+    div1.innerHTML = html;
+  }
+}
+
+/* ── Tabs (planning sub-tabs) ── */
 function switchTab(tab) {
   currentTab=tab;
   const tabs={list:'tabList',calendar:'tabCal',stats:'tabStats',history:'tabHist',pressing:'tabPressing'};
@@ -8035,7 +8136,7 @@ async function forceUpdate() {
   window.location.href = window.location.pathname + '?_v=' + Date.now();
 }
 let _updateBannerShown = false;
-const CURRENT_VERSION = 'v3.34';
+const CURRENT_VERSION = 'v4.00';
 function showUpdateBanner() {
   if (_updateBannerShown) return;
   _updateBannerShown = true;
@@ -8081,6 +8182,7 @@ if('serviceWorker' in navigator){
   }).catch(err=>console.log('SW:',err));
 }
 </script>
+
 </div><!-- /appMain -->
 </body>
 </html>
