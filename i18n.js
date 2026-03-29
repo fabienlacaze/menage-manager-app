@@ -45,7 +45,7 @@ const I18N = {
 
     // Sections
     'section.property': 'Propriete',
-    'section.team': 'Equipe menage',
+    'section.team': 'Equipe prestataires',
     'section.history': 'Historique & Pressing',
 
     // Config panel
