@@ -272,7 +272,7 @@ const API = (function() {
     // ─── Members ───
     async loadMembers() {
       if (!currentOrg) return [];
-      const { data } = await sb.from('members').select('*, profiles(email)').eq('org_id', currentOrg.id);
+      const { data } = await sb.from('members').select('*').eq('org_id', currentOrg.id);
       return data || [];
     },
     async inviteMember(email, role) {
