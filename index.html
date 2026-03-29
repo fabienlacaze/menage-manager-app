@@ -26,7 +26,7 @@
 <meta name="google" content="notranslate">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase_config.js?v=13"></script>
-<script src="i18n.js?v=27"></script>
+<script src="i18n.js?v=28"></script>
 <script src="ical_parser.js?v=14"></script>
 <script src="api_bridge.js?v=24"></script>
 <!-- Lazy-loaded: Leaflet, Chart.js, jsPDF (loaded on demand to improve startup) -->
@@ -915,7 +915,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.19</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.20</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -925,12 +925,21 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.19</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.20</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
   <div style="width:200px;height:3px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:24px;overflow:hidden;">
     <div id="splashBar" style="width:0%;height:100%;background:linear-gradient(90deg,#e94560,#6c63ff);border-radius:4px;transition:width 1.5s ease;"></div>
+  </div>
+  <!-- Changelog -->
+  <div style="margin-top:16px;max-width:280px;text-align:left;font-size:10px;color:rgba(255,255,255,0.3);line-height:1.6;">
+    <div style="color:rgba(255,255,255,0.5);font-weight:600;margin-bottom:4px;">Nouveautes :</div>
+    &#x2022; Systeme de notation des prestations<br>
+    &#x2022; Flux complet proprio → concierge → prestataire<br>
+    &#x2022; Filtres par statut (en attente, assigne, en cours...)<br>
+    &#x2022; Config services par bien (frequence, prix)<br>
+    &#x2022; Auto-sauvegarde des modifications
   </div>
 </div>
 <script>
@@ -2193,13 +2202,12 @@ function renderPropertyDetailsInline() {
   html += `<textarea id="inlinePropNotes" rows="3" placeholder="Notes sur la propriete..." style="${inputStyle}resize:vertical;font-family:'Inter',sans-serif;">${esc(prop.notes || '')}</textarea>`;
   html += `</div>`;
 
-  // SECTION: Actions (Save + Delete)
-  html += `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">`;
-  html += `<button class="btn btnSmall btnSuccess" onclick="saveInlinePropDetail()" style="padding:10px 16px;font-size:13px;flex:1;min-width:120px;">&#10003; Enregistrer</button>`;
+  // SECTION: Delete only (auto-save handles saving)
   if ((fullConfig.properties || []).length > 1) {
-    html += `<button class="btn btnSmall btnDanger" onclick="removeCurrentProperty();setTimeout(()=>{inlinePropCheckItems=[];renderBiensPropertySelector();renderPropertyDetailsInline()},300)" style="padding:10px 16px;font-size:13px;flex:1;min-width:120px;">&#128465; Supprimer</button>`;
+    html += `<div style="margin-bottom:16px;">`;
+    html += `<button class="btn btnSmall btnDanger" onclick="if(confirm('Supprimer ce bien et toutes ses donnees ?')){removeCurrentProperty();setTimeout(()=>{inlinePropCheckItems=[];renderBiensPropertySelector();renderPropertyDetailsInline()},300)}" style="padding:10px 16px;font-size:13px;">&#128465; Supprimer le bien</button>`;
+    html += `</div>`;
   }
-  html += `</div>`;
 
   container.innerHTML = html;
 
@@ -2271,6 +2279,13 @@ function renderPropertyDetailsInline() {
 
   // Render checklist
   renderInlineChecklist();
+
+  // Auto-save all property fields on change
+  const _autoSaveInline = debounce(() => saveInlinePropDetail(), 1500);
+  document.querySelectorAll('#propertyDetailsInline input, #propertyDetailsInline select, #propertyDetailsInline textarea').forEach(el => {
+    el.addEventListener('input', _autoSaveInline);
+    el.addEventListener('change', _autoSaveInline);
+  });
 }
 
 let inlinePropCheckItems = [];
@@ -2864,14 +2879,19 @@ async function loadKpiCards() {
     const { data: properties } = await sb.from('properties').select('id').eq('org_id', org.id);
     const propIds = (properties || []).map(p => p.id);
     const { data: plannings } = propIds.length ? await sb.from('plannings').select('cleanings').in('property_id', propIds) : { data: [] };
+    const { data: svcReqs } = await sb.from('service_requests').select('id,requested_date,status').eq('org_id', org.id).in('status', ['pending','assigned','accepted','in_progress']);
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     const weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate() + 7);
     const weekEndStr = weekEnd.toISOString().split('T')[0];
     let allCleanings = [];
     (plannings || []).forEach(p => { if (p.cleanings) allCleanings = allCleanings.concat(p.cleanings); });
-    const future = allCleanings.filter(c => (c.cleaningDate || c.date || '') >= todayStr);
-    const week = future.filter(c => (c.cleaningDate || c.date || '') <= weekEndStr);
+    const futureCl = allCleanings.filter(c => (c.cleaningDate || c.date || '') >= todayStr);
+    const futureSvc = (svcReqs || []).filter(r => (r.requested_date || '') >= todayStr);
+    const future = futureCl.length + futureSvc.length;
+    const weekCl = futureCl.filter(c => (c.cleaningDate || c.date || '') <= weekEndStr);
+    const weekSvc = futureSvc.filter(r => (r.requested_date || '') <= weekEndStr);
+    const week = weekCl.length + weekSvc.length;
     const provCount = new Set(allCleanings.map(c => c.provider).filter(Boolean)).size;
     el.style.display = '';
     el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
@@ -2880,11 +2900,11 @@ async function loadKpiCards() {
         <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.properties')}</div>
       </div>
       <div onclick="switchMainTab('prestations')" style="background:linear-gradient(135deg,#6c63ff,#5a54e0);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:transform 0.15s;user-select:none;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
-        <div style="font-size:24px;font-weight:800;color:#fff;">${future.length}</div>
+        <div style="font-size:24px;font-weight:800;color:#fff;">${future}</div>
         <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.upcoming')}</div>
       </div>
       <div onclick="switchMainTab('prestations')" style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:transform 0.15s;user-select:none;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
-        <div style="font-size:24px;font-weight:800;color:#fff;">${week.length}</div>
+        <div style="font-size:24px;font-weight:800;color:#fff;">${week}</div>
         <div style="font-size:11px;color:rgba(255,255,255,0.8);">${t('kpi.this_week')}</div>
       </div>
       <div onclick="switchMainTab('team')" style="background:linear-gradient(135deg,#34d399,#059669);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:transform 0.15s;user-select:none;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">

@@ -387,7 +387,7 @@ const I18N = {
 
     // KPI
     'kpi.properties': 'Proprietes',
-    'kpi.upcoming': 'Menages a venir',
+    'kpi.upcoming': 'Prestations a venir',
     'kpi.this_week': 'Cette semaine',
     'kpi.providers': 'Prestataires',
     'kpi.cost': 'Cout previsionnel',
