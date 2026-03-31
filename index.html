@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.38</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.40</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,22 +943,15 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.38</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.40</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
   <div style="width:200px;height:3px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:24px;overflow:hidden;">
     <div id="splashBar" style="width:0%;height:100%;background:linear-gradient(90deg,#e94560,#6c63ff);border-radius:4px;transition:width 1.5s ease;"></div>
   </div>
-  <!-- Changelog -->
-  <div style="margin-top:16px;max-width:280px;text-align:left;font-size:10px;color:rgba(255,255,255,0.3);line-height:1.6;">
-    <div style="color:rgba(255,255,255,0.5);font-weight:600;margin-bottom:4px;">Nouveautes :</div>
-    &#x2022; Annulation de prestations avec penalites graduees<br>
-    &#x2022; Paiement Stripe integre (checkout + portail)<br>
-    &#x2022; Mode hors-ligne (PWA)<br>
-    &#x2022; Traductions ES, PT, IT, DE completes<br>
-    &#x2022; Cartes prestations redesignees + separateurs de dates
-  </div>
+  <!-- Changelog (auto-generated from SPLASH_CHANGELOG) -->
+  <div id="splashChangelog" style="margin-top:16px;max-width:280px;text-align:left;font-size:10px;color:rgba(255,255,255,0.3);line-height:1.6;"></div>
 </div>
 <script>
 (function(){
@@ -1957,6 +1950,23 @@ function toggleTheme(){const t=document.documentElement.getAttribute('data-theme
 (function(){const t=localStorage.getItem('mm_theme');if(t==='light'){document.documentElement.setAttribute('data-theme','light');}})();
 
 const COLORS = ['#3fb950','#58a6ff','#d29922','#f85149','#bc8cff','#79c0ff','#f778ba'];
+
+// ── Splash Changelog (update this with each significant version) ──
+const SPLASH_CHANGELOG = [
+  'Detection de mise a jour en temps reel',
+  'Cartes prestations simplifiees et lisibles',
+  'Annulation avec penalites graduees',
+  'Mode hors-ligne (PWA)',
+  'Traductions ES, PT, IT, DE completes',
+];
+// Render splash changelog
+(function() {
+  const el = document.getElementById('splashChangelog');
+  if (el) {
+    el.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-weight:600;margin-bottom:4px;">Nouveautes :</div>'
+      + SPLASH_CHANGELOG.map(s => '&#x2022; ' + s).join('<br>');
+  }
+})();
 
 const SERVICE_CATALOG = [
   { cat: 'menage', label: 'Menage', services: [
@@ -10154,11 +10164,19 @@ async function loadAdminPrestations(forceReload) {
       dowStr = days[d.getDay()];
     }
 
+    // Pre-compute actions for pending status (inline in card)
+    let pendingProviders = null;
+    if (u._source === 'service_request' && u.status === 'pending') {
+      pendingProviders = [];
+      props.forEach(p => { (p.providers || []).forEach(pv => { if (!pendingProviders.find(x => x.name === pv.name)) pendingProviders.push(pv); }); });
+    }
+    const cancellable = u._source === 'service_request' && !['done', 'departed', 'in_progress', 'cancelled'].includes(u.status);
+    const cancelPrice = u.propertyId ? (propMap[u.propertyId]?.owner_price || 0) : 0;
+
     html += '<div class="adminPrestCard" data-category="' + cat + '" data-status="' + u.status + '"' + (isToday ? ' style="border-color:rgba(233,69,96,0.3);"' : '') + '>';
-    // Single row: icon + name + meta + status
     html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;">';
     // Service icon
-    html += '<div style="font-size:22px;flex-shrink:0;width:32px;text-align:center;">' + svcIcon + '</div>';
+    html += '<div style="font-size:22px;flex-shrink:0;width:28px;text-align:center;">' + svcIcon + '</div>';
     // Info
     html += '<div style="flex:1;min-width:0;">';
     html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
@@ -10166,7 +10184,6 @@ async function loadAdminPrestations(forceReload) {
     if (u.source) html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:' + (u.source.toLowerCase().includes('airbnb') ? '#e9456030' : '#2563eb30') + ';color:' + (u.source.toLowerCase().includes('airbnb') ? '#e94560' : '#2563eb') + ';font-weight:700;">' + esc(u.source).toUpperCase() + '</span>';
     if (u.priority === 'high') html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#ef444420;color:#ef4444;font-weight:700;">URGENT</span>';
     html += '</div>';
-    // Meta line
     html += '<div style="font-size:11px;color:var(--text3);margin-top:2px;">';
     const metaParts = [];
     if (u.propertyName) metaParts.push('🏠 ' + esc(u.propertyName));
@@ -10175,30 +10192,30 @@ async function loadAdminPrestations(forceReload) {
     html += '</div>';
     if (u.description) html += '<div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(u.description) + '</div>';
     html += '</div>';
-    // Status badge
-    html += '<span class="card-status" style="background:' + color + '18;color:' + color + ';flex-shrink:0;">' + label + '</span>';
+    // Right side: assign select (inline) + status + actions
+    html += '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">';
+    if (pendingProviders) {
+      html += '<select id="svcAssign_' + u._id + '" style="padding:4px 6px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:5px;font-size:10px;max-width:120px;">';
+      html += '<option value="">Assigner...</option>';
+      const matching = pendingProviders.filter(p => p.services && p.services.includes(u.type));
+      const others = pendingProviders.filter(p => !p.services || !p.services.includes(u.type));
+      if (matching.length) { matching.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; }); }
+      if (others.length) { others.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; }); }
+      html += '</select>';
+      html += '<button style="padding:3px 8px;font-size:10px;font-weight:600;border:none;border-radius:4px;cursor:pointer;background:rgba(52,211,153,0.15);color:#34d399;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcAssign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)" title="Assigner">&#10003;</button>';
+      html += '<button style="padding:3px 8px;font-size:10px;font-weight:600;border:none;border-radius:4px;cursor:pointer;background:rgba(239,68,68,0.15);color:#ef4444;" onclick="updateServiceRequest(\'' + u._id + '\',\'refused\');setTimeout(()=>loadAdminPrestations(true),500)" title="Refuser">&#10007;</button>';
+    } else {
+      html += '<span class="card-status" style="background:' + color + '18;color:' + color + ';">' + label + '</span>';
+    }
+    if (cancellable) {
+      html += '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcName).replace(/'/g,"\\'") + '\',' + cancelPrice + ');return false;" style="font-size:10px;color:var(--text3);text-decoration:none;padding:2px;" title="Annuler">&#128465;</a>';
+    }
+    html += '</div>';
     html += '</div>';
 
-    // Action footer for service requests
+    // Action footer for service requests (non-pending statuses only)
     if (u._source === 'service_request') {
-      const cancellable = !['done', 'departed', 'in_progress', 'cancelled'].includes(u.status);
-      // Get price for cancel penalty
-      const cancelPrice = u.propertyId ? (propMap[u.propertyId]?.owner_price || 0) : 0;
-      if (u.status === 'pending') {
-        let allProviders = [];
-        props.forEach(p => { (p.providers || []).forEach(pv => { if (!allProviders.find(x => x.name === pv.name)) allProviders.push(pv); }); });
-        html += '<div style="display:flex;gap:6px;align-items:center;padding:6px 14px 10px;flex-wrap:wrap;">';
-        html += '<select id="svcAssign_' + u._id + '" style="flex:1;padding:5px 8px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;min-width:100px;">';
-        html += '<option value="">Assigner a...</option>';
-        const matching = allProviders.filter(p => p.services && p.services.includes(u.type));
-        const others = allProviders.filter(p => !p.services || !p.services.includes(u.type));
-        if (matching.length) { html += '<optgroup label="Competents">'; matching.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; }); html += '</optgroup>'; }
-        if (others.length) { html += '<optgroup label="Autres">'; others.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; }); html += '</optgroup>'; }
-        html += '</select>';
-        html += '<button style="padding:4px 10px;font-size:10px;font-weight:600;border:none;border-radius:5px;cursor:pointer;background:rgba(52,211,153,0.15);color:#34d399;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcAssign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">&#10003;</button>';
-        html += '<button style="padding:4px 10px;font-size:10px;font-weight:600;border:none;border-radius:5px;cursor:pointer;background:rgba(239,68,68,0.15);color:#ef4444;" onclick="updateServiceRequest(\'' + u._id + '\',\'refused\');setTimeout(()=>loadAdminPrestations(true),500)">&#10007;</button>';
-        html += '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcName).replace(/'/g,"\\'") + '\',' + cancelPrice + ');return false;" style="font-size:10px;color:var(--text3);text-decoration:none;padding:2px 4px;" title="Annuler">&#128465;</a>';
-        html += '</div>';
+      if (false) { // pending is now handled inline above
       } else if (u.status === 'refused') {
         let allProviders = [];
         props.forEach(p => { (p.providers || []).forEach(pv => { if (!allProviders.find(x => x.name === pv.name)) allProviders.push(pv); }); });
