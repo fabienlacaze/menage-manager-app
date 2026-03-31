@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.46</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.47</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.46</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.47</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -8967,8 +8967,8 @@ function renderCalendar() {
     const dayReservs=reservations.filter(r=>dateStr>=r.start&&dateStr<r.end);
     // Also show service requests on calendar
     const daySvcReqs=(_adminPrestCache&&_adminPrestCache.svcRequests||[]).filter(r=>{const d=r.requested_date||r.preferred_date||'';return d===dateStr&&!['cancelled','refused'].includes(r.status);});
-    dayCleanings.forEach(c=>{const color=getProvColor(c.provider);events+=`<div class="calEvent calCleaning" style="background:${color}">${esc(c.provider)}</div>`;});
-    daySvcReqs.forEach(r=>{const svc=getServiceIcon?getServiceIcon(r.service_type):'📋';events+=`<div class="calEvent" style="background:#6c63ff;color:#fff;padding:2px 5px;margin:1px 0;font-size:9px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${svc} ${esc(r.assigned_provider||'?')}</div>`;});
+    dayCleanings.forEach(c=>{const color=getProvColor(c.provider);events+=`<div class="calEvent calCleaning" onclick="goToListDate('${dateStr}')" style="background:${color};cursor:pointer;">${esc(c.provider)}</div>`;});
+    daySvcReqs.forEach(r=>{const svc=getServiceIcon?getServiceIcon(r.service_type):'📋';events+=`<div class="calEvent" onclick="goToListDate('${dateStr}')" style="background:#6c63ff;color:#fff;padding:2px 5px;margin:1px 0;font-size:9px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;">${svc} ${esc(r.assigned_provider||'?')}</div>`;});
     dayReservs.forEach(r=>{events+=`<div class="calEvent calReserv">${esc(r.source)}</div>`;});
     const hasEvents=dayCleanings.length||dayReservs.length||daySvcReqs.length;
     const ttData=hasEvents?`onmouseenter="showCalTooltip(event,'${dateStr}')" onmouseleave="hideCalTooltip()"`:''
@@ -8979,6 +8979,37 @@ function renderCalendar() {
   html+='</tr></table>';
   html+='<div style="margin-top:12px;font-size:11px;color:var(--text3);display:flex;gap:14px;align-items:center;flex-wrap:wrap;"><span class="calEvent calCleaning" style="display:inline-block;padding:3px 10px;">Menage</span><span class="calEvent" style="display:inline-block;padding:3px 10px;background:#6c63ff;color:#fff;border-radius:4px;">Service</span><span class="calEvent calReserv" style="display:inline-block;padding:3px 10px;">Reservation</span><span style="color:var(--accent);font-weight:600;cursor:pointer;" onclick="calToday()">&#9658; Aujourd\'hui</span></div>';
   document.getElementById('calView').innerHTML=html;
+}
+function goToListDate(dateStr) {
+  // Switch to Liste tab and scroll to the date group
+  switchPrestSubTab('list');
+  setTimeout(() => {
+    // Find the date separator or card matching this date
+    const cards = document.querySelectorAll('.adminPrestCard');
+    for (const card of cards) {
+      // Check previous sibling for date separator
+      const prev = card.previousElementSibling;
+      if (prev && prev.textContent && card.dataset.status) {
+        // Check if card's date matches by looking at data or nearby separator
+      }
+    }
+    // Simpler: find date separator text and scroll to it
+    const allEls = document.getElementById('adminPrestList')?.children || [];
+    for (const el of allEls) {
+      if (el.tagName === 'DIV' && !el.classList.contains('adminPrestCard') && el.textContent) {
+        // Date separators contain the date text
+        const d = new Date(dateStr + 'T12:00:00');
+        const dayNum = d.getDate();
+        const monthName = d.toLocaleDateString('fr-FR', { month: 'long' });
+        if (el.textContent.toLowerCase().includes(String(dayNum)) && el.textContent.toLowerCase().includes(monthName.toLowerCase())) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          el.style.background = 'rgba(108,99,255,0.15)';
+          setTimeout(() => { el.style.background = ''; }, 2000);
+          return;
+        }
+      }
+    }
+  }, 300);
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
