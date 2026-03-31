@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.00</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.01</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.00</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.01</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -3843,6 +3843,9 @@ async function showProviderMode() {
   }
   html += '</div>';
 
+  // Team page (hidden, shown by nav Equipe tab)
+  html += '<div id="provContentTeam" style="display:none;"><div id="provTeamTabContent"></div></div>';
+
   // Chat page (hidden, shown by nav Messages tab)
   html += '<div id="provContentChat" style="display:none;">';
   html += '<div style="display:flex;flex-direction:column;height:calc(100vh - 210px);">';
@@ -3880,12 +3883,14 @@ function setupBottomNav(role) {
     ],
     provider: [
       { id: 'overview', icon: '📊', label: 'Apercu' },
+      { id: 'team', icon: '👥', label: 'Equipe' },
       { id: 'prestations', icon: '📋', label: 'Prestations' },
       { id: 'billing', icon: '💰', label: 'Finances' },
       { id: 'chat', icon: '💬', label: 'Messages' },
     ],
     owner: [
       { id: 'overview', icon: '📊', label: 'Apercu' },
+      { id: 'team', icon: '👥', label: 'Equipe' },
       { id: 'properties', icon: '🏠', label: 'Biens' },
       { id: 'prestations', icon: '📋', label: 'Prestations' },
       { id: 'billing', icon: '💰', label: 'Finances' },
@@ -3921,11 +3926,14 @@ function switchProviderNav(tab) {
   const prestations = document.getElementById('provContentPrestations');
   const billing = document.getElementById('provContentBilling');
   const chatPage = document.getElementById('provContentChat');
+  const teamPage = document.getElementById('provContentTeam');
   if (overview) overview.style.display = tab === 'overview' ? '' : 'none';
   if (billing) billing.style.display = tab === 'billing' ? '' : 'none';
   if (prestations) prestations.style.display = tab === 'prestations' ? '' : 'none';
   if (chatPage) chatPage.style.display = tab === 'chat' ? '' : 'none';
+  if (teamPage) teamPage.style.display = tab === 'team' ? '' : 'none';
   if (tab === 'chat') initProviderFullChat();
+  if (tab === 'team') renderTeamTab();
   document.querySelectorAll('#bottomNav .bottomNav-item').forEach(n => n.classList.remove('active'));
   const navEl = document.getElementById('nav_' + tab);
   if (navEl) navEl.classList.add('active');
@@ -4118,12 +4126,15 @@ function switchOwnerNav(tab) {
   const prestations = document.getElementById('ownerContentPrestations');
   const billing = document.getElementById('ownerContentBilling');
   const chatPage = document.getElementById('ownerContentChat');
+  const teamPage = document.getElementById('ownerContentTeam');
   if (overview) overview.style.display = tab === 'overview' ? '' : 'none';
   if (properties) { properties.style.display = tab === 'properties' ? '' : 'none'; if (tab === 'properties') renderOwnerPropertyDetails(); }
   if (prestations) prestations.style.display = tab === 'prestations' ? '' : 'none';
   if (billing) billing.style.display = tab === 'billing' ? '' : 'none';
   if (chatPage) chatPage.style.display = tab === 'chat' ? '' : 'none';
+  if (teamPage) teamPage.style.display = tab === 'team' ? '' : 'none';
   if (tab === 'chat') initOwnerFullChat();
+  if (tab === 'team') renderTeamTab();
   document.querySelectorAll('#bottomNav .bottomNav-item').forEach(n => n.classList.remove('active'));
   const navEl = document.getElementById('nav_' + tab);
   if (navEl) navEl.classList.add('active');
@@ -4598,6 +4609,9 @@ async function showOwnerMode() {
   html += '<div id="ownerBiensSelector" style="margin-bottom:8px;"></div>';
   html += '<div id="ownerPropertyDetailsInline"></div>';
   html += '</div>'; // close ownerContentProperties
+
+  // ═══ TAB: Equipe ═══
+  html += '<div id="ownerContentTeam" style="display:none;"><div id="ownerTeamTabContent"></div></div>';
 
   // ═══ TAB 3: Prestations (unified) ═══
   html += '<div id="ownerContentPrestations" style="display:none;">';
@@ -10955,6 +10969,60 @@ async function showConnectionRequests() {
   showMsg(html, true);
 }
 
+async function renderTeamTab() {
+  const container = document.getElementById('provTeamTabContent') || document.getElementById('ownerTeamTabContent');
+  if (!container) return;
+  const roleColors = { admin: '#e94560', manager: '#6c63ff', owner: '#f59e0b', provider: '#34d399', concierge: '#6c63ff' };
+  const roleLabels = { admin: 'Admin', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire', concierge: 'Conciergerie' };
+  let html = '';
+
+  // Pending connection requests
+  const requests = await loadConnectionRequests();
+  if (requests.length) {
+    html += '<div class="panel" style="margin-bottom:16px;">';
+    html += '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">&#128276; Demandes de connexion en attente</div>';
+    requests.forEach(r => {
+      html += '<div style="padding:12px;background:var(--surface2);border-radius:10px;margin-bottom:8px;border-left:3px solid ' + (roleColors[r.sender_role] || '#6c63ff') + ';">';
+      html += '<div style="font-weight:700;font-size:14px;color:var(--text);">' + esc(r.sender_name) + '</div>';
+      html += '<div style="font-size:11px;color:' + (roleColors[r.sender_role] || '#6c63ff') + ';margin-bottom:8px;">' + (roleLabels[r.sender_role] || r.sender_role) + '</div>';
+      if (r.message) html += '<div style="font-size:12px;color:var(--text3);margin-bottom:8px;">' + esc(r.message) + '</div>';
+      html += '<div style="display:flex;gap:8px;">';
+      html += '<button class="btn btnSuccess" style="flex:1;padding:8px;font-size:12px;" onclick="respondConnectionRequest(\'' + r.id + '\',true).then(()=>renderTeamTab())">&#10003; Accepter</button>';
+      html += '<button class="btn btnDanger" style="flex:1;padding:8px;font-size:12px;" onclick="respondConnectionRequest(\'' + r.id + '\',false).then(()=>renderTeamTab())">&#10007; Refuser</button>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  // My team members
+  const org = API.getOrg();
+  if (org) {
+    const { data: members } = await sb.from('members').select('*').eq('org_id', org.id);
+    if (members && members.length) {
+      html += '<div class="panel" style="margin-bottom:16px;">';
+      html += '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">&#128101; Mon equipe</div>';
+      members.forEach(m => {
+        const mColor = roleColors[m.role] || '#6c63ff';
+        const mLabel = roleLabels[m.role] || m.role;
+        html += '<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:6px;">';
+        html += '<div style="width:36px;height:36px;border-radius:50%;background:' + mColor + ';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;">' + esc((m.display_name || '?').charAt(0).toUpperCase()) + '</div>';
+        html += '<div style="flex:1;min-width:0;">';
+        html += '<div style="font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(m.display_name || 'Sans nom') + '</div>';
+        html += '<div style="font-size:11px;color:' + mColor + ';">' + mLabel + '</div>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+    }
+  }
+
+  // Link to marketplace
+  html += '<div style="text-align:center;padding:12px;">';
+  html += '<button onclick="showMarketplace()" style="padding:12px 24px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">&#127758; Rechercher sur l\'annuaire</button>';
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
 async function updateConnectionBadge() {
   const requests = await loadConnectionRequests();
   const badge = document.getElementById('connectionBadge');
@@ -11045,8 +11113,8 @@ async function _ensureMkUserId() {
   if (!_mkMyUserId) { const { data: { user } } = await sb.auth.getUser(); _mkMyUserId = user?.id; }
 }
 
-function renderMarketplaceResults(profiles) {
-  _ensureMkUserId();
+async function renderMarketplaceResults(profiles) {
+  await _ensureMkUserId();
   const container = document.getElementById('mkResults');
   const myRole = API.getRole();
   if (!profiles.length) {
@@ -11100,8 +11168,7 @@ function renderMarketplaceResults(profiles) {
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             ${p.phone ? `<a href="tel:${_escHtml(p.phone)}" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#34d399;text-decoration:none;padding:5px 10px;background:rgba(52,211,153,0.1);border-radius:8px;border:1px solid rgba(52,211,153,0.2);transition:background 0.2s;" onmouseenter="this.style.background='rgba(52,211,153,0.2)'" onmouseleave="this.style.background='rgba(52,211,153,0.1)'">&#128222; Appeler</a>` : ''}
             ${p.email ? `<a href="mailto:${_escHtml(p.email)}" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent);text-decoration:none;padding:5px 10px;background:rgba(108,99,255,0.1);border-radius:8px;border:1px solid rgba(108,99,255,0.2);transition:background 0.2s;" onmouseenter="this.style.background='rgba(108,99,255,0.2)'" onmouseleave="this.style.background='rgba(108,99,255,0.1)'">&#9993; Email</a>` : ''}
-            ${p.user_id !== _mkMyUserId && p.org_id !== API.getOrg()?.id ? `<button onclick="sendConnectionRequest('${_escHtml(p.user_id)}','${_escHtml(p.display_name)}','${_escHtml(p.role)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">&#128279; Se connecter</button>` : ''}
-            ${p.org_id === API.getOrg()?.id && p.user_id !== _mkMyUserId ? `<span style="font-size:11px;color:var(--success);margin-left:auto;">&#10003; Deja connecte</span>` : ''}
+            ${p.user_id !== _mkMyUserId ? `<button onclick="sendConnectionRequest('${_escHtml(p.user_id)}','${_escHtml(p.display_name)}','${_escHtml(p.role)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">&#128279; Se connecter</button>` : ''}
           </div>
         </div>
       </div>
