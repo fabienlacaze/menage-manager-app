@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.60</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.61</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.60</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.61</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1298,14 +1298,17 @@ async function loadPDF() {
   <div id="finSubTarifs" class="finSubContent">
     <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Definissez vos prix par service. Sauvegarde automatique.</div>
     <details style="margin-bottom:12px;">
-      <summary style="font-size:11px;color:var(--accent2);cursor:pointer;font-weight:600;">&#128161; Tarifs moyens du marche (indicatif)</summary>
+      <summary style="font-size:11px;color:var(--accent2);cursor:pointer;font-weight:600;">&#128161; Tarifs par defaut et indications marche</summary>
       <div style="font-size:11px;color:var(--text3);line-height:1.8;padding:8px 12px;margin-top:6px;background:var(--surface2);border-radius:8px;">
-        &#x2022; <b>Base menage</b> : ~0.50€/m² pour un menage standard<br>
-        &#x2022; <b>Par piece</b> : ~5€/piece supplementaire<br>
-        &#x2022; <b>Minimum</b> : 30€ (studio)<br>
-        &#x2022; <b>Menage profond</b> : x1.5 du standard<br>
+        Les tarifs sont <b>pre-remplis</b> avec les prix moyens du marche francais (locations courte duree). Vous pouvez les ajuster.<br><br>
+        &#x2022; <b>Menage standard</b> : 30€ presta / 50€ proprio (~0.50€/m²)<br>
+        &#x2022; <b>Menage profond</b> : 50€ / 80€ (x1.5)<br>
+        &#x2022; <b>Vitres, jardinage, piscine</b> : 20-30€ / 35-50€<br>
+        &#x2022; <b>Check-in/out</b> : 15-20€ / 25-30€<br>
+        &#x2022; <b>Linge, repassage</b> : 12€ / 20€<br>
+        &#x2022; <b>Garde enfants/animaux</b> : 10-12€/h / 18-20€/h<br>
         &#x2022; <b>Marge concierge</b> : 30 a 40% en general<br>
-        <span style="color:var(--text3);font-style:italic;">Selectionnez un bien pour voir les tarifs suggeres adaptes a sa surface et ses pieces.</span>
+        <span style="font-style:italic;">Les prix en gris italique sont les defauts. Modifiez pour personnaliser.</span>
       </div>
     </details>
     <div id="pricingTable" style="overflow-x:auto;"></div>
@@ -5091,6 +5094,30 @@ function switchFinanceTab(tab) {
   if (tab === 'factures') loadInvoices();
 }
 
+// ── Default base pricing (market rates France, short-term rentals) ──
+const DEFAULT_PRICING = {
+  cleaning_standard: { cost_provider: 30, price_owner: 50 },
+  cleaning_deep:     { cost_provider: 50, price_owner: 80 },
+  windows:           { cost_provider: 20, price_owner: 35 },
+  handyman:          { cost_provider: 35, price_owner: 55 },
+  laundry:           { cost_provider: 12, price_owner: 20 },
+  ironing:           { cost_provider: 12, price_owner: 20 },
+  pressing:          { cost_provider: 15, price_owner: 25 },
+  checkin:           { cost_provider: 20, price_owner: 30 },
+  checkout:          { cost_provider: 15, price_owner: 25 },
+  key_handover:      { cost_provider: 10, price_owner: 18 },
+  gardening:         { cost_provider: 25, price_owner: 40 },
+  pool:              { cost_provider: 30, price_owner: 50 },
+  snow:              { cost_provider: 25, price_owner: 40 },
+  shopping:          { cost_provider: 15, price_owner: 25 },
+  cooking:           { cost_provider: 40, price_owner: 65 },
+  childcare:         { cost_provider: 12, price_owner: 20 },
+  petcare:           { cost_provider: 10, price_owner: 18 },
+};
+function getDefaultPrice(svcId, field) {
+  return (DEFAULT_PRICING[svcId] || {})[field] || 0;
+}
+
 // ── Suggested pricing based on property characteristics ──
 function suggestPrice(serviceId, prop) {
   if (!prop) return 0;
@@ -5172,16 +5199,20 @@ function renderPricingTable() {
     cat.services.forEach(s => {
       const p = pricing[s.id] || {};
       const gp = globalPricing[s.id] || {};
-      const costPresta = p.cost_provider || gp.cost_provider || 0;
-      const priceOwner = p.price_owner || gp.price_owner || 0;
+      const userCost = p.cost_provider || gp.cost_provider || 0;
+      const userPrice = p.price_owner || gp.price_owner || 0;
+      const costPresta = userCost || getDefaultPrice(s.id, 'cost_provider');
+      const priceOwner = userPrice || getDefaultPrice(s.id, 'price_owner');
+      const isDefault = !userCost && !userPrice;
       const margin = priceOwner - costPresta;
       const suggested = activeProp ? suggestPrice(s.id, activeProp) : 0;
       if (costPresta > 0 || priceOwner > 0) { totalMargin += margin; serviceCount++; }
 
       html += '<tr style="border-bottom:1px solid var(--border);">';
       html += '<td style="padding:6px;">' + s.icon + ' ' + s.label + '</td>';
-      html += '<td style="text-align:center;padding:6px 2px;"><input type="number" value="' + costPresta + '" min="0" step="1" data-svc="' + s.id + '" data-field="cost_provider" data-prop="' + (_pricingPropertyId || '') + '" onchange="updatePricing(this)" style="width:60px;padding:3px 4px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:5px;font-size:11px;text-align:center;">€</td>';
-      html += '<td style="text-align:center;padding:6px 2px;"><input type="number" value="' + priceOwner + '" min="0" step="1" data-svc="' + s.id + '" data-field="price_owner" data-prop="' + (_pricingPropertyId || '') + '" onchange="updatePricing(this)" style="width:60px;padding:3px 4px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:5px;font-size:11px;text-align:center;">€</td>';
+      const defStyle = isDefault ? 'color:var(--text3);font-style:italic;' : 'color:var(--text);';
+      html += '<td style="text-align:center;padding:6px 2px;"><input type="number" value="' + costPresta + '" min="0" step="1" placeholder="' + getDefaultPrice(s.id, 'cost_provider') + '" data-svc="' + s.id + '" data-field="cost_provider" data-prop="' + (_pricingPropertyId || '') + '" onchange="updatePricing(this)" style="width:60px;padding:3px 4px;background:var(--surface2);' + defStyle + 'border:1px solid var(--border2);border-radius:5px;font-size:11px;text-align:center;">€</td>';
+      html += '<td style="text-align:center;padding:6px 2px;"><input type="number" value="' + priceOwner + '" min="0" step="1" placeholder="' + getDefaultPrice(s.id, 'price_owner') + '" data-svc="' + s.id + '" data-field="price_owner" data-prop="' + (_pricingPropertyId || '') + '" onchange="updatePricing(this)" style="width:60px;padding:3px 4px;background:var(--surface2);' + defStyle + 'border:1px solid var(--border2);border-radius:5px;font-size:11px;text-align:center;">€</td>';
       html += '<td style="text-align:center;padding:6px;font-weight:700;font-size:11px;color:' + (margin > 0 ? '#34d399' : margin < 0 ? '#ef4444' : 'var(--text3)') + ';">' + (margin > 0 ? '+' : '') + margin + '€</td>';
       if (activeProp) {
         html += '<td style="text-align:center;padding:6px;">';
@@ -5275,6 +5306,12 @@ function renderRevenueContent() {
   let revenueThisMonth = 0, costThisMonth = 0, revenueTotal = 0, costTotal = 0;
   let monthlyData = {};
 
+  // Helper: get price for a service (user config > global > default)
+  function _getPrice(svcType, field) {
+    const p = pricing[svcType] || {};
+    return p[field] || getDefaultPrice(svcType, field);
+  }
+
   // From cleanings
   (cache.plannings || []).forEach(plan => {
     const prop = cache.propMap[plan.property_id];
@@ -5283,9 +5320,8 @@ function renderRevenueContent() {
       const d = c.cleaningDate || c.date || '';
       if (d < today) return;
       const month = d.substring(0, 7);
-      const svcPricing = pricing['cleaning_standard'] || {};
-      const cost = svcPricing.cost_provider || 0;
-      const revenue = svcPricing.price_owner || 0;
+      const cost = _getPrice('cleaning_standard', 'cost_provider');
+      const revenue = _getPrice('cleaning_standard', 'price_owner');
       if (!monthlyData[month]) monthlyData[month] = { revenue: 0, cost: 0, count: 0 };
       monthlyData[month].revenue += revenue;
       monthlyData[month].cost += cost;
@@ -5296,14 +5332,14 @@ function renderRevenueContent() {
     });
   });
 
-  // From service requests
+  // From service requests (each with its own service type)
   (cache.svcRequests || []).forEach(r => {
     const d = r.requested_date || r.preferred_date || '';
     if (d < today || ['cancelled', 'refused'].includes(r.status)) return;
     const month = d.substring(0, 7);
-    const svcPricing = pricing[r.service_type] || {};
-    const cost = svcPricing.cost_provider || 0;
-    const revenue = svcPricing.price_owner || 0;
+    const svcType = r.service_type || 'cleaning_standard';
+    const cost = _getPrice(svcType, 'cost_provider');
+    const revenue = _getPrice(svcType, 'price_owner');
     if (!monthlyData[month]) monthlyData[month] = { revenue: 0, cost: 0, count: 0 };
     monthlyData[month].revenue += revenue;
     monthlyData[month].cost += cost;
