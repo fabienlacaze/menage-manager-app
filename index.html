@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.57</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.58</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.57</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.58</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1287,64 +1287,44 @@ async function loadPDF() {
   <!-- ═══ TAB: BILLING ═══ -->
   <div class="tab-content" id="tabBilling">
 
-  <!-- ═══ SECTION: GRILLE TARIFAIRE ═══ -->
-  <div class="panel" id="panelPricing">
-    <div class="panelHeader" onclick="togglePanel('pricing')">
-      <div class="panelLeft">
-        <div class="stepBadge" style="background:#6c63ff;">💶</div>
-        <div class="panelTitle">Grille tarifaire</div>
-      </div>
-      <span class="panelChevron open" id="chevPricing">&#9660;</span>
-    </div>
-    <div class="panelBody" id="bodyPricing">
-      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Definissez vos prix par service. Le cout prestataire et le tarif proprietaire sont sauvegardes automatiquement.</div>
-      <div id="pricingTable" style="overflow-x:auto;"></div>
-      <div id="pricingMarginSummary" style="margin-top:12px;"></div>
-    </div>
+  <!-- Sub-tabs -->
+  <div style="display:flex;gap:4px;margin-bottom:14px;overflow-x:auto;">
+    <button class="prestSubTab active" onclick="switchFinanceTab('tarifs')">&#128182; Tarifs</button>
+    <button class="prestSubTab" onclick="switchFinanceTab('revenus')">&#128200; Revenus</button>
+    <button class="prestSubTab" onclick="switchFinanceTab('factures')">&#128176; Factures</button>
   </div>
 
-  <!-- ═══ SECTION: REVENUS & COUTS ═══ -->
-  <div class="panel" id="panelRevenue">
-    <div class="panelHeader" onclick="togglePanel('revenue')">
-      <div class="panelLeft">
-        <div class="stepBadge" style="background:#34d399;">📊</div>
-        <div class="panelTitle">Revenus & Couts</div>
-      </div>
-      <span class="panelChevron" id="chevRevenue">&#9660;</span>
-    </div>
-    <div class="panelBody collapsed" id="bodyRevenue">
-      <div id="revenueContent"></div>
-    </div>
+  <!-- SUB: Tarifs -->
+  <div id="finSubTarifs" class="finSubContent">
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Definissez vos prix par service. Sauvegarde automatique.</div>
+    <div id="pricingTable" style="overflow-x:auto;"></div>
+    <div id="pricingMarginSummary" style="margin-top:12px;"></div>
   </div>
 
-  <!-- ═══ SECTION: FACTURATION ═══ -->
-  <div class="panel" id="panelBilling">
-    <div class="panelHeader" onclick="togglePanel('billing')">
-      <div class="panelLeft">
-        <div class="stepBadge" style="background:#f59e0b;">💰</div>
-        <div class="panelTitle">Facturation</div>
+  <!-- SUB: Revenus -->
+  <div id="finSubRevenus" class="finSubContent" style="display:none;">
+    <div id="revenueContent"></div>
+  </div>
+
+  <!-- SUB: Factures -->
+  <div id="finSubFactures" class="finSubContent" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;gap:6px;">
+        <button class="btn btnSmall btnPrimary" onclick="showCreateInvoiceModal('concierge_to_owner')" style="padding:6px 10px;font-size:11px;">+ Facture proprietaire</button>
+        <button class="btn btnSmall" onclick="showCreateInvoiceModal('provider_to_concierge')" style="padding:6px 10px;font-size:11px;background:#34d399;color:#fff;">+ Facture concierge</button>
       </div>
-      <span class="panelChevron" id="chevBilling">&#9660;</span>
-    </div>
-    <div class="panelBody collapsed" id="bodyBilling">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-        <div style="display:flex;gap:6px;">
-          <button class="btn btnSmall btnPrimary" onclick="showCreateInvoiceModal('concierge_to_owner')" style="padding:6px 10px;font-size:11px;">+ Facture proprietaire</button>
-          <button class="btn btnSmall" onclick="showCreateInvoiceModal('provider_to_concierge')" style="padding:6px 10px;font-size:11px;background:#34d399;color:#fff;">+ Facture concierge</button>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <select id="invoiceFilter" onchange="loadInvoices()" style="padding:6px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;">
-            <option value="all">Toutes</option>
-            <option value="draft">Brouillons</option>
-            <option value="sent">Envoyees</option>
-            <option value="paid">Payees</option>
-            <option value="overdue">En retard</option>
-          </select>
-        </div>
+      <div style="display:flex;gap:6px;">
+        <select id="invoiceFilter" onchange="loadInvoices()" style="padding:6px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;">
+          <option value="all">Toutes</option>
+          <option value="draft">Brouillons</option>
+          <option value="sent">Envoyees</option>
+          <option value="paid">Payees</option>
+          <option value="overdue">En retard</option>
+        </select>
       </div>
-      <div id="invoicesList"></div>
-      <div id="invoiceSummary" style="margin-top:12px;"></div>
     </div>
+    <div id="invoicesList"></div>
+    <div id="invoiceSummary" style="margin-top:12px;"></div>
   </div>
 
   </div><!-- /tabBilling -->
@@ -5083,6 +5063,21 @@ async function saveInvoice(status, type) {
   closeMsg();
   showToast(status === 'draft' ? 'Brouillon sauvegarde' : 'Facture ' + invoiceNumber + ' creee !');
   loadInvoices();
+}
+
+// ── Finance Sub-Tabs ──
+function switchFinanceTab(tab) {
+  document.querySelectorAll('.finSubContent').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('#tabBilling .prestSubTab').forEach(btn => btn.classList.remove('active'));
+  const idMap = { tarifs: 'finSubTarifs', revenus: 'finSubRevenus', factures: 'finSubFactures' };
+  const el = document.getElementById(idMap[tab]);
+  if (el) el.style.display = '';
+  const btns = document.querySelectorAll('#tabBilling .prestSubTab');
+  const idx = { tarifs: 0, revenus: 1, factures: 2 };
+  if (btns[idx[tab]]) btns[idx[tab]].classList.add('active');
+  if (tab === 'tarifs') renderPricingTable();
+  if (tab === 'revenus') renderRevenueContent();
+  if (tab === 'factures') loadInvoices();
 }
 
 // ── Pricing Table ──
