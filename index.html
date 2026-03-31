@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.28</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.29</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.28</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.29</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -3262,8 +3262,8 @@ async function showProviderMode() {
     todayItems.forEach(u => {
       const svcLabel = getServiceLabel(u.type);
       const statusIcons = { done: '&#9989;', departed: '&#128682;', in_progress: '&#129529;', arrived: '&#127968;', assigned: '&#128228;', accepted: '&#9989;', seen: '&#128065;', sent: '&#9993;', refused: '&#10060;', pending: '&#9898;' };
-      const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'En cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte', seen: 'Lu', sent: 'Envoye', refused: 'Refuse', pending: 'A faire' };
-      const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', pending: 'var(--text3)' };
+      const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'En cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte', seen: 'Lu', sent: 'Envoye', refused: 'Refuse', cancelled: 'Annulee', pending: 'A faire' };
+      const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', cancelled: '#ef4444', pending: 'var(--text3)' };
       html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px;">
         <div style="flex:1;font-weight:600;">${svcLabel}</div>
         <div style="color:var(--text2);">${esc(u.propertyName || '')}</div>
@@ -3323,9 +3323,9 @@ async function showProviderMode() {
         const status = u.status;
         const statusIcons = { done: '&#9989;', departed: '&#128682;', in_progress: '&#129529;', arrived: '&#127968;', assigned: '&#128228;', accepted: '&#9989;', seen: '&#128065;', sent: '&#9993;', refused: '&#10060;', pending: '&#9898;' };
         const statusIcon = statusIcons[status] || '&#9898;';
-        const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'Menage en cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte &#10003;&#10003;', seen: 'Lu &#10003;', sent: 'Envoye', refused: 'Refuse', pending: 'A faire' };
+        const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'Menage en cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte &#10003;&#10003;', seen: 'Lu &#10003;', sent: 'Envoye', refused: 'Refuse', cancelled: 'Annulee', pending: 'A faire' };
         const statusLabel = statusLabels[status] || 'A faire';
-        const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', pending: 'var(--text3)' };
+        const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', cancelled: '#ef4444', pending: 'var(--text3)' };
         const statusColor = statusColors[status] || 'var(--text3)';
 
         html += `<div class="prestCard" data-category="${catKey}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;${isToday ? 'border-left:3px solid #e94560;' : ''}">
@@ -4014,8 +4014,8 @@ async function showOwnerMode() {
       const v = validations[key];
       const status = v ? v.status : 'pending';
       const statusIcons = { done: '&#9989;', departed: '&#128682;', in_progress: '&#129529;', arrived: '&#127968;', assigned: '&#128228;', accepted: '&#10003;&#10003;', seen: '&#128065;', sent: '&#9993;', refused: '&#10060;', pending: '&#9203;' };
-      const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'En cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte', seen: 'Lu', sent: 'Envoye', refused: 'Refuse', pending: 'En attente' };
-      const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', pending: 'var(--text3)' };
+      const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'En cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte', seen: 'Lu', sent: 'Envoye', refused: 'Refuse', cancelled: 'Annulee', pending: 'En attente' };
+      const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', cancelled: '#ef4444', pending: 'var(--text3)' };
       html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px;">
         <div style="flex:1;font-weight:600;">${esc(c.propertyName)}</div>
         <div style="color:var(--text2);">${esc(c.provider || '?')}</div>
@@ -4079,9 +4079,10 @@ async function showOwnerMode() {
       const catObj = SERVICE_CATALOG.find(c => c.services.some(s => s.id === u.type));
       const catKey = catObj ? catObj.cat : 'autre';
       const svcLabel = getServiceLabel(u.type);
-      const statusIcons = { done: '&#9989;', departed: '&#128682;', in_progress: '&#129529;', arrived: '&#127968;', assigned: '&#128228;', accepted: '&#10003;&#10003;', seen: '&#128065;', sent: '&#9993;', refused: '&#10060;', pending: '&#9203;' };
-      const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'En cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte', seen: 'Lu', sent: 'Envoye', refused: 'Refuse', pending: 'En attente' };
-      const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', pending: 'var(--text3)' };
+      const statusIcons = { done: '&#9989;', departed: '&#128682;', in_progress: '&#129529;', arrived: '&#127968;', assigned: '&#128228;', accepted: '&#10003;&#10003;', seen: '&#128065;', sent: '&#9993;', refused: '&#10060;', cancelled: '&#10006;', pending: '&#9203;' };
+      const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'En cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte', seen: 'Lu', sent: 'Envoye', refused: 'Refuse', cancelled: 'Annulee', pending: 'En attente' };
+      const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', cancelled: '#ef4444', pending: 'var(--text3)' };
+      const ownerCanCancel = u._source === 'service_request' && !['done','departed','in_progress','cancelled'].includes(u.status);
 
       if (dateStr) {
         const dateObj = new Date(dateStr + 'T00:00:00');
@@ -4096,6 +4097,8 @@ async function showOwnerMode() {
             <div style="font-weight:600;font-size:13px;color:var(--text);">${esc(u.propertyName || '')}${isToday2 ? ' <span style="background:#e94560;color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;">AUJOURD\'HUI</span>' : ''}</div>
             <div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(u.provider || '?')}</div>
             ${u.notes ? '<div style="font-size:11px;color:var(--text2);margin-top:2px;">' + esc(u.notes) + '</div>' : ''}
+            ${ownerCanCancel ? '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcLabel).replace(/'/g,"\\\\'") + '\',0);return false;" style="font-size:11px;color:#ef4444;text-decoration:none;margin-top:4px;display:inline-block;">&#10006; Annuler</a>' : ''}
+            ${u.status === 'cancelled' ? '<div style="font-size:11px;color:#ef4444;margin-top:4px;">&#10006; Annulee</div>' : ''}
           </div>
           <span style="font-size:11px;color:${statusColors[u.status] || 'var(--text3)'};white-space:nowrap;">${statusIcons[u.status] || '&#9203;'} ${statusLabels[u.status] || ''}</span>
         </div>`;
@@ -9698,8 +9701,8 @@ async function loadServiceRequests() {
   const providers = (API.getActiveProperty(fullConfig) || {}).providers || [];
   let html = '';
   requests.forEach(r => {
-    const statusColors = { pending: '#f59e0b', assigned: '#8b5cf6', accepted: '#6c63ff', in_progress: '#3b82f6', done: '#34d399', refused: '#e94560' };
-    const statusLabels = { pending: 'En attente', assigned: 'Assigne', accepted: 'Acceptee', in_progress: 'En cours', done: 'Terminee', refused: 'Refusee' };
+    const statusColors = { pending: '#f59e0b', assigned: '#8b5cf6', accepted: '#6c63ff', in_progress: '#3b82f6', done: '#34d399', refused: '#e94560', cancelled: '#ef4444' };
+    const statusLabels = { pending: 'En attente', assigned: 'Assigne', accepted: 'Acceptee', in_progress: 'En cours', done: 'Terminee', refused: 'Refusee', cancelled: 'Annulee' };
     const priorityIcons = { low: '🟢', normal: '🟡', high: '🔴' };
     const color = statusColors[r.status] || '#888';
     const label = statusLabels[r.status] || r.status;
@@ -9798,6 +9801,102 @@ async function updateServiceRequest(id, status, provider) {
     }
     loadServiceRequests();
   } catch(e) { console.error('updateServiceRequest error:', e); showToast('Erreur'); loadServiceRequests(); }
+}
+
+// ─── Cancellation System ───
+const CANCEL_POLICY = [
+  { minDays: 7, percent: 0, label: 'Gratuit (plus de 7 jours)' },
+  { minDays: 3, percent: 25, label: '25% du prix (3-7 jours)' },
+  { minDays: 1, percent: 50, label: '50% du prix (1-2 jours)' },
+  { minDays: 0, percent: 75, label: '75% du prix (jour meme)' },
+];
+function getCancelPenalty(dateStr) {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const d = new Date(dateStr + 'T00:00:00');
+  const diff = Math.floor((d - now) / 86400000);
+  for (const rule of CANCEL_POLICY) { if (diff >= rule.minDays) return { ...rule, daysUntil: diff }; }
+  return { percent: 75, label: '75% du prix', daysUntil: diff };
+}
+function showCancelModal(requestId, dateStr, svcLabel, price) {
+  const penalty = getCancelPenalty(dateStr);
+  const penaltyAmount = price > 0 ? Math.round(price * penalty.percent / 100 * 100) / 100 : 0;
+  const nonCancellable = ['in_progress', 'done', 'departed'];
+  let html = '<div style="padding:10px;">';
+  html += '<div style="font-size:20px;text-align:center;margin-bottom:8px;">&#9888;</div>';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:12px;text-align:center;">Annuler cette prestation ?</div>';
+  html += '<div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:14px;">';
+  html += '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">' + esc(svcLabel) + '</div>';
+  html += '<div style="font-size:12px;color:var(--text3);">Date : ' + fmtDate(dateStr) + '</div>';
+  if (penalty.daysUntil >= 0) {
+    html += '<div style="font-size:12px;color:var(--text3);">Dans ' + penalty.daysUntil + ' jour' + (penalty.daysUntil > 1 ? 's' : '') + '</div>';
+  }
+  html += '</div>';
+  // Cancellation policy
+  html += '<div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">Conditions d\'annulation :</div>';
+  html += '<div style="font-size:11px;color:var(--text3);line-height:1.8;margin-bottom:12px;">';
+  CANCEL_POLICY.forEach(rule => {
+    const active = penalty.percent === rule.percent;
+    html += '<div style="' + (active ? 'color:var(--accent);font-weight:700;' : '') + '">';
+    html += (active ? '&#9654; ' : '&nbsp;&nbsp; ') + rule.label;
+    if (active && price > 0) html += ' = <b>' + penaltyAmount.toFixed(2) + '€</b>';
+    html += '</div>';
+  });
+  html += '</div>';
+  // Reason
+  html += '<div style="margin-bottom:12px;">';
+  html += '<label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px;">Raison (optionnel) :</label>';
+  html += '<textarea id="cancelReason" placeholder="Ex: changement de planning, imprevu..." style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:Inter,sans-serif;resize:vertical;min-height:50px;box-sizing:border-box;"></textarea>';
+  html += '</div>';
+  // Penalty summary
+  if (penaltyAmount > 0) {
+    html += '<div style="background:rgba(233,69,96,0.1);border:1px solid rgba(233,69,96,0.3);border-radius:8px;padding:10px;margin-bottom:14px;text-align:center;">';
+    html += '<div style="font-size:12px;color:var(--accent);font-weight:600;">Frais d\'annulation : ' + penaltyAmount.toFixed(2) + '€</div>';
+    html += '<div style="font-size:11px;color:var(--text3);margin-top:2px;">' + penalty.percent + '% du montant de la prestation</div>';
+    html += '</div>';
+  } else {
+    html += '<div style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:8px;padding:10px;margin-bottom:14px;text-align:center;">';
+    html += '<div style="font-size:12px;color:var(--success);font-weight:600;">Annulation gratuite</div>';
+    html += '<div style="font-size:11px;color:var(--text3);margin-top:2px;">Plus de 7 jours avant la prestation</div>';
+    html += '</div>';
+  }
+  html += '<div style="display:flex;gap:8px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;" onclick="closeMsg()">Retour</button>';
+  html += '<button class="btn" style="flex:1;padding:12px;background:#ef4444;color:#fff;border:none;font-weight:700;" onclick="confirmCancelPrestation(\'' + requestId + '\',' + penalty.percent + ',' + penaltyAmount + ')">Confirmer l\'annulation</button>';
+  html += '</div></div>';
+  showMsg(html, true);
+}
+async function confirmCancelPrestation(requestId, penaltyPercent, penaltyAmount) {
+  const reason = document.getElementById('cancelReason')?.value?.trim() || '';
+  closeMsg();
+  try {
+    // Try with cancel fields, fallback to just status if columns don't exist yet
+    let update = { status: 'cancelled', updated_at: new Date().toISOString() };
+    const { error: err1 } = await sb.from('service_requests').update({
+      ...update,
+      cancel_reason: reason,
+      cancel_penalty_percent: penaltyPercent,
+      cancel_penalty_amount: penaltyAmount,
+      cancelled_at: new Date().toISOString(),
+    }).eq('id', requestId);
+    // Fallback if cancel columns don't exist
+    if (err1 && err1.code === '42703') {
+      await sb.from('service_requests').update(update).eq('id', requestId);
+    }
+    // Send auto-messages
+    const { data: req } = await sb.from('service_requests').select('*').eq('id', requestId).single();
+    if (req) {
+      const org = API.getOrg();
+      const svcLabel = getServiceLabel(req.service_type);
+      const dateStr = req.requested_date ? new Date(req.requested_date).toLocaleDateString('fr-FR') : '';
+      if (req.assigned_provider) {
+        await sendAutoMessage(org.id, 'Gestionnaire', 'admin', req.assigned_provider,
+          '🚫 Annulation : ' + svcLabel + ' du ' + dateStr + (penaltyAmount > 0 ? ' (indemnite: ' + penaltyAmount.toFixed(2) + '€)' : '') + (reason ? ' — ' + reason : ''));
+      }
+    }
+    showToast('Prestation annulee' + (penaltyAmount > 0 ? ' (frais: ' + penaltyAmount.toFixed(2) + '€)' : ''));
+    loadAdminPrestations(true);
+    loadServiceRequests();
+  } catch(e) { console.error('Cancel error:', e); showToast('Erreur lors de l\'annulation'); }
 }
 
 let _adminPrestCache = null;
@@ -9901,6 +10000,8 @@ async function loadAdminPrestations(forceReload) {
       status: r.status,
       priority: r.priority,
       description: r.description || r.notes || '',
+      cancel_reason: r.cancel_reason || '',
+      cancel_penalty_amount: r.cancel_penalty_amount || 0,
     });
   });
   unified.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
@@ -9926,6 +10027,7 @@ async function loadAdminPrestations(forceReload) {
       { id: 'in_progress', label: 'En cours', color: '#3b82f6' },
       { id: 'done', label: 'Termine', color: '#059669' },
       { id: 'refused', label: 'Refuse', color: '#ef4444' },
+      { id: 'cancelled', label: 'Annulee', color: '#ef4444' },
     ];
     let fHtml = '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px;-webkit-overflow-scrolling:touch;align-items:center;">';
     // Category pills
@@ -9963,7 +10065,7 @@ async function loadAdminPrestations(forceReload) {
 
   const providers = props.length ? (props[0].providers || []) : [];
   const statusColors = { pending: '#f59e0b', assigned: '#8b5cf6', accepted: '#6c63ff', in_progress: '#3b82f6', done: '#34d399', refused: '#e94560', sent: '#888', seen: '#6c63ff', arrived: '#6c63ff', departed: '#34d399' };
-  const statusLabels = { pending: 'En attente', assigned: 'Assigne', accepted: 'Accepte', in_progress: 'En cours', done: 'Termine', refused: 'Refuse', sent: 'Envoye', seen: 'Lu', arrived: 'Sur place', departed: 'Parti' };
+  const statusLabels = { pending: 'En attente', assigned: 'Assigne', accepted: 'Accepte', in_progress: 'En cours', done: 'Termine', refused: 'Refuse', cancelled: 'Annulee', sent: 'Envoye', seen: 'Lu', arrived: 'Sur place', departed: 'Parti' };
 
   let html = '';
   const months = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'];
@@ -10015,6 +10117,9 @@ async function loadAdminPrestations(forceReload) {
 
     // Action footer for service requests
     if (u._source === 'service_request') {
+      const cancellable = !['done', 'departed', 'in_progress', 'cancelled'].includes(u.status);
+      // Get price for cancel penalty
+      const cancelPrice = u.propertyId ? (propMap[u.propertyId]?.owner_price || 0) : 0;
       if (u.status === 'pending') {
         let allProviders = [];
         props.forEach(p => { (p.providers || []).forEach(pv => { if (!allProviders.find(x => x.name === pv.name)) allProviders.push(pv); }); });
@@ -10028,6 +10133,7 @@ async function loadAdminPrestations(forceReload) {
         html += '</select>';
         html += '<button class="btn btnSmall btnSuccess" style="padding:5px 12px;font-size:11px;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcAssign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">Assigner</button>';
         html += '<button class="btn btnSmall btnDanger" style="padding:5px 12px;font-size:11px;" onclick="updateServiceRequest(\'' + u._id + '\',\'refused\');setTimeout(()=>loadAdminPrestations(true),500)">Refuser</button>';
+        html += '<button class="btn btnSmall" style="padding:5px 12px;font-size:11px;background:transparent;color:#ef4444;border:1px solid #ef444440;" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcLabel).replace(/'/g,"\\'") + '\',' + cancelPrice + ')">Annuler</button>';
         html += '</div>';
       } else if (u.status === 'refused') {
         let allProviders = [];
@@ -10038,6 +10144,16 @@ async function loadAdminPrestations(forceReload) {
         allProviders.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; });
         html += '</select>';
         html += '<button class="btn btnSmall" style="padding:5px 12px;font-size:11px;background:#8b5cf6;color:#fff;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcReassign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">Reassigner</button>';
+        html += '</div>';
+      } else if (cancellable && u.status !== 'refused') {
+        // Assigned or accepted — show cancel button
+        html += '<div class="card-actions">';
+        html += '<button class="btn btnSmall" style="padding:5px 12px;font-size:11px;background:transparent;color:#ef4444;border:1px solid #ef444440;" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcLabel).replace(/'/g,"\\'") + '\',' + cancelPrice + ')">&#10006; Annuler la prestation</button>';
+        html += '</div>';
+      } else if (u.status === 'cancelled') {
+        html += '<div style="padding:8px 12px;font-size:11px;color:#ef4444;border-top:1px solid var(--border);">';
+        html += '&#10006; Annulee' + (u.cancel_reason ? ' — ' + esc(u.cancel_reason) : '');
+        if (u.cancel_penalty_amount > 0) html += ' (frais: ' + u.cancel_penalty_amount.toFixed(2) + '€)';
         html += '</div>';
       }
     }
@@ -10466,7 +10582,7 @@ function showUpdateBanner(version) {
   banner.style.cssText = 'position:fixed;top:68px;left:0;right:0;padding:10px 16px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;font-size:13px;font-weight:600;text-align:center;z-index:99999;';
   document.body.appendChild(banner);
 }
-// Update check: once at 5s, then every 60s
+// Update check: once at 10s, then every 5 minutes
 async function _checkUpdate() {
   try {
     const resp = await fetch('sw.js?_t=' + Date.now(), { cache: 'no-store' });
@@ -10474,18 +10590,21 @@ async function _checkUpdate() {
     const match = text.match(/APP_VERSION\s*=\s*'([^']+)'/);
     if (!match || !match[1]) return;
     const remoteVersion = match[1];
-    const badge = document.querySelector('#versionBadge');
-    const htmlVersion = badge ? badge.textContent.trim().replace('v','') : '';
-    // Up to date
-    if (remoteVersion === htmlVersion) { localStorage.setItem('lokizio_seen_version', remoteVersion); return; }
-    // Already seen this version
+    // Compare with the version baked into THIS page (not the DOM which could be stale)
+    const currentVersion = (document.querySelector('#versionBadge')?.textContent || '').trim().replace('v','');
+    // Up to date — mark as seen
+    if (remoteVersion === currentVersion) { localStorage.setItem('lokizio_seen_version', remoteVersion); return; }
+    // Already seen or dismissed this version
     const seen = localStorage.getItem('lokizio_seen_version');
-    if (seen && seen >= remoteVersion) return;
+    if (seen === remoteVersion) return;
+    // Compare numerically: only show if remote is NEWER
+    const toNum = v => { const p = v.split('.'); return (parseInt(p[0])||0) * 1000 + (parseInt(p[1])||0); };
+    if (toNum(remoteVersion) <= toNum(currentVersion)) { localStorage.setItem('lokizio_seen_version', remoteVersion); return; }
     showUpdateBanner(remoteVersion);
   } catch(e) {}
 }
-setTimeout(_checkUpdate, 5000);
-setInterval(_checkUpdate, 15000);
+setTimeout(_checkUpdate, 10000);
+setInterval(_checkUpdate, 5 * 60 * 1000);
 
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').then(reg => {
