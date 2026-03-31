@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.50</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.51</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.50</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.51</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -3167,6 +3167,7 @@ async function showProviderMode() {
   const unified = [];
   allCleanings.forEach(c => {
     const dateStr = c.cleaningDate || c.date;
+    if (dateStr < today) return; // Hide past cleanings
     const isToday = dateStr === today;
     const key = dateStr + '_' + providerName;
     const v = validations[key];
@@ -3190,11 +3191,13 @@ async function showProviderMode() {
     });
   });
   myServiceRequests.forEach(r => {
+    const rDate = r.preferred_date || r.requested_date || '';
+    if (rDate && rDate < today) return; // Hide past service requests
     unified.push({
       _source: 'service_request',
       _id: r.id,
       type: r.service_type,
-      date: r.preferred_date,
+      date: rDate,
       propertyName: r.property_name || '',
       status: r.status,
       notes: r.notes,
@@ -3356,9 +3359,19 @@ async function showProviderMode() {
       <div style="font-size:13px;color:var(--text3);line-height:1.6;">Vous n'avez pas de prestation en cours.</div>
     </div>`;
   } else {
+    let _lastProvDate = '';
     for (const u of unified) {
       const catObj = SERVICE_CATALOG.find(c => c.services.some(s => s.id === u.type));
       const catKey = catObj ? catObj.cat : 'autre';
+      // Date separator
+      const _ud = u.date || '';
+      if (_ud && _ud !== _lastProvDate) {
+        _lastProvDate = _ud;
+        const _gd = new Date(_ud + 'T12:00:00');
+        const _isGd = _ud === today;
+        const _gdL = _isGd ? 'Aujourd\'hui' : _gd.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+        html += '<div style="font-size:12px;font-weight:700;color:' + (_isGd ? 'var(--accent)' : 'var(--text3)') + ';margin:12px 0 4px 4px;text-transform:capitalize;">' + _gdL + '</div>';
+      }
 
       if (u._source === 'cleaning') {
         // Cleaning card (same as before)
@@ -4026,11 +4039,14 @@ async function showOwnerMode() {
     });
   });
   ownerServiceRequests.forEach(r => {
+    const rDate = r.requested_date || r.preferred_date || '';
+    // Hide past service requests
+    if (rDate && rDate < today) return;
     ownerUnified.push({
       _source: 'service_request',
       _id: r.id,
       type: r.service_type,
-      date: r.requested_date || r.preferred_date || '',
+      date: rDate,
       propertyName: r.property_name || '',
       status: r.status,
       notes: r.notes,
@@ -4187,56 +4203,49 @@ async function showOwnerMode() {
       <div style="font-size:13px;color:var(--text3);">Votre conciergerie n'a pas encore programme de prestations.</div>
     </div>`;
   } else {
-    let currentMonth = '';
+    const _osc2 = { done:'#34d399', departed:'#34d399', in_progress:'#f59e0b', arrived:'#6c63ff', assigned:'#8b5cf6', accepted:'#34d399', seen:'#6c63ff', sent:'var(--text3)', refused:'#ef4444', cancelled:'#ef4444', pending_validation:'#f59e0b', pending:'var(--text3)' };
+    const _osl2 = { done:'Termine', departed:'Parti', in_progress:'En cours', arrived:'Sur place', assigned:'Assigne', accepted:'Accepte', refused:'Refuse', cancelled:'Annulee', pending_validation:'A valider', pending:'En attente' };
+    let lastOwnerDate = '';
     ownerUnified.forEach(u => {
       const dateStr = u.date || '';
-      if (dateStr) {
-        const dateObj = new Date(dateStr + 'T00:00:00');
-        const monthKey = dateObj.toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
-        if (monthKey !== currentMonth) {
-          currentMonth = monthKey;
-          html += `<div style="font-size:14px;font-weight:700;color:var(--accent);margin:16px 0 8px 4px;text-transform:capitalize;">${monthKey}</div>`;
-        }
+      // Date separator
+      if (dateStr && dateStr !== lastOwnerDate) {
+        lastOwnerDate = dateStr;
+        const gd = new Date(dateStr + 'T12:00:00');
+        const isGd = dateStr === today;
+        const gdLabel = isGd ? 'Aujourd\'hui' : gd.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+        html += '<div style="font-size:12px;font-weight:700;color:' + (isGd ? 'var(--accent)' : 'var(--text3)') + ';margin:12px 0 4px 4px;text-transform:capitalize;">' + gdLabel + '</div>';
       }
-      const isToday2 = dateStr === today;
       const catObj = SERVICE_CATALOG.find(c => c.services.some(s => s.id === u.type));
       const catKey = catObj ? catObj.cat : 'autre';
-      const svcLabel = getServiceLabel(u.type);
-      const statusIcons = { done: '&#9989;', departed: '&#128682;', in_progress: '&#129529;', arrived: '&#127968;', assigned: '&#128228;', accepted: '&#10003;&#10003;', seen: '&#128065;', sent: '&#9993;', refused: '&#10060;', cancelled: '&#10006;', pending: '&#9203;' };
-      const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'En cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte', seen: 'Lu', sent: 'Envoye', refused: 'Refuse', cancelled: 'Annulee', pending_validation: 'A valider', pending: 'En attente' };
-      const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', cancelled: '#ef4444', pending_validation: '#f59e0b', pending: 'var(--text3)' };
+      const svcObj = (catObj ? catObj.services : []).find(s => s.id === u.type);
+      const svcIcon = svcObj ? svcObj.icon : '📋';
+      const svcName = svcObj ? svcObj.label : u.type;
+      const color = _osc2[u.status] || '#666';
+      const label = _osl2[u.status] || u.status;
       const ownerCanCancel = u._source === 'service_request' && !['done','departed','in_progress','cancelled'].includes(u.status);
 
-      if (dateStr) {
-        const dateObj = new Date(dateStr + 'T00:00:00');
-        const dayName = dateObj.toLocaleString('fr-FR', { weekday: 'short' });
-        html += `<div class="prestCard" data-category="${catKey}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;${isToday2 ? 'border-left:3px solid #e94560;' : ''}display:flex;align-items:center;gap:12px;">
-          <div style="min-width:50px;text-align:center;">
-            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;">${dayName}</div>
-            <div style="font-size:20px;font-weight:800;color:${isToday2 ? '#e94560' : 'var(--text)'};">${dateObj.getDate()}</div>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:11px;color:var(--accent2);font-weight:600;">${svcLabel}</div>
-            <div style="font-weight:600;font-size:13px;color:var(--text);">${esc(u.propertyName || '')}${isToday2 ? ' <span style="background:#e94560;color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;">AUJOURD\'HUI</span>' : ''}</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(u.provider || '?')}</div>
-            ${u.notes ? '<div style="font-size:11px;color:var(--text2);margin-top:2px;">' + esc(u.notes) + '</div>' : ''}
-            ${ownerCanCancel ? '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcLabel).replace(/'/g,"\\\\'") + '\',0);return false;" style="font-size:11px;color:#ef4444;text-decoration:none;margin-top:4px;display:inline-block;">&#10006; Annuler</a>' : ''}
-            ${u.status === 'cancelled' ? '<div style="font-size:11px;color:#ef4444;margin-top:4px;">&#10006; Annulee</div>' : ''}
-            ${(u.status === 'done' || u.status === 'pending_validation') && u._source === 'service_request' && u.provider ? '<a href="#" onclick="showRatingModal(\'' + u._id + '\',\'' + esc(u.provider).replace(/'/g,"\\\\'") + '\');return false;" style="font-size:11px;color:#f59e0b;text-decoration:none;margin-top:4px;display:inline-block;">&#11088; Noter</a>' : ''}
-          </div>
-          <span style="font-size:11px;color:${statusColors[u.status] || 'var(--text3)'};white-space:nowrap;">${statusIcons[u.status] || '&#9203;'} ${statusLabels[u.status] || ''}</span>
-        </div>`;
-      } else {
-        html += `<div class="prestCard" data-category="${catKey}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
-          <div style="flex:1;">
-            <div style="font-size:11px;color:var(--accent2);font-weight:600;">${svcLabel}</div>
-            <div style="font-weight:600;font-size:13px;color:var(--text);">${esc(u.propertyName || '')}</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(u.provider || '?')}</div>
-            ${u.notes ? '<div style="font-size:11px;color:var(--text2);margin-top:2px;">' + esc(u.notes) + '</div>' : ''}
-          </div>
-          <span style="font-size:11px;color:${statusColors[u.status] || 'var(--text3)'};white-space:nowrap;">${statusIcons[u.status] || '&#9203;'} ${statusLabels[u.status] || ''}</span>
-        </div>`;
-      }
+      html += '<div class="prestCard adminPrestCard" data-category="' + catKey + '" data-date="' + dateStr + '" data-type="' + (u.type||'') + '" data-provider="' + esc(u.provider||'') + '" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0;margin-bottom:8px;overflow:hidden;">';
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;">';
+      html += '<div style="font-size:22px;flex-shrink:0;width:28px;text-align:center;">' + svcIcon + '</div>';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+      html += '<span style="font-size:13px;font-weight:700;color:var(--text);">' + esc(svcName) + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:11px;color:var(--text3);margin-top:2px;">';
+      const mp = [];
+      if (u.propertyName) mp.push('🏠 ' + esc(u.propertyName));
+      if (u.provider) mp.push('👤 ' + esc(u.provider));
+      html += mp.join(' · ');
+      html += '</div>';
+      html += '</div>';
+      html += '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">';
+      html += '<span class="card-status" style="background:' + color + '18;color:' + color + ';">' + label + '</span>';
+      if (ownerCanCancel) html += '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + dateStr + '\',\'' + esc(svcName).replace(/'/g,"\\\\'") + '\',0);return false;" style="font-size:10px;color:var(--text3);text-decoration:none;" title="Annuler">&#128465;</a>';
+      if ((u.status === 'done' || u.status === 'pending_validation') && u._source === 'service_request' && u.provider) html += '<a href="#" onclick="showRatingModal(\'' + u._id + '\',\'' + esc(u.provider).replace(/'/g,"\\\\'") + '\');return false;" style="font-size:10px;color:#f59e0b;text-decoration:none;" title="Noter">&#11088;</a>';
+      html += '</div>';
+      html += '</div>';
+      html += '</div>';
     });
   }
 
