@@ -919,7 +919,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.26</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.27</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -929,7 +929,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.26</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.27</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2835,6 +2835,21 @@ async function init() {
   // Load plan (also loads org + member)
   await API.load_plan();
   updatePlanUI();
+
+  // Handle Stripe checkout success — refresh subscription from server
+  if (localStorage.getItem('mm_stripe_success')) {
+    localStorage.removeItem('mm_stripe_success');
+    // Re-check plan after short delay (webhook may need a moment)
+    setTimeout(async () => {
+      await API.load_plan();
+      updatePlanUI();
+      if (API.isPremium()) {
+        showToast('Paiement reussi ! Bienvenue en Premium &#9733;');
+      } else {
+        showToast('Paiement en cours de traitement... Actualisez dans quelques instants.');
+      }
+    }, 2000);
+  }
 
   const org = API.getOrg();
   const member = API.getMember();
@@ -5174,10 +5189,18 @@ async function showAccountModal() {
   const plan = API.getPlan();
   const planEl = document.getElementById('accountPlan');
   const isPaid = plan === 'premium' || plan === 'business' || plan === 'pro';
+  const org = API.getOrg();
+  const hasStripe = org && org.stripe_subscription_id;
   if (isPaid) {
     const planLabel = plan === 'business' ? 'Business' : 'Pro';
     const badgeColor = plan === 'business' ? 'background:#6c63ff;' : '';
-    planEl.innerHTML = '<span style="color:var(--success);font-weight:700;">' + planLabel + '</span> <span class="premiumBadge" style="' + badgeColor + '">' + planLabel.toUpperCase() + '</span>';
+    let planHtml = '<span style="color:var(--success);font-weight:700;">' + planLabel + '</span> <span class="premiumBadge" style="' + badgeColor + '">' + planLabel.toUpperCase() + '</span>';
+    if (hasStripe) {
+      planHtml += ' <a href="#" onclick="openStripePortal();return false;" style="color:var(--accent2);font-size:12px;margin-left:8px;">Gerer</a>';
+    } else if (API.getTrialDaysLeft() > 0) {
+      planHtml += ' <span style="color:var(--warning);font-size:11px;margin-left:8px;">(Essai ' + API.getTrialDaysLeft() + 'j)</span>';
+    }
+    planEl.innerHTML = planHtml;
   } else {
     planEl.innerHTML = '<span>' + (t('premium.plan.free') || 'Gratuit') + '</span> — <a href="#" onclick="showPremiumModal();closeAccountModal();return false;" style="color:var(--accent);">' + (t('premium.upgrade') || 'Passer a Premium') + '</a>';
   }
@@ -5607,7 +5630,18 @@ function updatePlanUI() {
     const daysLeft = API.getTrialDaysLeft();
     if (daysLeft > 0) {
       trialBanner.style.display = 'block';
-      trialBanner.innerHTML = '&#127881; Essai gratuit — <b>' + daysLeft + ' jour' + (daysLeft > 1 ? 's' : '') + '</b> restant' + (daysLeft > 1 ? 's' : '') + ' <span style="opacity:0.7;margin-left:8px;">Toutes les fonctionnalites sont deverrouillees !</span>';
+      if (daysLeft <= 3) {
+        trialBanner.style.background = 'linear-gradient(135deg,#e94560,#c73e54)';
+        trialBanner.innerHTML = '&#9888; Essai gratuit — <b>' + daysLeft + ' jour' + (daysLeft > 1 ? 's' : '') + '</b> restant' + (daysLeft > 1 ? 's' : '') + ' <a href="#" onclick="showPremiumModal();return false;" style="color:#fff;text-decoration:underline;margin-left:8px;font-weight:700;">Passer a Premium</a>';
+      } else {
+        trialBanner.style.background = 'linear-gradient(135deg,#6c63ff,#e94560)';
+        trialBanner.innerHTML = '&#127881; Essai gratuit — <b>' + daysLeft + ' jour' + (daysLeft > 1 ? 's' : '') + '</b> restant' + (daysLeft > 1 ? 's' : '') + ' <span style="opacity:0.7;margin-left:8px;">Toutes les fonctionnalites sont deverrouillees !</span>';
+      }
+    } else if (!isPremium) {
+      // Trial expired, show upgrade CTA
+      trialBanner.style.display = 'block';
+      trialBanner.style.background = 'linear-gradient(135deg,#1a1a2e,#16213e)';
+      trialBanner.innerHTML = '&#128274; Essai termine — <a href="#" onclick="showPremiumModal();return false;" style="color:#6c63ff;text-decoration:underline;font-weight:700;">Passer a Premium</a> pour debloquer toutes les fonctionnalites';
     } else {
       trialBanner.style.display = 'none';
     }
@@ -5648,29 +5682,58 @@ function showPremiumModal(reason) {
       ? '3.99€<small style="font-size:11px;font-weight:400;">/mois</small>'
       : '19.99€<small style="font-size:11px;font-weight:400;">/mois</small>';
   }
+  // Adapt buttons if already premium
+  const upgradeBtn = document.querySelector('.btnUpgrade');
+  const freeBtn = document.querySelector('#pricingTable tfoot .btnOutline');
+  if (API.isPremium()) {
+    if (upgradeBtn) { upgradeBtn.textContent = 'Actuel'; upgradeBtn.disabled = true; upgradeBtn.style.background = 'var(--success)'; upgradeBtn.onclick = null; }
+    if (freeBtn) { freeBtn.textContent = 'Gratuit'; freeBtn.disabled = false; }
+  } else {
+    if (upgradeBtn) { upgradeBtn.textContent = 'Premium'; upgradeBtn.disabled = false; upgradeBtn.style.background = ''; upgradeBtn.onclick = upgradeToPremium; }
+    if (freeBtn) { freeBtn.textContent = 'Actuel'; freeBtn.disabled = true; }
+  }
   document.getElementById('overlay').style.display = 'block';
   document.getElementById('premiumModal').style.display = 'block';
 }
 async function upgradeToPremium() {
   const role = API.getRole();
   const priceId = (role === 'admin' || role === 'manager') ? STRIPE_PRICE_BUSINESS : STRIPE_PRICE_PRO;
+  // Find upgrade button and show loading
+  const btn = document.querySelector('.btnUpgrade');
+  const origText = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = 'Chargement...'; btn.disabled = true; }
   // Stripe Checkout
-  if (priceId) {
-    try {
-      const userId = await (async()=>{ const{data:{user}}=await sb.auth.getUser(); return user.id; })();
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, priceId })
-      });
-      const { url } = await resp.json();
-      if (url) { window.location.href = url; return; }
-    } catch(e) { console.error('Stripe error:', e); }
+  try {
+    const userId = await (async()=>{ const{data:{user}}=await sb.auth.getUser(); return user.id; })();
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, priceId, successUrl: window.location.origin + window.location.pathname + '?stripe=success', cancelUrl: window.location.origin + window.location.pathname + '?stripe=cancel' })
+    });
+    const data = await resp.json();
+    if (data.url) { window.location.href = data.url; return; }
+    throw new Error(data.error || 'Pas de lien de paiement');
+  } catch(e) {
+    console.error('Stripe error:', e);
+    showToast('Erreur: ' + (e.message || 'Impossible de lancer le paiement'));
   }
-  btn.textContent = t('premium.btn.upgrade');
-  btn.disabled = false;
-  showMsg(t('premium.stripe.pending') || 'Le paiement sera bientot disponible. Contactez-nous pour un acces anticipe !');
-  closePremiumModal();
+  if (btn) { btn.textContent = origText; btn.disabled = false; }
+}
+async function openStripePortal() {
+  try {
+    const userId = await (async()=>{ const{data:{user}}=await sb.auth.getUser(); return user.id; })();
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/create-portal`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, returnUrl: window.location.href })
+    });
+    const data = await resp.json();
+    if (data.url) { window.location.href = data.url; return; }
+    showToast('Contactez cleaningmanager.service@gmail.com pour gerer votre abonnement.');
+  } catch(e) {
+    console.error('Portal error:', e);
+    showToast('Contactez cleaningmanager.service@gmail.com pour gerer votre abonnement.');
+  }
 }
 function checkProviderLimit() {
   const limits = API.getLimits();
@@ -5685,8 +5748,20 @@ function checkProviderLimit() {
 document.addEventListener('DOMContentLoaded', async () => {
   setLang(currentLang);
   // Capture referral code from URL before it gets cleared
-  const refParam = new URLSearchParams(window.location.search).get('ref');
+  const urlParams = new URLSearchParams(window.location.search);
+  const refParam = urlParams.get('ref');
   if (refParam) localStorage.setItem('mm_referral', refParam);
+  // Handle Stripe checkout return
+  const stripeStatus = urlParams.get('stripe');
+  if (stripeStatus) {
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    if (stripeStatus === 'success') {
+      localStorage.setItem('mm_stripe_success', '1');
+    } else if (stripeStatus === 'cancel') {
+      setTimeout(() => showToast('Paiement annule. Vous pouvez reessayer a tout moment.'), 1500);
+    }
+  }
   // Handle email confirmation token from URL hash
   const hash = window.location.hash;
   if (hash && hash.includes('confirmation_token=')) {
