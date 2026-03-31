@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.86</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.87</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.86</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.87</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2928,6 +2928,7 @@ async function addNewProperty() {
 }
 
 async function removeCurrentProperty() {
+  if (API.getRole() !== 'admin') { showToast('Seul l\'administrateur peut supprimer un bien'); return; }
   if ((fullConfig.properties || []).length <= 1) {
     showToast('Impossible de supprimer le dernier bien');
     return;
@@ -3163,8 +3164,8 @@ async function loadKpiCards() {
 
 function appendRoleBadge(h1) {
   const role = API.getRole();
-  const roleLabels = { admin: 'Conciergerie', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
-  const roleColors = { admin: '#e94560', manager: '#e94560', owner: '#f59e0b', provider: '#34d399' };
+  const roleLabels = { admin: 'Administrateur', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
+  const roleColors = { admin: '#e94560', manager: '#6c63ff', owner: '#f59e0b', provider: '#34d399' };
   if (role && roleLabels[role]) {
     // Add role badge as a separate clickable element after the header-left div
     const existing = document.getElementById('roleBadgeBtn');
@@ -3788,10 +3789,10 @@ function setupBottomNav(role) {
   let html = '';
   items.forEach((item, i) => {
     const active = i === 0 ? ' active' : '';
-    const fn = role === 'admin' ? 'switchMainTab' : role === 'provider' ? 'switchProviderNav' : 'switchOwnerNav';
+    const fn = (role === 'admin' || role === 'manager') ? 'switchMainTab' : role === 'provider' ? 'switchProviderNav' : 'switchOwnerNav';
     html += '<div class="bottomNav-item' + active + '" onclick="' + fn + '(\'' + item.id + '\')" id="nav_' + item.id + '">';
     html += '<span class="nav-icon">' + item.icon + '</span>';
-    if (item.id === 'prestations' && role === 'admin') html += '<span class="nav-badge" id="navServicesBadge" style="display:none;"></span>';
+    if (item.id === 'prestations' && (role === 'admin' || role === 'manager')) html += '<span class="nav-badge" id="navServicesBadge" style="display:none;"></span>';
     html += '<span>' + item.label + '</span>';
     html += '</div>';
   });
@@ -3799,7 +3800,7 @@ function setupBottomNav(role) {
   nav.style.display = 'flex';
   // Show chat FAB for admin (Business plan check is in initChatWidget)
   const chatFab = document.getElementById('chatFab');
-  if (chatFab && role === 'admin') {
+  if (chatFab && (role === 'admin' || role === 'manager')) {
     const plan = API.getPlan();
     if (plan === 'business' || plan === 'pro' || plan === 'premium' || API.isPremium()) chatFab.style.display = '';
   } else if (chatFab) {
@@ -6525,7 +6526,7 @@ async function changeRole(newRole) {
   // Free or trial: show confirmation with current plan info
   closeMsg();
   let html = '<div style="padding:10px;text-align:center;">';
-  const roleLabels = { admin: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
+  const roleLabels = { admin: 'Administrateur', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
   const roleColors = { admin: '#6c63ff', owner: '#f59e0b', provider: '#34d399' };
   html += '<div style="font-size:16px;font-weight:700;color:' + (roleColors[newRole]||'var(--text)') + ';margin-bottom:10px;">Passer en mode ' + (roleLabels[newRole]||newRole) + '</div>';
   if (isTrial) {
@@ -6581,7 +6582,7 @@ async function doChangeRole(newRole, subscriptionAction) {
 }
 
 function showRoleTransition(fromRole, toRole) {
-  const labels = { admin: 'Conciergerie', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
+  const labels = { admin: 'Administrateur', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire' };
   const colors = { admin: '#e94560', manager: '#e94560', owner: '#f59e0b', provider: '#34d399' };
   const icons = { admin: '🏢', manager: '🏢', owner: '🏠', provider: '🧹' };
   const fromLabel = labels[fromRole] || fromRole;
@@ -6661,7 +6662,7 @@ async function showTeamModal() {
         <span style="font-size:11px;font-weight:700;color:${roleColors[role]||'#888'};background:${roleColors[role]||'#888'}22;padding:3px 8px;border-radius:6px;">${roleLabels[role]||role}</span>
         <span style="flex:1;font-size:13px;">${esc(email)}</span>
         ${m.accepted ? '<span style="color:var(--success);font-size:11px;">✓</span>' : '<span style="color:var(--text3);font-size:11px;">En attente</span>'}
-        ${API.isAdmin() && members.length > 1 ? '<button class="btn btnSmall btnDanger" style="padding:2px 6px;font-size:11px;" onclick="removeTeamMember(\''+m.id+'\')">✕</button>' : ''}
+        ${API.getRole() === 'admin' && members.length > 1 ? '<button class="btn btnSmall btnDanger" style="padding:2px 6px;font-size:11px;" onclick="removeTeamMember(\''+m.id+'\')">✕</button>' : ''}
       </div>`;
     }).join('');
   }
@@ -10790,8 +10791,8 @@ function renderMarketplaceResults(profiles) {
     </div>`;
     return;
   }
-  const roleColors = { provider: '#34d399', owner: '#f59e0b', admin: '#e94560' };
-  const roleLabels = { provider: 'Prestataire', owner: 'Proprietaire', admin: 'Conciergerie' };
+  const roleColors = { provider: '#34d399', owner: '#f59e0b', admin: '#e94560', manager: '#6c63ff' };
+  const roleLabels = { provider: 'Prestataire', owner: 'Proprietaire', admin: 'Administrateur', manager: 'Conciergerie' };
   const availLabels = { available: '&#128994; Disponible', full: '&#128308; Complet', vacation: '&#127796; En vacances' };
   let html = '';
   profiles.forEach(p => {
@@ -10830,8 +10831,8 @@ function renderMarketplaceResults(profiles) {
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             ${p.phone ? `<a href="tel:${_escHtml(p.phone)}" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#34d399;text-decoration:none;padding:5px 10px;background:rgba(52,211,153,0.1);border-radius:8px;border:1px solid rgba(52,211,153,0.2);transition:background 0.2s;" onmouseenter="this.style.background='rgba(52,211,153,0.2)'" onmouseleave="this.style.background='rgba(52,211,153,0.1)'">&#128222; Appeler</a>` : ''}
             ${p.email ? `<a href="mailto:${_escHtml(p.email)}" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent);text-decoration:none;padding:5px 10px;background:rgba(108,99,255,0.1);border-radius:8px;border:1px solid rgba(108,99,255,0.2);transition:background 0.2s;" onmouseenter="this.style.background='rgba(108,99,255,0.2)'" onmouseleave="this.style.background='rgba(108,99,255,0.1)'">&#9993; Email</a>` : ''}
-            ${(p.role === 'admin' && p.org_id && myRole === 'owner') ? `<button onclick="requestJoinOrg('${p.org_id}','${_escHtml(p.display_name)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">Rejoindre</button>` : ''}
-            ${(p.role === 'provider' && myRole === 'admin') ? `<button onclick="requestHireProvider('${p.user_id}','${_escHtml(p.display_name)}','${_escHtml(p.email)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#34d399,#059669);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">Inviter</button>` : ''}
+            ${((p.role === 'admin' || p.role === 'manager') && p.org_id && myRole === 'owner') ? `<button onclick="requestJoinOrg('${p.org_id}','${_escHtml(p.display_name)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">Rejoindre</button>` : ''}
+            ${(p.role === 'provider' && (myRole === 'admin' || myRole === 'manager')) ? `<button onclick="requestHireProvider('${p.user_id}','${_escHtml(p.display_name)}','${_escHtml(p.email)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#34d399,#059669);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">Inviter</button>` : ''}
           </div>
         </div>
       </div>
