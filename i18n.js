@@ -823,6 +823,309 @@ const I18N = {
     'status.ready': 'Listo', 'status.restored': 'Planificacion restaurada',
     'ad.label': 'Publicidad', 'calendar.today': 'Hoy',
     'install.title': 'Instalar Lokizio', 'install.btn': 'Instalar',
+    'install.subtitle': 'Acceso rapido desde la pantalla de inicio',
+
+    // Auth (missing)
+    'auth.confirm': 'Confirmar contrasena',
+    'auth.confirm.placeholder': 'Vuelva a escribir la contrasena',
+    'auth.register.loading': 'Creacion en curso...',
+    'auth.pass.min': 'La contrasena debe tener al menos 6 caracteres',
+    'auth.email.taken': 'Este email ya esta en uso',
+    'auth.login.invalid': 'Email o contrasena incorrectos',
+    'auth.register.success': 'Cuenta creada!',
+    'auth.register.check_email': 'Se ha enviado un email de confirmacion a <b>{email}</b>.<br>Haga clic en el enlace del email y luego vuelva a iniciar sesion.',
+    'auth.register.connecting': 'Cuenta creada! Conexion...',
+    'auth.remember': 'Recordarme',
+    'auth.forgot': 'Contrasena olvidada?',
+    'auth.reset.sent': 'Email de restablecimiento enviado! Revise su bandeja de entrada.',
+
+    // Header (missing)
+    'header.share': 'Compartir en solo lectura',
+    'header.changelog': 'Historial de modificaciones',
+    'header.theme': 'Tema claro/oscuro',
+    'header.help': 'Ayuda',
+    'header.logout': 'Desconexion',
+
+    // Config (missing)
+    'config.title': 'Configuracion',
+    'config.ical.airbnb': 'URL iCal Airbnb...',
+    'config.ical.booking': 'URL iCal Booking...',
+    'config.paste': 'Pegar',
+    'config.pct': '%',
+
+    // Generate (missing)
+    'generate.title': 'Generar',
+    'generate.save': 'Guardar configuracion',
+
+    // Map (missing)
+    'map.provider_zone': 'Zona de',
+    'map.property_location': 'Posicion de',
+    'map.saved': 'Posicion guardada para',
+    'map.search': 'Buscar una direccion...',
+
+    // Comm (missing)
+    'comm.provlinks': 'Enlaces proveedores',
+    'comm.export': 'Exportar',
+
+    // Results (missing)
+    'results.empty': 'Haga clic en GENERAR PLANIFICACION para mostrar las limpiezas',
+    'results.whatsapp': 'WhatsApp',
+    'results.clear_history': 'Borrar el historial',
+
+    // Stats (missing)
+    'stats.empty': 'Genere una planificacion para ver las estadisticas.',
+
+    // Modals (missing)
+    'modal.vacations': 'Vacaciones del proveedor',
+
+    // Help (missing)
+    'help.title': 'Ayuda',
+    'help.config.title': '1. Configuracion',
+    'help.config.text': 'Pegue las URLs iCal de Airbnb y Booking. Agregue sus proveedores con su porcentaje (total = 100%).',
+    'help.planning.title': '2. Planificacion',
+    'help.planning.text': 'Haga clic en GENERAR para descargar los calendarios y asignar las limpiezas automaticamente.',
+    'help.results.title': '3. Resultados',
+    'help.results.text': 'Cambie los proveedores, filtre, marque "Transmitido" para las fechas enviadas.',
+    'help.features': 'Funcionalidades',
+    'help.feature.persist': 'modificaciones guardadas automaticamente.',
+    'help.feature.whatsapp': 'envie la planificacion a cada proveedor.',
+    'help.feature.calendar': 'vista mensual con limpiezas y reservas.',
+    'help.feature.stats': 'graficos de distribucion por proveedor.',
+    'help.feature.history': 'las limpiezas pasadas se archivan.',
+    'help.feature.notif': 'alertas 2 dias antes de llegada/salida.',
+    'help.feature.link': 'comparta un enlace de solo lectura.',
+
+    // Nav (missing)
+    'nav.config': 'Config',
+    'nav.generate': 'Generar',
+    'nav.results': 'Planificacion',
+    'nav.stats': 'Estadisticas',
+    'nav.more': 'Mas',
+
+    // Properties (missing)
+    'property.name_prompt': 'Nombre de la propiedad:',
+    'property.remove_confirm': 'Eliminar',
+
+    // Premium (missing)
+    'premium.free.property': '1 propiedad',
+    'premium.free.providers': '2 proveedores maximo',
+    'premium.free.ical': 'Calendario iCal',
+    'premium.free.ads': 'Publicidad',
+    'premium.feat.properties': 'Propiedades ilimitadas',
+    'premium.feat.providers': 'Proveedores ilimitados',
+    'premium.feat.noads': 'Sin publicidad',
+    'premium.feat.priority': 'Soporte prioritario',
+    'premium.feat.export': 'Exportacion PDF avanzada',
+    'premium.stripe.pending': 'El pago estara disponible pronto. Contactenos para un acceso anticipado!',
+    'ad.remove': 'Eliminar la publicidad',
+
+    // Validation (missing)
+    'validation.name.required': 'Por favor ingrese un nombre.',
+    'config.ical.required': 'Ingrese al menos una URL iCal.',
+    'config.provider.required': 'Agregue al menos un proveedor.',
+    'config.percentages.invalid': 'El total de los porcentajes debe ser 100%',
+    'config.saved': 'Configuracion guardada',
+
+    // Generate (missing)
+    'generate.remaining': 'quedan {n} generacion(es) gratuita(s)',
+
+    // Export (missing)
+    'export.empty': 'Ninguna planificacion para exportar.',
+    'export.filter.empty': 'Ninguna limpieza con este filtro.',
+    'export.csv.success': 'CSV exportado: {n} limpieza(s)',
+    'export.pdf.success': 'PDF exportado: {n} limpieza(s)',
+    'export.pdf.title': 'Planificacion de limpiezas',
+    'export.pdf.generated': 'Generado el',
+    'export.text.copied': 'Planificacion copiada',
+
+    // WhatsApp (missing)
+    'whatsapp.empty': 'Ninguna limpieza para',
+    'whatsapp.opened': 'Copiado + WhatsApp abierto para',
+    'whatsapp.copied': 'Planificacion copiada al portapapeles!',
+    'whatsapp.empty.all': 'Ninguna planificacion para enviar.',
+    'whatsapp.no.providers': 'Ningun proveedor con limpiezas.',
+    'whatsapp.title': 'Enviar por WhatsApp',
+    'whatsapp.select': 'Haga clic en un proveedor:',
+
+    // Share (missing)
+    'share.save.first': 'Guarde la configuracion primero.',
+    'share.link.copied': 'Enlace de solo lectura copiado!',
+
+    // Provider (missing)
+    'provider.added': 'agregado',
+    'provider.delete.confirm': 'Eliminar el proveedor',
+    'provider.link.copied': 'Enlace del proveedor copiado!',
+    'provider.zone.define': 'Definir la zona',
+
+    // Vacation (missing)
+    'vacation.none': 'Ninguna',
+    'vacation.title': 'Vacaciones de',
+    'vacation.empty': 'Ningun periodo de vacaciones.',
+    'share.save_first': 'Guarde la configuracion primero para generar el enlace.',
+    'ical.remove_confirm': 'Eliminar el calendario',
+    'btn.delete': 'Eliminar',
+    'provider.remove_confirm': 'Eliminar el proveedor',
+    'validate.pct': 'El total de los porcentajes debe ser 100%',
+    'notif.blocked': 'Notificaciones bloqueadas. Autorícelas en los ajustes del navegador.',
+    'notif.denied': 'Permiso de notificacion denegado.',
+    'error': 'Error',
+
+    // Account (missing)
+    'account.title': 'Mi cuenta',
+    'account.new_password': 'Nueva contrasena (6 caracteres minimo):',
+    'account.pwd_short': 'La contrasena debe tener al menos 6 caracteres.',
+    'account.pwd_changed': 'Contrasena modificada!',
+    'account.new_email': 'Nuevo email:',
+    'account.email_sent': 'Email de confirmacion enviado.',
+    'account.delete_confirm': 'Esta seguro de que desea eliminar su cuenta? Esta accion es irreversible. Todos sus datos se perderan.',
+    'account.delete_btn': 'Eliminar definitivamente',
+    'account.delete_confirm2': 'Ultima oportunidad! Confirme la eliminacion.',
+    'account.deleted': 'Cuenta eliminada.',
+    'premium.upgrade': 'Pasar a Premium',
+
+    // Dashboard (missing)
+    'dash.today': 'Limpiezas de hoy',
+    'dash.week': 'Esta semana',
+    'dash.properties': 'Propiedades',
+    'dash.providers': 'Proveedores',
+    'dash.no_today': 'Ninguna limpieza hoy',
+
+    'vacation.dates.required': 'Seleccione ambas fechas.',
+    'vacation.dates.invalid': 'La fecha de inicio debe ser anterior a la de fin.',
+
+    // Linen (missing)
+    'linen.name.required': 'Ingrese un nombre para el juego de ropa.',
+    'linen.duplicate': 'Este juego ya existe.',
+    'linen.empty': 'Ningun juego de ropa. Agregue uno arriba.',
+    'linen.status.available': 'Disponible',
+    'linen.status.used': 'En uso',
+    'linen.status.pressing': 'En lavanderia',
+    'linen.action.mark.used': 'Marcar como usado',
+    'linen.action.send.pressing': 'Enviar a lavanderia',
+    'linen.action.return': 'Retorno de lavanderia',
+    'linen.last.used': 'Ultimo uso:',
+    'linen.never.used': 'Nunca usado',
+    'linen.history.recent': 'Historial reciente',
+
+    // iCal (missing)
+    'ical.empty': 'Ningun calendario configurado',
+    'ical.all.added': 'Todas las plataformas ya estan agregadas',
+    'ical.choose.platform': 'Elegir una plataforma:',
+    'ical.add.title': 'Agregar un calendario',
+    'ical.add.button': '+ Agregar un calendario',
+    'ical.delete.confirm': 'Eliminar el calendario',
+
+    // Property (missing)
+    'property.click.configure': 'Haga clic en ✏️ para configurar la propiedad',
+    'property.type.apartment': 'Apartamento',
+    'property.type.house': 'Casa',
+    'property.type.studio': 'Estudio',
+    'property.type.villa': 'Villa',
+    'property.type.chalet': 'Chalet',
+    'property.type.other': 'Otro',
+    'property.image.toolarge': 'Imagen demasiado grande (max 500 Ko)',
+    'property.checklist.empty': 'Ninguna instruccion',
+    'property.name.placeholder': 'Nombre del alojamiento',
+    'property.instruction.placeholder': 'Nueva instruccion...',
+
+    // Time (missing)
+    'time.today': 'hoy',
+    'time.tomorrow': 'manana',
+    'time.in2days': 'en 2 dias',
+
+    // Notifications (missing)
+    'notification.unsupported': 'Notificaciones no soportadas por este navegador.',
+    'notification.blocked': 'Notificaciones bloqueadas. Autorícelas en los ajustes.',
+    'notification.denied': 'Permiso de notificacion denegado.',
+    'reminder.duplicate': 'Recordatorio ya programado para',
+    'reminder.scheduled': 'Recordatorio programado J-2 para',
+
+    // Premium limits (missing)
+    'premium.limit.providers': 'Ha alcanzado el limite de {n} proveedores.',
+    'premium.limit.properties': 'Ha alcanzado el limite de {n} propiedad(es).',
+    'premium.limit.icals': 'Ha alcanzado el limite de {n} calendarios.',
+    'premium.limit.generations': 'Limite de {n} generaciones/dia alcanzado.',
+    'premium.stats.locked': 'Los graficos y costes estan reservados para usuarios Premium',
+    'premium.comm.locked': 'WhatsApp, PDF y Compartir estan reservados para usuarios Premium',
+    'premium.history.locked': 'El historial y la lavanderia estan reservados para usuarios Premium',
+    'premium.upgrade.text': 'Pase a Premium para desbloquear.',
+
+    // Confirm (missing)
+    'confirm.title': 'Confirmar',
+    'confirm.cancel': 'Cancelar',
+    'confirm.delete': 'Eliminar',
+
+    // Changelog (missing)
+    'changelog.title': 'Historial de modificaciones',
+    'changelog.empty': 'Ninguna modificacion registrada.',
+    'changelog.cleared': 'Historial borrado',
+
+    // Calendar (missing)
+    'calendar.legend.cleaning': 'Limpieza',
+    'calendar.legend.reservation': 'Reserva',
+
+    // Help tooltips (missing)
+    'help.property': 'Configure su alojamiento: nombre, direccion, calendarios iCal. Haga clic en ✏️ para los detalles y 📍 para la posicion.',
+    'help.providers': 'Agregue sus proveedores con su % de distribucion (total = 100%). Haga clic en 📍 para definir su zona de accion.',
+    'help.planning': 'La planificacion se genera automaticamente. Haga clic en Actualizar para forzar la actualizacion. Filtre por proveedor.',
+    'help.communication': 'Exporte en CSV o envie por WhatsApp. Comparta un enlace de solo lectura.',
+    'help.history': 'Las limpiezas pasadas se archivan automaticamente. Gestione sus juegos de ropa en Lavanderia.',
+
+    // Table headers provider list (missing)
+    'table.name': 'Nombre',
+    'table.phone': 'Tel',
+    'table.pct': '%',
+    'table.rate': 'Tarifa',
+    'table.vacations': 'Vacaciones',
+    'table.link': 'Enlace',
+
+    // Results (missing)
+    'results.empty.future': 'Ninguna limpieza por venir.',
+    'results.loading': 'Cargando...',
+
+    // Onboarding (missing)
+    'onboarding.welcome': 'Bienvenido a Lokizio!',
+    'onboarding.role_question': 'Cual es su perfil?',
+    'onboarding.steps': 'Para comenzar:',
+    'onboarding.step1': 'Ingrese el nombre y pegue las URLs iCal de sus plataformas (Airbnb, Booking...)',
+    'onboarding.step2': 'Agregue sus proveedores con su % de distribucion',
+    'onboarding.step3': 'Se genera automaticamente!',
+    'onboarding.help': 'Haga clic en ? junto a cada seccion para mas ayuda.',
+    'onboarding.go': 'Vamos!',
+    'onboarding.concierge.title': 'Modo Conserjeria',
+    'onboarding.owner.title': 'Modo Propietario',
+    'onboarding.provider.title': 'Modo Proveedor',
+    'onboarding.provider.desc': 'Su gestor o propietario le ha invitado.',
+    'onboarding.provider.features': 'Lo que puede hacer:',
+
+    // Roles (missing)
+    'role.concierge.title': 'Gestiono una conserjeria',
+    'role.concierge.desc': 'Gestiona las limpiezas para varios propietarios. Dashboard, facturacion, gestion de equipo.',
+    'role.owner.title': 'Soy propietario',
+    'role.owner.desc': 'Es propietario y sigue las limpiezas de sus bienes.',
+    'role.owner.plan': 'Gratis (1 propiedad) / Pro (3.99€/mes)',
+    'role.provider.title': 'Soy proveedor de limpieza',
+    'role.provider.desc': 'Realiza las limpiezas. Consulte su planificacion, valide sus intervenciones.',
+    'role.provider.plan': 'Gratis (invitado por un gestor)',
+
+    // Team (missing)
+    'team.email_required': 'Email requerido',
+    'team.admin_only': 'Solo los administradores pueden gestionar el equipo',
+    'team.invite_error': 'Error al enviar la invitacion',
+    'team.remove_confirm': 'Retirar este miembro del equipo?',
+
+    // KPI (missing)
+    'kpi.properties': 'Propiedades',
+    'kpi.upcoming': 'Prestaciones por venir',
+    'kpi.this_week': 'Esta semana',
+    'kpi.providers': 'Proveedores',
+    'kpi.cost': 'Coste previsional',
+    'kpi.upcoming_provider': 'Por venir',
+    'kpi.done': 'Terminados',
+    'kpi.remaining': 'Restantes',
+
+    // Prop detail (missing)
+    'prop.detail.saved': 'Propiedad guardada',
   },
 
   // ═══ PORTUGUES ═══
@@ -860,6 +1163,309 @@ const I18N = {
     'status.ready': 'Pronto', 'status.restored': 'Planejamento restaurado',
     'ad.label': 'Publicidade', 'calendar.today': 'Hoje',
     'install.title': 'Instalar Lokizio', 'install.btn': 'Instalar',
+    'install.subtitle': 'Acesso rapido a partir da tela inicial',
+
+    // Auth (missing)
+    'auth.confirm': 'Confirmar a senha',
+    'auth.confirm.placeholder': 'Digite a senha novamente',
+    'auth.register.loading': 'Criacao em andamento...',
+    'auth.pass.min': 'A senha deve ter pelo menos 6 caracteres',
+    'auth.email.taken': 'Este email ja esta em uso',
+    'auth.login.invalid': 'Email ou senha incorretos',
+    'auth.register.success': 'Conta criada!',
+    'auth.register.check_email': 'Um email de confirmacao foi enviado para <b>{email}</b>.<br>Clique no link do email e volte para fazer login.',
+    'auth.register.connecting': 'Conta criada! Conectando...',
+    'auth.remember': 'Lembrar de mim',
+    'auth.forgot': 'Esqueceu a senha?',
+    'auth.reset.sent': 'Email de redefinicao enviado! Verifique sua caixa de entrada.',
+
+    // Header (missing)
+    'header.share': 'Compartilhar em somente leitura',
+    'header.changelog': 'Historico de modificacoes',
+    'header.theme': 'Tema claro/escuro',
+    'header.help': 'Ajuda',
+    'header.logout': 'Desconexao',
+
+    // Config (missing)
+    'config.title': 'Configuracao',
+    'config.ical.airbnb': 'URL iCal Airbnb...',
+    'config.ical.booking': 'URL iCal Booking...',
+    'config.paste': 'Colar',
+    'config.pct': '%',
+
+    // Generate (missing)
+    'generate.title': 'Gerar',
+    'generate.save': 'Salvar configuracao',
+
+    // Map (missing)
+    'map.provider_zone': 'Zona de',
+    'map.property_location': 'Posicao de',
+    'map.saved': 'Posicao salva para',
+    'map.search': 'Pesquisar um endereco...',
+
+    // Comm (missing)
+    'comm.provlinks': 'Links dos fornecedores',
+    'comm.export': 'Exportar',
+
+    // Results (missing)
+    'results.empty': 'Clique em GERAR PLANEJAMENTO para exibir as limpezas',
+    'results.whatsapp': 'WhatsApp',
+    'results.clear_history': 'Apagar o historico',
+
+    // Stats (missing)
+    'stats.empty': 'Gere um planejamento para ver as estatisticas.',
+
+    // Modals (missing)
+    'modal.vacations': 'Ferias do fornecedor',
+
+    // Help (missing)
+    'help.title': 'Ajuda',
+    'help.config.title': '1. Configuracao',
+    'help.config.text': 'Cole as URLs iCal do Airbnb e Booking. Adicione seus fornecedores com a porcentagem deles (total = 100%).',
+    'help.planning.title': '2. Planejamento',
+    'help.planning.text': 'Clique em GERAR para baixar os calendarios e atribuir as limpezas automaticamente.',
+    'help.results.title': '3. Resultados',
+    'help.results.text': 'Altere os fornecedores, filtre, marque "Transmitido" para as datas enviadas.',
+    'help.features': 'Funcionalidades',
+    'help.feature.persist': 'modificacoes salvas automaticamente.',
+    'help.feature.whatsapp': 'envie o planejamento para cada fornecedor.',
+    'help.feature.calendar': 'visao mensal com limpezas e reservas.',
+    'help.feature.stats': 'graficos de distribuicao por fornecedor.',
+    'help.feature.history': 'as limpezas passadas sao arquivadas.',
+    'help.feature.notif': 'alertas 2 dias antes da chegada/saida.',
+    'help.feature.link': 'compartilhe um link somente leitura.',
+
+    // Nav (missing)
+    'nav.config': 'Config',
+    'nav.generate': 'Gerar',
+    'nav.results': 'Planejamento',
+    'nav.stats': 'Estatisticas',
+    'nav.more': 'Mais',
+
+    // Properties (missing)
+    'property.name_prompt': 'Nome da propriedade:',
+    'property.remove_confirm': 'Excluir',
+
+    // Premium (missing)
+    'premium.free.property': '1 propriedade',
+    'premium.free.providers': '2 fornecedores no maximo',
+    'premium.free.ical': 'Calendario iCal',
+    'premium.free.ads': 'Publicidade',
+    'premium.feat.properties': 'Propriedades ilimitadas',
+    'premium.feat.providers': 'Fornecedores ilimitados',
+    'premium.feat.noads': 'Sem publicidade',
+    'premium.feat.priority': 'Suporte prioritario',
+    'premium.feat.export': 'Exportacao PDF avancada',
+    'premium.stripe.pending': 'O pagamento estara disponivel em breve. Entre em contato para acesso antecipado!',
+    'ad.remove': 'Remover a publicidade',
+
+    // Validation (missing)
+    'validation.name.required': 'Por favor, insira um nome.',
+    'config.ical.required': 'Insira pelo menos uma URL iCal.',
+    'config.provider.required': 'Adicione pelo menos um fornecedor.',
+    'config.percentages.invalid': 'O total das porcentagens deve ser 100%',
+    'config.saved': 'Configuracao salva',
+
+    // Generate (missing)
+    'generate.remaining': 'restam {n} geracao(oes) gratuita(s)',
+
+    // Export (missing)
+    'export.empty': 'Nenhum planejamento para exportar.',
+    'export.filter.empty': 'Nenhuma limpeza com este filtro.',
+    'export.csv.success': 'CSV exportado: {n} limpeza(s)',
+    'export.pdf.success': 'PDF exportado: {n} limpeza(s)',
+    'export.pdf.title': 'Planejamento de limpezas',
+    'export.pdf.generated': 'Gerado em',
+    'export.text.copied': 'Planejamento copiado',
+
+    // WhatsApp (missing)
+    'whatsapp.empty': 'Nenhuma limpeza para',
+    'whatsapp.opened': 'Copiado + WhatsApp aberto para',
+    'whatsapp.copied': 'Planejamento copiado para a area de transferencia!',
+    'whatsapp.empty.all': 'Nenhum planejamento para enviar.',
+    'whatsapp.no.providers': 'Nenhum fornecedor com limpezas.',
+    'whatsapp.title': 'Enviar por WhatsApp',
+    'whatsapp.select': 'Clique em um fornecedor:',
+
+    // Share (missing)
+    'share.save.first': 'Salve a configuracao primeiro.',
+    'share.link.copied': 'Link somente leitura copiado!',
+
+    // Provider (missing)
+    'provider.added': 'adicionado',
+    'provider.delete.confirm': 'Excluir o fornecedor',
+    'provider.link.copied': 'Link do fornecedor copiado!',
+    'provider.zone.define': 'Definir a zona',
+
+    // Vacation (missing)
+    'vacation.none': 'Nenhuma',
+    'vacation.title': 'Ferias de',
+    'vacation.empty': 'Nenhum periodo de ferias.',
+    'share.save_first': 'Salve a configuracao primeiro para gerar o link.',
+    'ical.remove_confirm': 'Excluir o calendario',
+    'btn.delete': 'Excluir',
+    'provider.remove_confirm': 'Excluir o fornecedor',
+    'validate.pct': 'O total das porcentagens deve ser 100%',
+    'notif.blocked': 'Notificacoes bloqueadas. Autorize-as nas configuracoes do navegador.',
+    'notif.denied': 'Permissao de notificacao recusada.',
+    'error': 'Erro',
+
+    // Account (missing)
+    'account.title': 'Minha conta',
+    'account.new_password': 'Nova senha (6 caracteres minimo):',
+    'account.pwd_short': 'A senha deve ter pelo menos 6 caracteres.',
+    'account.pwd_changed': 'Senha alterada!',
+    'account.new_email': 'Novo email:',
+    'account.email_sent': 'Email de confirmacao enviado.',
+    'account.delete_confirm': 'Tem certeza de que deseja excluir sua conta? Esta acao e irreversivel. Todos os seus dados serao perdidos.',
+    'account.delete_btn': 'Excluir definitivamente',
+    'account.delete_confirm2': 'Ultima chance! Confirme a exclusao.',
+    'account.deleted': 'Conta excluida.',
+    'premium.upgrade': 'Passar para Premium',
+
+    // Dashboard (missing)
+    'dash.today': 'Limpezas de hoje',
+    'dash.week': 'Esta semana',
+    'dash.properties': 'Propriedades',
+    'dash.providers': 'Fornecedores',
+    'dash.no_today': 'Nenhuma limpeza hoje',
+
+    'vacation.dates.required': 'Selecione ambas as datas.',
+    'vacation.dates.invalid': 'A data de inicio deve ser anterior a data de fim.',
+
+    // Linen (missing)
+    'linen.name.required': 'Insira um nome para o jogo de roupa.',
+    'linen.duplicate': 'Este jogo ja existe.',
+    'linen.empty': 'Nenhum jogo de roupa. Adicione um acima.',
+    'linen.status.available': 'Disponivel',
+    'linen.status.used': 'Em uso',
+    'linen.status.pressing': 'Na lavanderia',
+    'linen.action.mark.used': 'Marcar como usado',
+    'linen.action.send.pressing': 'Enviar para lavanderia',
+    'linen.action.return': 'Retorno da lavanderia',
+    'linen.last.used': 'Ultimo uso:',
+    'linen.never.used': 'Nunca usado',
+    'linen.history.recent': 'Historico recente',
+
+    // iCal (missing)
+    'ical.empty': 'Nenhum calendario configurado',
+    'ical.all.added': 'Todas as plataformas ja foram adicionadas',
+    'ical.choose.platform': 'Escolher uma plataforma:',
+    'ical.add.title': 'Adicionar um calendario',
+    'ical.add.button': '+ Adicionar um calendario',
+    'ical.delete.confirm': 'Excluir o calendario',
+
+    // Property (missing)
+    'property.click.configure': 'Clique em ✏️ para configurar a propriedade',
+    'property.type.apartment': 'Apartamento',
+    'property.type.house': 'Casa',
+    'property.type.studio': 'Estudio',
+    'property.type.villa': 'Villa',
+    'property.type.chalet': 'Chale',
+    'property.type.other': 'Outro',
+    'property.image.toolarge': 'Imagem muito grande (max 500 Ko)',
+    'property.checklist.empty': 'Nenhuma instrucao',
+    'property.name.placeholder': 'Nome do alojamento',
+    'property.instruction.placeholder': 'Nova instrucao...',
+
+    // Time (missing)
+    'time.today': 'hoje',
+    'time.tomorrow': 'amanha',
+    'time.in2days': 'em 2 dias',
+
+    // Notifications (missing)
+    'notification.unsupported': 'Notificacoes nao suportadas por este navegador.',
+    'notification.blocked': 'Notificacoes bloqueadas. Autorize-as nas configuracoes.',
+    'notification.denied': 'Permissao de notificacao recusada.',
+    'reminder.duplicate': 'Lembrete ja programado para',
+    'reminder.scheduled': 'Lembrete programado J-2 para',
+
+    // Premium limits (missing)
+    'premium.limit.providers': 'Voce atingiu o limite de {n} fornecedores.',
+    'premium.limit.properties': 'Voce atingiu o limite de {n} propriedade(s).',
+    'premium.limit.icals': 'Voce atingiu o limite de {n} calendarios.',
+    'premium.limit.generations': 'Limite de {n} geracoes/dia atingido.',
+    'premium.stats.locked': 'Os graficos e custos sao reservados para usuarios Premium',
+    'premium.comm.locked': 'WhatsApp, PDF e Compartilhamento sao reservados para usuarios Premium',
+    'premium.history.locked': 'O historico e a lavanderia sao reservados para usuarios Premium',
+    'premium.upgrade.text': 'Passe para Premium para desbloquear.',
+
+    // Confirm (missing)
+    'confirm.title': 'Confirmar',
+    'confirm.cancel': 'Cancelar',
+    'confirm.delete': 'Excluir',
+
+    // Changelog (missing)
+    'changelog.title': 'Historico de modificacoes',
+    'changelog.empty': 'Nenhuma modificacao registrada.',
+    'changelog.cleared': 'Historico apagado',
+
+    // Calendar (missing)
+    'calendar.legend.cleaning': 'Limpeza',
+    'calendar.legend.reservation': 'Reserva',
+
+    // Help tooltips (missing)
+    'help.property': 'Configure sua propriedade: nome, endereco, calendarios iCal. Clique em ✏️ para os detalhes e 📍 para a posicao.',
+    'help.providers': 'Adicione seus fornecedores com o % de distribuicao (total = 100%). Clique em 📍 para definir a zona de atuacao.',
+    'help.planning': 'O planejamento e gerado automaticamente. Clique em Atualizar para forcar a atualizacao. Filtre por fornecedor.',
+    'help.communication': 'Exporte em CSV ou envie por WhatsApp. Compartilhe um link somente leitura.',
+    'help.history': 'As limpezas passadas sao arquivadas automaticamente. Gerencie seus jogos de roupa em Lavanderia.',
+
+    // Table headers provider list (missing)
+    'table.name': 'Nome',
+    'table.phone': 'Tel',
+    'table.pct': '%',
+    'table.rate': 'Tarifa',
+    'table.vacations': 'Ferias',
+    'table.link': 'Link',
+
+    // Results (missing)
+    'results.empty.future': 'Nenhuma limpeza por vir.',
+    'results.loading': 'Carregando...',
+
+    // Onboarding (missing)
+    'onboarding.welcome': 'Bem-vindo ao Lokizio!',
+    'onboarding.role_question': 'Qual e o seu perfil?',
+    'onboarding.steps': 'Para comecar:',
+    'onboarding.step1': 'Insira o nome e cole as URLs iCal das suas plataformas (Airbnb, Booking...)',
+    'onboarding.step2': 'Adicione seus fornecedores com o % de distribuicao',
+    'onboarding.step3': 'Gera automaticamente!',
+    'onboarding.help': 'Clique em ? ao lado de cada secao para mais ajuda.',
+    'onboarding.go': 'Vamos la!',
+    'onboarding.concierge.title': 'Modo Concierge',
+    'onboarding.owner.title': 'Modo Proprietario',
+    'onboarding.provider.title': 'Modo Fornecedor',
+    'onboarding.provider.desc': 'Seu gestor ou proprietario o convidou.',
+    'onboarding.provider.features': 'O que voce pode fazer:',
+
+    // Roles (missing)
+    'role.concierge.title': 'Eu gerencio um servico de concierge',
+    'role.concierge.desc': 'Voce gerencia as limpezas para varios proprietarios. Dashboard, faturamento, gestao de equipe.',
+    'role.owner.title': 'Eu sou proprietario',
+    'role.owner.desc': 'Voce e proprietario e acompanha as limpezas dos seus imoveis.',
+    'role.owner.plan': 'Gratis (1 propriedade) / Pro (3.99€/mes)',
+    'role.provider.title': 'Eu sou fornecedor de limpeza',
+    'role.provider.desc': 'Voce faz as limpezas. Consulte seu planejamento, valide suas intervencoes.',
+    'role.provider.plan': 'Gratis (convidado por um gestor)',
+
+    // Team (missing)
+    'team.email_required': 'Email obrigatorio',
+    'team.admin_only': 'Somente administradores podem gerenciar a equipe',
+    'team.invite_error': 'Erro ao enviar o convite',
+    'team.remove_confirm': 'Remover este membro da equipe?',
+
+    // KPI (missing)
+    'kpi.properties': 'Propriedades',
+    'kpi.upcoming': 'Prestacoes por vir',
+    'kpi.this_week': 'Esta semana',
+    'kpi.providers': 'Fornecedores',
+    'kpi.cost': 'Custo previsional',
+    'kpi.upcoming_provider': 'Por vir',
+    'kpi.done': 'Concluidos',
+    'kpi.remaining': 'Restantes',
+
+    // Prop detail (missing)
+    'prop.detail.saved': 'Propriedade salva',
   },
 
   // ═══ ITALIANO ═══
@@ -897,6 +1503,312 @@ const I18N = {
     'status.ready': 'Pronto', 'status.restored': 'Pianificazione ripristinata',
     'ad.label': 'Pubblicita', 'calendar.today': 'Oggi',
     'install.title': 'Installa Lokizio', 'install.btn': 'Installa',
+    'install.subtitle': 'Accesso rapido dalla schermata iniziale',
+
+    // Auth (missing)
+    'auth.confirm': 'Conferma la password',
+    'auth.confirm.placeholder': 'Ridigita la password',
+    'auth.register.loading': 'Creazione in corso...',
+    'auth.pass.min': 'La password deve avere almeno 6 caratteri',
+    'auth.email.taken': 'Questa email e gia in uso',
+    'auth.login.invalid': 'Email o password non corretti',
+    'auth.register.success': 'Account creato!',
+    'auth.register.check_email': 'Un\'email di conferma e stata inviata a <b>{email}</b>.<br>Clicca sul link nell\'email e poi torna per accedere.',
+    'auth.register.connecting': 'Account creato! Connessione...',
+    'auth.remember': 'Ricordami',
+    'auth.forgot': 'Password dimenticata?',
+    'auth.reset.sent': 'Email di reimpostazione inviata! Controlla la tua casella di posta.',
+
+    // Header (missing)
+    'header.share': 'Condividi in sola lettura',
+    'header.changelog': 'Storico delle modifiche',
+    'header.theme': 'Tema chiaro/scuro',
+    'header.help': 'Aiuto',
+    'header.logout': 'Disconnessione',
+
+    // Config (missing)
+    'config.title': 'Configurazione',
+    'config.ical.airbnb': 'URL iCal Airbnb...',
+    'config.ical.booking': 'URL iCal Booking...',
+    'config.paste': 'Incolla',
+    'config.pct': '%',
+
+    // Generate (missing)
+    'generate.title': 'Genera',
+    'generate.save': 'Salva configurazione',
+
+    // Map (missing)
+    'map.provider_zone': 'Zona di',
+    'map.property_location': 'Posizione di',
+    'map.saved': 'Posizione salvata per',
+    'map.search': 'Cerca un indirizzo...',
+
+    // Comm (missing)
+    'comm.provlinks': 'Link fornitori',
+    'comm.export': 'Esporta',
+
+    // Results (missing)
+    'results.empty': 'Clicca su GENERA PIANIFICAZIONE per visualizzare le pulizie',
+    'results.whatsapp': 'WhatsApp',
+    'results.clear_history': 'Cancella lo storico',
+
+    // Stats (missing)
+    'stats.empty': 'Genera una pianificazione per vedere le statistiche.',
+
+    // Modals (missing)
+    'modal.vacations': 'Vacanze del fornitore',
+
+    // Help (missing)
+    'help.title': 'Aiuto',
+    'help.config.title': '1. Configurazione',
+    'help.config.text': 'Incolla le URL iCal di Airbnb e Booking. Aggiungi i tuoi fornitori con la loro percentuale (totale = 100%).',
+    'help.planning.title': '2. Pianificazione',
+    'help.planning.text': 'Clicca GENERA per scaricare i calendari e assegnare le pulizie automaticamente.',
+    'help.results.title': '3. Risultati',
+    'help.results.text': 'Cambia i fornitori, filtra, spunta "Trasmesso" per le date inviate.',
+    'help.features': 'Funzionalita',
+    'help.feature.persist': 'modifiche salvate automaticamente.',
+    'help.feature.whatsapp': 'invia la pianificazione a ogni fornitore.',
+    'help.feature.calendar': 'vista mensile con pulizie e prenotazioni.',
+    'help.feature.stats': 'grafici di distribuzione per fornitore.',
+    'help.feature.history': 'le pulizie passate vengono archiviate.',
+    'help.feature.notif': 'avvisi 2 giorni prima dell\'arrivo/partenza.',
+    'help.feature.link': 'condividi un link in sola lettura.',
+
+    // Nav (missing)
+    'nav.config': 'Config',
+    'nav.generate': 'Genera',
+    'nav.results': 'Pianificazione',
+    'nav.stats': 'Statistiche',
+    'nav.more': 'Altro',
+
+    // Properties (missing)
+    'property.name_prompt': 'Nome della proprieta:',
+    'property.remove_confirm': 'Elimina',
+
+    // Premium (missing)
+    'premium.free.property': '1 proprieta',
+    'premium.free.providers': '2 fornitori massimo',
+    'premium.free.ical': 'Calendario iCal',
+    'premium.free.ads': 'Pubblicita',
+    'premium.feat.properties': 'Proprieta illimitate',
+    'premium.feat.providers': 'Fornitori illimitati',
+    'premium.feat.noads': 'Nessuna pubblicita',
+    'premium.feat.priority': 'Supporto prioritario',
+    'premium.feat.export': 'Esportazione PDF avanzata',
+    'premium.stripe.pending': 'Il pagamento sara presto disponibile. Contattaci per un accesso anticipato!',
+    'ad.remove': 'Rimuovere la pubblicita',
+
+    // Validation (missing)
+    'validation.name.required': 'Inserisci un nome.',
+    'config.ical.required': 'Inserisci almeno un URL iCal.',
+    'config.provider.required': 'Aggiungi almeno un fornitore.',
+    'config.percentages.invalid': 'Il totale delle percentuali deve essere 100%',
+    'config.saved': 'Configurazione salvata',
+
+    // Generate (missing)
+    'generate.remaining': 'restano {n} generazione(i) gratuita(e)',
+
+    // Export (missing)
+    'export.empty': 'Nessuna pianificazione da esportare.',
+    'export.filter.empty': 'Nessuna pulizia con questo filtro.',
+    'export.csv.success': 'CSV esportato: {n} pulizia(e)',
+    'export.pdf.success': 'PDF esportato: {n} pulizia(e)',
+    'export.pdf.title': 'Pianificazione pulizie',
+    'export.pdf.generated': 'Generato il',
+    'export.text.copied': 'Pianificazione copiata',
+
+    // WhatsApp (missing)
+    'whatsapp.empty': 'Nessuna pulizia per',
+    'whatsapp.opened': 'Copiato + WhatsApp aperto per',
+    'whatsapp.copied': 'Pianificazione copiata negli appunti!',
+    'whatsapp.empty.all': 'Nessuna pianificazione da inviare.',
+    'whatsapp.no.providers': 'Nessun fornitore con pulizie.',
+    'whatsapp.title': 'Invia tramite WhatsApp',
+    'whatsapp.select': 'Clicca su un fornitore:',
+
+    // Share (missing)
+    'share.save.first': 'Salva prima la configurazione.',
+    'share.link.copied': 'Link in sola lettura copiato!',
+
+    // Provider (missing)
+    'provider.added': 'aggiunto',
+    'provider.delete.confirm': 'Elimina il fornitore',
+    'provider.link.copied': 'Link del fornitore copiato!',
+    'provider.zone.define': 'Definisci la zona',
+
+    // Vacation (missing)
+    'vacation.none': 'Nessuna',
+    'vacation.title': 'Vacanze di',
+    'vacation.empty': 'Nessun periodo di vacanza.',
+    'share.save_first': 'Salva prima la configurazione per generare il link.',
+    'ical.remove_confirm': 'Elimina il calendario',
+    'btn.delete': 'Elimina',
+    'provider.remove_confirm': 'Elimina il fornitore',
+    'validate.pct': 'Il totale delle percentuali deve essere 100%',
+    'notif.blocked': 'Notifiche bloccate. Autorizzale nelle impostazioni del browser.',
+    'notif.denied': 'Permesso di notifica rifiutato.',
+    'error': 'Errore',
+
+    // Account (missing)
+    'account.title': 'Il mio account',
+    'account.new_password': 'Nuova password (6 caratteri minimo):',
+    'account.pwd_short': 'La password deve avere almeno 6 caratteri.',
+    'account.pwd_changed': 'Password modificata!',
+    'account.new_email': 'Nuova email:',
+    'account.email_sent': 'Email di conferma inviata.',
+    'account.delete_confirm': 'Sei sicuro di voler eliminare il tuo account? Questa azione e irreversibile. Tutti i tuoi dati andranno persi.',
+    'account.delete_btn': 'Elimina definitivamente',
+    'account.delete_confirm2': 'Ultima possibilita! Conferma l\'eliminazione.',
+    'account.deleted': 'Account eliminato.',
+    'premium.upgrade': 'Passa a Premium',
+
+    // Dashboard (missing)
+    'dash.today': 'Pulizie di oggi',
+    'dash.week': 'Questa settimana',
+    'dash.properties': 'Proprieta',
+    'dash.providers': 'Fornitori',
+    'dash.no_today': 'Nessuna pulizia oggi',
+
+    'vacation.dates.required': 'Seleziona entrambe le date.',
+    'vacation.dates.invalid': 'La data di inizio deve essere anteriore alla fine.',
+
+    // Linen (missing)
+    'linen.name.required': 'Inserisci un nome per il set di biancheria.',
+    'linen.duplicate': 'Questo set esiste gia.',
+    'linen.empty': 'Nessun set di biancheria. Aggiungine uno sopra.',
+    'linen.status.available': 'Disponibile',
+    'linen.status.used': 'In uso',
+    'linen.status.pressing': 'In lavanderia',
+    'linen.action.mark.used': 'Segna come usato',
+    'linen.action.send.pressing': 'Invia in lavanderia',
+    'linen.action.return': 'Ritorno dalla lavanderia',
+    'linen.last.used': 'Ultimo utilizzo:',
+    'linen.never.used': 'Mai utilizzato',
+    'linen.history.recent': 'Storico recente',
+
+    // iCal (missing)
+    'ical.empty': 'Nessun calendario configurato',
+    'ical.all.added': 'Tutte le piattaforme sono gia aggiunte',
+    'ical.choose.platform': 'Scegli una piattaforma:',
+    'ical.add.title': 'Aggiungi un calendario',
+    'ical.add.button': '+ Aggiungi un calendario',
+    'ical.delete.confirm': 'Elimina il calendario',
+
+    // Property (missing)
+    'property.click.configure': 'Clicca ✏️ per configurare la proprieta',
+    'property.type.apartment': 'Appartamento',
+    'property.type.house': 'Casa',
+    'property.type.studio': 'Monolocale',
+    'property.type.villa': 'Villa',
+    'property.type.chalet': 'Chalet',
+    'property.type.other': 'Altro',
+    'property.image.toolarge': 'Immagine troppo grande (max 500 Ko)',
+    'property.checklist.empty': 'Nessuna istruzione',
+    'property.name.placeholder': 'Nome dell\'alloggio',
+    'property.instruction.placeholder': 'Nuova istruzione...',
+
+    // Time (missing)
+    'time.today': 'oggi',
+    'time.tomorrow': 'domani',
+    'time.in2days': 'tra 2 giorni',
+
+    // Notifications (missing)
+    'notification.unsupported': 'Notifiche non supportate da questo browser.',
+    'notification.blocked': 'Notifiche bloccate. Autorizzale nelle impostazioni.',
+    'notification.denied': 'Permesso di notifica rifiutato.',
+    'reminder.duplicate': 'Promemoria gia programmato per',
+    'reminder.scheduled': 'Promemoria programmato G-2 per',
+
+    // Premium limits (missing)
+    'premium.limit.providers': 'Hai raggiunto il limite di {n} fornitori.',
+    'premium.limit.properties': 'Hai raggiunto il limite di {n} proprieta.',
+    'premium.limit.icals': 'Hai raggiunto il limite di {n} calendari.',
+    'premium.limit.generations': 'Limite di {n} generazioni/giorno raggiunto.',
+    'premium.stats.locked': 'I grafici e i costi sono riservati agli utenti Premium',
+    'premium.comm.locked': 'WhatsApp, PDF e Condivisione sono riservati agli utenti Premium',
+    'premium.history.locked': 'Lo storico e la lavanderia sono riservati agli utenti Premium',
+    'premium.upgrade.text': 'Passa a Premium per sbloccare.',
+
+    // Confirm (missing)
+    'confirm.title': 'Conferma',
+    'confirm.cancel': 'Annulla',
+    'confirm.delete': 'Elimina',
+
+    // Changelog (missing)
+    'changelog.title': 'Storico delle modifiche',
+    'changelog.empty': 'Nessuna modifica registrata.',
+    'changelog.cleared': 'Storico cancellato',
+
+    // Calendar (missing)
+    'calendar.legend.cleaning': 'Pulizia',
+    'calendar.legend.reservation': 'Prenotazione',
+
+    // Send modal (missing)
+    // (send.btn, send.title, send.copy already present)
+
+    // Help tooltips (missing)
+    'help.property': 'Configura il tuo alloggio: nome, indirizzo, calendari iCal. Clicca ✏️ per i dettagli e 📍 per la posizione.',
+    'help.providers': 'Aggiungi i tuoi fornitori con la % di distribuzione (totale = 100%). Clicca 📍 per definire la loro zona d\'azione.',
+    'help.planning': 'La pianificazione viene generata automaticamente. Clicca Aggiorna per forzare l\'aggiornamento. Filtra per fornitore.',
+    'help.communication': 'Esporta in CSV o invia tramite WhatsApp. Condividi un link in sola lettura.',
+    'help.history': 'Le pulizie passate vengono archiviate automaticamente. Gestisci i tuoi set di biancheria in Lavanderia.',
+
+    // Table headers provider list (missing)
+    'table.name': 'Nome',
+    'table.phone': 'Tel',
+    'table.pct': '%',
+    'table.rate': 'Tariffa',
+    'table.vacations': 'Vacanze',
+    'table.link': 'Link',
+
+    // Results (missing)
+    'results.empty.future': 'Nessuna pulizia in arrivo.',
+    'results.loading': 'Caricamento...',
+
+    // Onboarding (missing)
+    'onboarding.welcome': 'Benvenuto su Lokizio!',
+    'onboarding.role_question': 'Qual e il tuo profilo?',
+    'onboarding.steps': 'Per iniziare:',
+    'onboarding.step1': 'Inserisci il nome e incolla gli URL iCal delle tue piattaforme (Airbnb, Booking...)',
+    'onboarding.step2': 'Aggiungi i tuoi fornitori con la % di distribuzione',
+    'onboarding.step3': 'Si genera automaticamente!',
+    'onboarding.help': 'Clicca ? accanto a ogni sezione per ulteriore aiuto.',
+    'onboarding.go': 'Andiamo!',
+    'onboarding.concierge.title': 'Modalita Concierge',
+    'onboarding.owner.title': 'Modalita Proprietario',
+    'onboarding.provider.title': 'Modalita Fornitore',
+    'onboarding.provider.desc': 'Il tuo gestore o proprietario ti ha invitato.',
+    'onboarding.provider.features': 'Cosa puoi fare:',
+
+    // Roles (missing)
+    'role.concierge.title': 'Gestisco un servizio di concierge',
+    'role.concierge.desc': 'Gestisci le pulizie per diversi proprietari. Dashboard, fatturazione, gestione del team.',
+    'role.owner.title': 'Sono proprietario',
+    'role.owner.desc': 'Sei proprietario e segui le pulizie dei tuoi immobili.',
+    'role.owner.plan': 'Gratuito (1 proprieta) / Pro (3.99€/mese)',
+    'role.provider.title': 'Sono fornitore di pulizie',
+    'role.provider.desc': 'Fai le pulizie. Consulta la tua pianificazione, convalida i tuoi interventi.',
+    'role.provider.plan': 'Gratuito (invitato da un gestore)',
+
+    // Team (missing)
+    'team.email_required': 'Email obbligatoria',
+    'team.admin_only': 'Solo gli amministratori possono gestire il team',
+    'team.invite_error': 'Errore durante l\'invio dell\'invito',
+    'team.remove_confirm': 'Rimuovere questo membro dal team?',
+
+    // KPI (missing)
+    'kpi.properties': 'Proprieta',
+    'kpi.upcoming': 'Prestazioni in arrivo',
+    'kpi.this_week': 'Questa settimana',
+    'kpi.providers': 'Fornitori',
+    'kpi.cost': 'Costo previsionale',
+    'kpi.upcoming_provider': 'In arrivo',
+    'kpi.done': 'Completati',
+    'kpi.remaining': 'Rimanenti',
+
+    // Prop detail (missing)
+    'prop.detail.saved': 'Proprieta salvata',
   },
 
   // ═══ DEUTSCH ═══
@@ -934,6 +1846,309 @@ const I18N = {
     'status.ready': 'Bereit', 'status.restored': 'Planung wiederhergestellt',
     'ad.label': 'Werbung', 'calendar.today': 'Heute',
     'install.title': 'Lokizio installieren', 'install.btn': 'Installieren',
+    'install.subtitle': 'Schnellzugriff vom Startbildschirm',
+
+    // Auth (missing)
+    'auth.confirm': 'Passwort bestaetigen',
+    'auth.confirm.placeholder': 'Passwort erneut eingeben',
+    'auth.register.loading': 'Erstellung laeuft...',
+    'auth.pass.min': 'Passwort muss mindestens 6 Zeichen haben',
+    'auth.email.taken': 'Diese Email wird bereits verwendet',
+    'auth.login.invalid': 'Email oder Passwort falsch',
+    'auth.register.success': 'Konto erstellt!',
+    'auth.register.check_email': 'Eine Bestaetigungsemail wurde an <b>{email}</b> gesendet.<br>Klicken Sie auf den Link in der Email und kommen Sie zurueck zum Anmelden.',
+    'auth.register.connecting': 'Konto erstellt! Verbindung...',
+    'auth.remember': 'Angemeldet bleiben',
+    'auth.forgot': 'Passwort vergessen?',
+    'auth.reset.sent': 'Zuruecksetzungsemail gesendet! Pruefen Sie Ihren Posteingang.',
+
+    // Header (missing)
+    'header.share': 'Nur-Lesen-Link teilen',
+    'header.changelog': 'Aenderungsverlauf',
+    'header.theme': 'Helles/dunkles Design',
+    'header.help': 'Hilfe',
+    'header.logout': 'Abmelden',
+
+    // Config (missing)
+    'config.title': 'Konfiguration',
+    'config.ical.airbnb': 'iCal-URL Airbnb...',
+    'config.ical.booking': 'iCal-URL Booking...',
+    'config.paste': 'Einfuegen',
+    'config.pct': '%',
+
+    // Generate (missing)
+    'generate.title': 'Generieren',
+    'generate.save': 'Konfiguration speichern',
+
+    // Map (missing)
+    'map.provider_zone': 'Zone von',
+    'map.property_location': 'Position von',
+    'map.saved': 'Position gespeichert fuer',
+    'map.search': 'Adresse suchen...',
+
+    // Comm (missing)
+    'comm.provlinks': 'Dienstleister-Links',
+    'comm.export': 'Exportieren',
+
+    // Results (missing)
+    'results.empty': 'Klicken Sie auf PLANUNG ERSTELLEN um die Reinigungen anzuzeigen',
+    'results.whatsapp': 'WhatsApp',
+    'results.clear_history': 'Verlauf loeschen',
+
+    // Stats (missing)
+    'stats.empty': 'Erstellen Sie eine Planung um die Statistiken zu sehen.',
+
+    // Modals (missing)
+    'modal.vacations': 'Urlaub des Dienstleisters',
+
+    // Help (missing)
+    'help.title': 'Hilfe',
+    'help.config.title': '1. Konfiguration',
+    'help.config.text': 'Fuegen Sie die iCal-URLs von Airbnb und Booking ein. Fuegen Sie Ihre Dienstleister mit ihrem Prozentsatz hinzu (Gesamt = 100%).',
+    'help.planning.title': '2. Planung',
+    'help.planning.text': 'Klicken Sie auf ERSTELLEN um die Kalender herunterzuladen und die Reinigungen automatisch zuzuweisen.',
+    'help.results.title': '3. Ergebnisse',
+    'help.results.text': 'Aendern Sie die Dienstleister, filtern Sie, markieren Sie "Uebermittelt" fuer gesendete Termine.',
+    'help.features': 'Funktionen',
+    'help.feature.persist': 'Aenderungen werden automatisch gespeichert.',
+    'help.feature.whatsapp': 'senden Sie die Planung an jeden Dienstleister.',
+    'help.feature.calendar': 'Monatsansicht mit Reinigungen und Buchungen.',
+    'help.feature.stats': 'Verteilungsdiagramme pro Dienstleister.',
+    'help.feature.history': 'vergangene Reinigungen werden archiviert.',
+    'help.feature.notif': 'Benachrichtigungen 2 Tage vor An-/Abreise.',
+    'help.feature.link': 'teilen Sie einen Nur-Lesen-Link.',
+
+    // Nav (missing)
+    'nav.config': 'Config',
+    'nav.generate': 'Erstellen',
+    'nav.results': 'Planung',
+    'nav.stats': 'Statistiken',
+    'nav.more': 'Mehr',
+
+    // Properties (missing)
+    'property.name_prompt': 'Name der Unterkunft:',
+    'property.remove_confirm': 'Loeschen',
+
+    // Premium (missing)
+    'premium.free.property': '1 Unterkunft',
+    'premium.free.providers': '2 Dienstleister maximal',
+    'premium.free.ical': 'iCal-Kalender',
+    'premium.free.ads': 'Werbung',
+    'premium.feat.properties': 'Unbegrenzte Unterkuenfte',
+    'premium.feat.providers': 'Unbegrenzte Dienstleister',
+    'premium.feat.noads': 'Keine Werbung',
+    'premium.feat.priority': 'Prioritaetssupport',
+    'premium.feat.export': 'Erweiterter PDF-Export',
+    'premium.stripe.pending': 'Die Zahlung wird bald verfuegbar sein. Kontaktieren Sie uns fuer fruehen Zugang!',
+    'ad.remove': 'Werbung entfernen',
+
+    // Validation (missing)
+    'validation.name.required': 'Bitte geben Sie einen Namen ein.',
+    'config.ical.required': 'Geben Sie mindestens eine iCal-URL ein.',
+    'config.provider.required': 'Fuegen Sie mindestens einen Dienstleister hinzu.',
+    'config.percentages.invalid': 'Die Gesamtprozente muessen 100% ergeben',
+    'config.saved': 'Konfiguration gespeichert',
+
+    // Generate (missing)
+    'generate.remaining': 'noch {n} kostenlose Generierung(en) uebrig',
+
+    // Export (missing)
+    'export.empty': 'Keine Planung zum Exportieren.',
+    'export.filter.empty': 'Keine Reinigung mit diesem Filter.',
+    'export.csv.success': 'CSV exportiert: {n} Reinigung(en)',
+    'export.pdf.success': 'PDF exportiert: {n} Reinigung(en)',
+    'export.pdf.title': 'Reinigungsplanung',
+    'export.pdf.generated': 'Erstellt am',
+    'export.text.copied': 'Planung kopiert',
+
+    // WhatsApp (missing)
+    'whatsapp.empty': 'Keine Reinigung fuer',
+    'whatsapp.opened': 'Kopiert + WhatsApp geoeffnet fuer',
+    'whatsapp.copied': 'Planung in die Zwischenablage kopiert!',
+    'whatsapp.empty.all': 'Keine Planung zum Senden.',
+    'whatsapp.no.providers': 'Kein Dienstleister mit Reinigungen.',
+    'whatsapp.title': 'Per WhatsApp senden',
+    'whatsapp.select': 'Klicken Sie auf einen Dienstleister:',
+
+    // Share (missing)
+    'share.save.first': 'Speichern Sie zuerst die Konfiguration.',
+    'share.link.copied': 'Nur-Lesen-Link kopiert!',
+
+    // Provider (missing)
+    'provider.added': 'hinzugefuegt',
+    'provider.delete.confirm': 'Dienstleister loeschen',
+    'provider.link.copied': 'Dienstleister-Link kopiert!',
+    'provider.zone.define': 'Zone definieren',
+
+    // Vacation (missing)
+    'vacation.none': 'Keine',
+    'vacation.title': 'Urlaub von',
+    'vacation.empty': 'Kein Urlaubszeitraum.',
+    'share.save_first': 'Speichern Sie zuerst die Konfiguration um den Link zu generieren.',
+    'ical.remove_confirm': 'Kalender loeschen',
+    'btn.delete': 'Loeschen',
+    'provider.remove_confirm': 'Dienstleister loeschen',
+    'validate.pct': 'Die Gesamtprozente muessen 100% ergeben',
+    'notif.blocked': 'Benachrichtigungen blockiert. Erlauben Sie sie in den Browsereinstellungen.',
+    'notif.denied': 'Benachrichtigungsberechtigung verweigert.',
+    'error': 'Fehler',
+
+    // Account (missing)
+    'account.title': 'Mein Konto',
+    'account.new_password': 'Neues Passwort (mindestens 6 Zeichen):',
+    'account.pwd_short': 'Das Passwort muss mindestens 6 Zeichen haben.',
+    'account.pwd_changed': 'Passwort geaendert!',
+    'account.new_email': 'Neue Email:',
+    'account.email_sent': 'Bestaetigungsemail gesendet.',
+    'account.delete_confirm': 'Sind Sie sicher, dass Sie Ihr Konto loeschen moechten? Diese Aktion ist unwiderruflich. Alle Ihre Daten gehen verloren.',
+    'account.delete_btn': 'Endgueltig loeschen',
+    'account.delete_confirm2': 'Letzte Chance! Bestaetigen Sie die Loeschung.',
+    'account.deleted': 'Konto geloescht.',
+    'premium.upgrade': 'Auf Premium upgraden',
+
+    // Dashboard (missing)
+    'dash.today': 'Reinigungen heute',
+    'dash.week': 'Diese Woche',
+    'dash.properties': 'Unterkuenfte',
+    'dash.providers': 'Dienstleister',
+    'dash.no_today': 'Keine Reinigung heute',
+
+    'vacation.dates.required': 'Waehlen Sie beide Daten aus.',
+    'vacation.dates.invalid': 'Das Startdatum muss vor dem Enddatum liegen.',
+
+    // Linen (missing)
+    'linen.name.required': 'Geben Sie einen Namen fuer das Waescheset ein.',
+    'linen.duplicate': 'Dieses Set existiert bereits.',
+    'linen.empty': 'Kein Waescheset. Fuegen Sie oben eines hinzu.',
+    'linen.status.available': 'Verfuegbar',
+    'linen.status.used': 'In Gebrauch',
+    'linen.status.pressing': 'In der Waescherei',
+    'linen.action.mark.used': 'Als benutzt markieren',
+    'linen.action.send.pressing': 'In die Waescherei senden',
+    'linen.action.return': 'Rueckkehr aus der Waescherei',
+    'linen.last.used': 'Letzte Verwendung:',
+    'linen.never.used': 'Nie benutzt',
+    'linen.history.recent': 'Aktueller Verlauf',
+
+    // iCal (missing)
+    'ical.empty': 'Kein Kalender konfiguriert',
+    'ical.all.added': 'Alle Plattformen sind bereits hinzugefuegt',
+    'ical.choose.platform': 'Plattform waehlen:',
+    'ical.add.title': 'Kalender hinzufuegen',
+    'ical.add.button': '+ Kalender hinzufuegen',
+    'ical.delete.confirm': 'Kalender loeschen',
+
+    // Property (missing)
+    'property.click.configure': 'Klicken Sie ✏️ um die Unterkunft zu konfigurieren',
+    'property.type.apartment': 'Wohnung',
+    'property.type.house': 'Haus',
+    'property.type.studio': 'Studio',
+    'property.type.villa': 'Villa',
+    'property.type.chalet': 'Chalet',
+    'property.type.other': 'Andere',
+    'property.image.toolarge': 'Bild zu gross (max 500 Ko)',
+    'property.checklist.empty': 'Keine Anweisungen',
+    'property.name.placeholder': 'Name der Unterkunft',
+    'property.instruction.placeholder': 'Neue Anweisung...',
+
+    // Time (missing)
+    'time.today': 'heute',
+    'time.tomorrow': 'morgen',
+    'time.in2days': 'in 2 Tagen',
+
+    // Notifications (missing)
+    'notification.unsupported': 'Benachrichtigungen werden von diesem Browser nicht unterstuetzt.',
+    'notification.blocked': 'Benachrichtigungen blockiert. Erlauben Sie sie in den Einstellungen.',
+    'notification.denied': 'Benachrichtigungsberechtigung verweigert.',
+    'reminder.duplicate': 'Erinnerung bereits geplant fuer',
+    'reminder.scheduled': 'Erinnerung T-2 geplant fuer',
+
+    // Premium limits (missing)
+    'premium.limit.providers': 'Sie haben das Limit von {n} Dienstleistern erreicht.',
+    'premium.limit.properties': 'Sie haben das Limit von {n} Unterkunft(en) erreicht.',
+    'premium.limit.icals': 'Sie haben das Limit von {n} Kalendern erreicht.',
+    'premium.limit.generations': 'Limit von {n} Generierungen/Tag erreicht.',
+    'premium.stats.locked': 'Diagramme und Kosten sind Premium-Nutzern vorbehalten',
+    'premium.comm.locked': 'WhatsApp, PDF und Teilen sind Premium-Nutzern vorbehalten',
+    'premium.history.locked': 'Verlauf und Waescherei sind Premium-Nutzern vorbehalten',
+    'premium.upgrade.text': 'Upgraden Sie auf Premium zum Freischalten.',
+
+    // Confirm (missing)
+    'confirm.title': 'Bestaetigen',
+    'confirm.cancel': 'Abbrechen',
+    'confirm.delete': 'Loeschen',
+
+    // Changelog (missing)
+    'changelog.title': 'Aenderungsverlauf',
+    'changelog.empty': 'Keine Aenderungen verzeichnet.',
+    'changelog.cleared': 'Verlauf geloescht',
+
+    // Calendar (missing)
+    'calendar.legend.cleaning': 'Reinigung',
+    'calendar.legend.reservation': 'Buchung',
+
+    // Help tooltips (missing)
+    'help.property': 'Konfigurieren Sie Ihre Unterkunft: Name, Adresse, iCal-Kalender. Klicken Sie ✏️ fuer Details und 📍 fuer die Position.',
+    'help.providers': 'Fuegen Sie Ihre Dienstleister mit ihrem %-Anteil hinzu (Gesamt = 100%). Klicken Sie 📍 um ihre Einsatzzone zu definieren.',
+    'help.planning': 'Die Planung wird automatisch erstellt. Klicken Sie auf Aktualisieren um die Aktualisierung zu erzwingen. Filtern Sie nach Dienstleister.',
+    'help.communication': 'Exportieren Sie als CSV oder senden Sie per WhatsApp. Teilen Sie einen Nur-Lesen-Link.',
+    'help.history': 'Vergangene Reinigungen werden automatisch archiviert. Verwalten Sie Ihre Waeschesets unter Waescherei.',
+
+    // Table headers provider list (missing)
+    'table.name': 'Name',
+    'table.phone': 'Tel',
+    'table.pct': '%',
+    'table.rate': 'Preis',
+    'table.vacations': 'Urlaub',
+    'table.link': 'Link',
+
+    // Results (missing)
+    'results.empty.future': 'Keine anstehenden Reinigungen.',
+    'results.loading': 'Wird geladen...',
+
+    // Onboarding (missing)
+    'onboarding.welcome': 'Willkommen bei Lokizio!',
+    'onboarding.role_question': 'Was ist Ihr Profil?',
+    'onboarding.steps': 'Um zu beginnen:',
+    'onboarding.step1': 'Geben Sie den Namen ein und fuegen Sie die iCal-URLs Ihrer Plattformen ein (Airbnb, Booking...)',
+    'onboarding.step2': 'Fuegen Sie Ihre Dienstleister mit ihrem %-Anteil hinzu',
+    'onboarding.step3': 'Es wird automatisch generiert!',
+    'onboarding.help': 'Klicken Sie ? neben jedem Abschnitt fuer weitere Hilfe.',
+    'onboarding.go': 'Los geht\'s!',
+    'onboarding.concierge.title': 'Concierge-Modus',
+    'onboarding.owner.title': 'Eigentuemer-Modus',
+    'onboarding.provider.title': 'Dienstleister-Modus',
+    'onboarding.provider.desc': 'Ihr Verwalter oder Eigentuemer hat Sie eingeladen.',
+    'onboarding.provider.features': 'Was Sie tun koennen:',
+
+    // Roles (missing)
+    'role.concierge.title': 'Ich verwalte einen Concierge-Service',
+    'role.concierge.desc': 'Sie verwalten die Reinigungen fuer mehrere Eigentuemer. Dashboard, Abrechnung, Teamverwaltung.',
+    'role.owner.title': 'Ich bin Eigentuemer',
+    'role.owner.desc': 'Sie sind Eigentuemer und verfolgen die Reinigungen Ihrer Immobilien.',
+    'role.owner.plan': 'Kostenlos (1 Unterkunft) / Pro (3.99€/Monat)',
+    'role.provider.title': 'Ich bin Reinigungsdienstleister',
+    'role.provider.desc': 'Sie fuehren die Reinigungen durch. Sehen Sie Ihre Planung ein, bestaetigen Sie Ihre Einsaetze.',
+    'role.provider.plan': 'Kostenlos (von einem Verwalter eingeladen)',
+
+    // Team (missing)
+    'team.email_required': 'Email erforderlich',
+    'team.admin_only': 'Nur Administratoren koennen das Team verwalten',
+    'team.invite_error': 'Fehler beim Senden der Einladung',
+    'team.remove_confirm': 'Dieses Mitglied aus dem Team entfernen?',
+
+    // KPI (missing)
+    'kpi.properties': 'Unterkuenfte',
+    'kpi.upcoming': 'Anstehende Reinigungen',
+    'kpi.this_week': 'Diese Woche',
+    'kpi.providers': 'Dienstleister',
+    'kpi.cost': 'Voraussichtliche Kosten',
+    'kpi.upcoming_provider': 'Anstehend',
+    'kpi.done': 'Erledigt',
+    'kpi.remaining': 'Verbleibend',
+
+    // Prop detail (missing)
+    'prop.detail.saved': 'Unterkunft gespeichert',
   }
 };
 
