@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.80</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.81</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.80</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.81</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -3180,6 +3180,34 @@ function appendRoleBadge(h1) {
 }
 
 /* ── Provider Mode ── */
+async function shareProviderProfile() {
+  const member = API.getMember();
+  const user = sb.auth.getUser ? (await sb.auth.getUser()).data?.user : null;
+  const email = user?.email || member?.invited_email || '';
+  const name = member?.display_name || email;
+  const phone = member?.phone || '';
+  const shareText = 'Bonjour,\n\nJe suis prestataire sur Lokizio et je souhaite rejoindre votre equipe.\n\n' +
+    'Nom : ' + name + '\n' +
+    'Email : ' + email + '\n' +
+    (phone ? 'Tel : ' + phone + '\n' : '') +
+    '\nAjoutez-moi dans vos prestataires sur Lokizio :\nhttps://fabienlacaze.github.io/lokizio/';
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Profil prestataire — ' + name, text: shareText });
+      return;
+    } catch(e) {}
+  }
+  // Fallback: copy to clipboard
+  try {
+    await navigator.clipboard.writeText(shareText);
+    showToast('Profil copie ! Collez-le dans un message.');
+  } catch(e) {
+    // Last resort: show in modal
+    showMsg('<div style="padding:10px;"><div style="font-weight:700;margin-bottom:8px;">Copiez ce texte :</div><textarea style="width:100%;height:120px;padding:8px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;" readonly>' + esc(shareText) + '</textarea></div>');
+  }
+}
+
 async function showProviderMode() {
   try {
   setupBottomNav('provider');
@@ -3235,6 +3263,8 @@ async function showProviderMode() {
         <b>Votre email :</b> ${esc(providerEmail)}<br>
         Communiquez-le a votre gestionnaire pour qu'il vous ajoute.
       </div>
+      <button onclick="shareProviderProfile()" style="margin-top:24px;padding:16px 32px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;width:100%;max-width:320px;box-shadow:0 4px 16px rgba(108,99,255,0.4);">&#128228; Partager mon profil</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;">Envoyez votre profil a une conciergerie pour etre ajoute</div>
     </div>`;
     return;
   }
