@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.48</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.49</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.48</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.49</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -3264,40 +3264,40 @@ async function showProviderMode() {
   }
 
   // Today's prestations summary
-  const todayItems = unified.filter(u => u.date === today);
-  if (todayItems.length > 0) {
-    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
-      <div style="font-weight:700;font-size:14px;margin-bottom:10px;">&#128197; Aujourd'hui — ${todayItems.length} prestation(s)</div>`;
+  const _sc = { done:'#34d399', departed:'#34d399', in_progress:'#3b82f6', arrived:'#6c63ff', assigned:'#8b5cf6', accepted:'#34d399', pending:'#f59e0b', pending_validation:'#f59e0b', refused:'#ef4444', cancelled:'#ef4444' };
+  const _sl = { done:'Termine', departed:'Parti', in_progress:'En cours', arrived:'Sur place', assigned:'Assigne', accepted:'Accepte', pending:'Attente', pending_validation:'Validation', refused:'Refuse', cancelled:'Annulee' };
+  const todayItems = unified.filter(u => u.date === today && !['done','cancelled','departed'].includes(u.status));
+  html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">';
+  html += '<div style="font-weight:700;font-size:14px;margin-bottom:10px;">&#128197; Aujourd\'hui — ' + todayItems.length + ' prestation(s)</div>';
+  if (todayItems.length === 0) {
+    html += '<div style="color:var(--text3);font-size:13px;">Aucune prestation aujourd\'hui</div>';
+  } else {
     todayItems.forEach(u => {
-      const svcLabel = getServiceLabel(u.type);
-      const statusIcons = { done: '&#9989;', departed: '&#128682;', in_progress: '&#129529;', arrived: '&#127968;', assigned: '&#128228;', accepted: '&#9989;', seen: '&#128065;', sent: '&#9993;', refused: '&#10060;', pending: '&#9898;' };
-      const statusLabels = { done: 'Termine', departed: 'Parti', in_progress: 'En cours', arrived: 'Sur place', assigned: 'Assigne', accepted: 'Accepte', seen: 'Lu', sent: 'Envoye', refused: 'Refuse', cancelled: 'Annulee', pending_validation: 'A valider', pending: 'A faire' };
-      const statusColors = { done: '#34d399', departed: '#34d399', in_progress: '#f59e0b', arrived: '#6c63ff', assigned: '#8b5cf6', accepted: '#34d399', seen: '#6c63ff', sent: 'var(--text3)', refused: '#ef4444', cancelled: '#ef4444', pending_validation: '#f59e0b', pending: 'var(--text3)' };
-      html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px;">
-        <div style="flex:1;font-weight:600;">${svcLabel}</div>
-        <div style="color:var(--text2);">${esc(u.propertyName || '')}</div>
-        <span style="font-size:11px;color:${statusColors[u.status] || 'var(--text3)'};white-space:nowrap;">${statusIcons[u.status] || '&#9898;'} ${statusLabels[u.status] || ''}</span>
-      </div>`;
+      html += '<div onclick="switchProviderNav(\'prestations\')" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);cursor:pointer;" onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'\'">';
+      html += '<div style="flex:1;font-size:12px;font-weight:600;">' + getServiceLabel(u.type) + '</div>';
+      if (u.propertyName) html += '<div style="font-size:11px;color:var(--text3);">' + esc(u.propertyName) + '</div>';
+      if (u.priority === 'high') html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#ef444420;color:#ef4444;font-weight:700;animation:pulse 1.5s ease-in-out infinite;">URGENT</span>';
+      html += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + (_sc[u.status]||'#666') + '22;color:' + (_sc[u.status]||'#666') + ';font-weight:600;">' + (_sl[u.status]||u.status) + '</span>';
+      html += '</div>';
     });
-    html += '</div>';
   }
+  html += '</div>';
 
-  // Upcoming prestations (next 7 days, excluding past)
+  // Upcoming prestations (excluding today, excluding terminal)
   const upcomingItems = unified.filter(u => {
     const d = u.date || '';
-    return d >= today && d !== today && !['done','cancelled','departed'].includes(u.status);
-  }).slice(0, 5);
+    return d > today && !['done','cancelled','departed'].includes(u.status);
+  }).slice(0, 8);
   if (upcomingItems.length > 0) {
     html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">';
-    html += '<div style="font-weight:700;font-size:14px;margin-bottom:10px;">&#128197; Prochaines prestations</div>';
+    html += '<div style="font-weight:700;font-size:14px;margin-bottom:10px;">&#128203; Prochaines prestations</div>';
     upcomingItems.forEach(u => {
-      const svcLabel = getServiceLabel(u.type);
-      const statusColors2 = { pending: '#f59e0b', assigned: '#8b5cf6', accepted: '#34d399', in_progress: '#3b82f6', pending_validation: '#f59e0b' };
-      const statusLabels2 = { pending: 'Attente', assigned: 'Assigne', accepted: 'Accepte', in_progress: 'En cours', pending_validation: 'Validation' };
-      html += '<div onclick="switchProviderNav(\'prestations\')" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px;cursor:pointer;" onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'\'">';
-      html += '<div style="min-width:40px;text-align:center;font-size:11px;color:var(--text3);">' + fmtDate(u.date).substring(0,5) + '</div>';
-      html += '<div style="flex:1;font-weight:600;">' + svcLabel + '</div>';
-      html += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + (statusColors2[u.status]||'#666') + '22;color:' + (statusColors2[u.status]||'#666') + ';font-weight:600;">' + (statusLabels2[u.status]||u.status) + '</span>';
+      html += '<div onclick="switchProviderNav(\'prestations\')" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);cursor:pointer;" onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'\'">';
+      html += '<div style="min-width:40px;font-size:11px;color:var(--text3);">' + fmtDate(u.date).substring(0,5) + '</div>';
+      html += '<div style="flex:1;font-size:12px;font-weight:600;">' + getServiceLabel(u.type) + '</div>';
+      if (u.propertyName) html += '<div style="font-size:11px;color:var(--text3);">' + esc(u.propertyName) + '</div>';
+      if (u.priority === 'high') html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#ef444420;color:#ef4444;font-weight:700;animation:pulse 1.5s ease-in-out infinite;">URGENT</span>';
+      html += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + (_sc[u.status]||'#666') + '22;color:' + (_sc[u.status]||'#666') + ';font-weight:600;">' + (_sl[u.status]||'') + '</span>';
       html += '</div>';
     });
     if (unified.filter(u => (u.date||'') >= today && !['done','cancelled','departed'].includes(u.status)).length > 5) {
@@ -4125,6 +4125,32 @@ async function showOwnerMode() {
       <div style="font-weight:700;font-size:14px;margin-bottom:6px;">&#128197; Aujourd'hui</div>
       <div style="color:var(--text3);font-size:13px;">Aucun menage prevu aujourd'hui</div>
     </div>`;
+  }
+
+  // Upcoming prestations for owner
+  const ownerUpcoming = ownerUnified.filter(u => {
+    const d = u.date || '';
+    return d > today && !['done','cancelled','departed'].includes(u.status);
+  }).slice(0, 8);
+  if (ownerUpcoming.length > 0) {
+    const _osc = { done:'#34d399', in_progress:'#3b82f6', assigned:'#8b5cf6', accepted:'#34d399', pending:'#f59e0b', pending_validation:'#f59e0b', refused:'#ef4444' };
+    const _osl = { done:'Termine', in_progress:'En cours', assigned:'Assigne', accepted:'Accepte', pending:'Attente', pending_validation:'Validation', refused:'Refuse' };
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">';
+    html += '<div style="font-weight:700;font-size:14px;margin-bottom:10px;">&#128203; Prochaines prestations</div>';
+    ownerUpcoming.forEach(u => {
+      const svcLabel = getServiceLabel(u.type);
+      html += '<div onclick="switchOwnerNav(\'prestations\')" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);cursor:pointer;" onmouseover="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseout="this.style.background=\'\'">';
+      html += '<div style="min-width:40px;font-size:11px;color:var(--text3);">' + fmtDate(u.date).substring(0,5) + '</div>';
+      html += '<div style="flex:1;font-size:12px;font-weight:600;">' + svcLabel + '</div>';
+      if (u.propertyName) html += '<div style="font-size:11px;color:var(--text3);">' + esc(u.propertyName) + '</div>';
+      if (u.provider) html += '<div style="font-size:11px;color:var(--text3);">' + esc(u.provider) + '</div>';
+      html += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + (_osc[u.status]||'#666') + '22;color:' + (_osc[u.status]||'#666') + ';font-weight:600;">' + (_osl[u.status]||u.status) + '</span>';
+      html += '</div>';
+    });
+    if (ownerUnified.filter(u => (u.date||'') > today && !['done','cancelled','departed'].includes(u.status)).length > 8) {
+      html += '<div onclick="switchOwnerNav(\'prestations\')" style="text-align:center;padding:8px;font-size:11px;color:var(--accent2);cursor:pointer;font-weight:600;">Voir tout &#8250;</div>';
+    }
+    html += '</div>';
   }
 
   html += '</div>'; // close ownerContentOverview
