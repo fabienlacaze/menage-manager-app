@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.73</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.74</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.73</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.74</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1385,6 +1385,28 @@ async function loadPDF() {
         &#x2022; <b>Garde enfants/animaux</b> : 10-12€/h / 18-20€/h<br>
         &#x2022; <b>Marge concierge</b> : 30 a 40% en general<br>
         <span style="font-style:italic;">Les prix en gris italique sont les defauts. Modifiez pour personnaliser.</span>
+      </div>
+    </details>
+
+    <!-- Dynamic Pricing -->
+    <details id="dynamicPricingSection" style="margin-top:16px;">
+      <summary style="font-size:12px;font-weight:600;color:var(--text);cursor:pointer;">&#128200; Pricing dynamique (saisons & majorations)</summary>
+      <div style="padding:12px 0;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Les tarifs sont automatiquement ajustes selon la saison et le jour de la semaine. Les prix affiches aux proprietaires et payes aux prestataires sont multiplies par le coefficient.</div>
+
+        <!-- Season config -->
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">Saisons</div>
+        <div id="dynamicPricingSeasons"></div>
+        <button class="btn btnSmall btnOutline" onclick="addDynamicSeason()" style="font-size:11px;padding:6px 12px;margin-top:6px;margin-bottom:14px;">+ Ajouter une saison</button>
+
+        <!-- Day of week multipliers -->
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">Majorations par jour</div>
+        <div id="dynamicPricingDays" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-bottom:14px;"></div>
+
+        <!-- Special dates -->
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">Dates speciales (jours feries, evenements)</div>
+        <div id="dynamicPricingSpecial"></div>
+        <button class="btn btnSmall btnOutline" onclick="addSpecialDate()" style="font-size:11px;padding:6px 12px;margin-top:6px;">+ Ajouter une date</button>
       </div>
     </details>
   </div>
@@ -2393,6 +2415,14 @@ async function renderPropertyDetailsInline() {
   html += `<textarea id="inlinePropNotes" rows="3" placeholder="Notes sur la propriete..." style="${inputStyle}resize:vertical;font-family:'Inter',sans-serif;">${esc(prop.notes || '')}</textarea>`;
   html += `</div>`;
 
+  // SECTION: QC Checklist
+  html += `<div style="${sectionStyle}">`;
+  html += `<div style="${sectionTitleStyle}">&#128247; Checklist photos (Controle qualite)</div>`;
+  html += `<div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Definissez les pieces/zones que le prestataire doit photographier apres chaque menage.</div>`;
+  html += `<div id="qcChecklistItems"></div>`;
+  html += `<button class="btn btnSmall btnOutline" onclick="addQcChecklistItem()" style="font-size:11px;padding:6px 12px;">+ Ajouter une piece</button>`;
+  html += `</div>`;
+
   // SECTION: Delete only (auto-save handles saving)
   if ((fullConfig.properties || []).length > 1) {
     html += `<div style="margin-bottom:16px;">`;
@@ -2401,6 +2431,9 @@ async function renderPropertyDetailsInline() {
   }
 
   container.innerHTML = html;
+
+  // Render QC checklist
+  renderQcChecklist();
 
   // Render services config
   const svcDiv = document.getElementById('inlinePropServicesChecks');
@@ -3788,7 +3821,7 @@ async function renderOwnerPropertyDetails() {
       const isActive = p.id === activeId;
       sHtml += '<button onclick="window._ownerActivePropId=\'' + p.id + '\';renderOwnerPropertyDetails()" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:' + (isActive ? '700' : '500') + ';cursor:pointer;white-space:nowrap;border:' + (isActive ? '2px solid var(--accent)' : '1px solid var(--border2)') + ';background:' + (isActive ? 'rgba(233,69,96,0.15)' : 'var(--surface2)') + ';color:' + (isActive ? 'var(--accent)' : 'var(--text)') + ';flex-shrink:0;">🏠 ' + esc(p.name) + '</button>';
     });
-    sHtml += '<button onclick="ownerAddNewProperty()" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;border:1px dashed var(--border2);background:transparent;color:var(--text3);flex-shrink:0;">+ Nouveau bien</button>';
+    sHtml += '<button onclick="ownerAddNewProperty()" style="padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px dashed var(--success);background:transparent;color:var(--success);transition:all 0.2s;flex-shrink:0;">+ Nouveau bien</button>';
     sHtml += '</div>';
     selContainer.innerHTML = sHtml;
     if (!window._ownerActivePropId) window._ownerActivePropId = properties[0].id;
@@ -3877,7 +3910,14 @@ async function renderOwnerPropertyDetails() {
   html += '</div>';
 
   // Save button
-  html += '<button class="btn btnSmall btnSuccess" onclick="saveOwnerPropDetail()" style="padding:12px 20px;font-size:14px;width:100%;">✓ Enregistrer</button>';
+  // Auto-save: add onchange to all inputs/selects/textareas after render
+  setTimeout(() => {
+    const container = document.getElementById('ownerPropertyDetailsInline');
+    if (container) container.querySelectorAll('input,select,textarea').forEach(el => {
+      if (!el.id || el.id === 'ownerPropPhotoInput') return;
+      el.addEventListener('change', () => saveOwnerPropDetail());
+    });
+  }, 100);
 
   detailContainer.innerHTML = html;
 }
@@ -4047,21 +4087,104 @@ async function startServiceRequest(id) {
 async function completeServiceRequest(id) {
   try {
     const { data: req } = await sb.from('service_requests').select('*').eq('id', id).single();
+    if (!req) return;
+    // Check if property has QC checklist
+    const { data: prop } = await sb.from('properties').select('qc_checklist').eq('id', req.property_id).single();
+    const checklist = (prop && prop.qc_checklist) || [];
+    if (checklist.length > 0 && !req.qc_photos) {
+      // Show QC photo upload modal
+      showQcPhotoModal(id, req, checklist);
+      return;
+    }
+    await finalizeServiceCompletion(id, req);
+  } catch(e) { console.error('completeServiceRequest error:', e); showToast('Erreur'); showProviderMode(); }
+}
+
+function showQcPhotoModal(requestId, req, checklist) {
+  let html = '<div style="padding:8px;">';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;text-align:center;">&#128247; Photos de controle qualite</div>';
+  html += '<div style="font-size:11px;color:var(--text3);margin-bottom:14px;text-align:center;">Prenez une photo de chaque piece pour valider le menage.</div>';
+  checklist.forEach((item, i) => {
+    const req2 = item.required !== false;
+    html += '<div style="padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:8px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+    html += '<span style="font-size:13px;font-weight:600;color:var(--text);">' + (item.icon || '&#128247;') + ' ' + esc(item.label) + '</span>';
+    if (req2) html += '<span style="font-size:10px;color:var(--accent);">Requis</span>';
+    html += '</div>';
+    html += '<div id="qcPreview_' + i + '" style="display:none;margin-bottom:6px;"><img style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;"></div>';
+    html += '<label style="display:block;padding:10px;border:1px dashed var(--border2);border-radius:8px;text-align:center;cursor:pointer;color:var(--text3);font-size:12px;">';
+    html += '&#128248; Prendre une photo';
+    html += '<input type="file" accept="image/*" capture="environment" data-qc-idx="' + i + '" onchange="handleQcPhoto(this,' + i + ')" style="display:none;">';
+    html += '</label>';
+    html += '</div>';
+  });
+  html += '<div style="display:flex;gap:8px;margin-top:12px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;" onclick="closeMsg()">Retour</button>';
+  html += '<button class="btn btnPrimary" style="flex:1;padding:12px;background:#059669;" id="qcSubmitBtn" onclick="submitQcPhotos(\'' + requestId + '\',' + checklist.length + ')">&#9989; Valider</button>';
+  html += '</div></div>';
+  window._qcPhotos = {};
+  showMsg(html, true);
+}
+
+function handleQcPhoto(input, idx) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    window._qcPhotos[idx] = e.target.result;
+    const preview = document.getElementById('qcPreview_' + idx);
+    if (preview) {
+      preview.style.display = 'block';
+      preview.querySelector('img').src = e.target.result;
+    }
+    // Change label to green check
+    input.parentElement.innerHTML = '&#9989; Photo ajoutee <input type="file" accept="image/*" capture="environment" data-qc-idx="' + idx + '" onchange="handleQcPhoto(this,' + idx + ')" style="display:none;">';
+    input.parentElement.style.borderColor = '#34d399';
+    input.parentElement.style.color = '#34d399';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitQcPhotos(requestId, total) {
+  // Validate required photos
+  const { data: req } = await sb.from('service_requests').select('*').eq('id', requestId).single();
+  const { data: prop } = await sb.from('properties').select('qc_checklist').eq('id', req.property_id).single();
+  const checklist = (prop && prop.qc_checklist) || [];
+  const missing = [];
+  checklist.forEach((item, i) => {
+    if (item.required !== false && !window._qcPhotos[i]) missing.push(item.label);
+  });
+  if (missing.length > 0) {
+    showToast('Photos manquantes: ' + missing.join(', '));
+    return;
+  }
+  // Save photos as JSON array in service_request
+  const photos = checklist.map((item, i) => ({
+    room: item.label,
+    icon: item.icon,
+    photo: window._qcPhotos[i] || null,
+    timestamp: new Date().toISOString()
+  })).filter(p => p.photo);
+
+  await sb.from('service_requests').update({ qc_photos: photos }).eq('id', requestId);
+  closeMsg();
+  await finalizeServiceCompletion(requestId, req);
+  window._qcPhotos = {};
+}
+
+async function finalizeServiceCompletion(id, req) {
     await sb.from('service_requests').update({ status: 'pending_validation', updated_at: new Date().toISOString() }).eq('id', id);
     showToast('En attente de validation du gestionnaire');
-    if (req) {
-      const org = API.getOrg();
-      const member = API.getMember();
-      const provName = member?.display_name || member?.invited_email || 'Prestataire';
-      const svcLabel = getServiceLabel(req.service_type);
-      const propName = req.property_name || '';
-      await sendAutoMessage(org.id, provName, 'provider', 'gestionnaire',
-        '&#9989; ' + provName + ' a termine ' + svcLabel + ' — En attente de votre validation');
-      await sendAutoMessage(org.id, provName, 'provider', 'proprietaire',
-        '&#9989; ' + svcLabel + ' termine pour ' + propName + ' — Validation en cours');
-    }
+    const org = API.getOrg();
+    const member = API.getMember();
+    const provName = member?.display_name || member?.invited_email || 'Prestataire';
+    const svcLabel = getServiceLabel(req.service_type);
+    const propName = req.property_name || '';
+    await sendAutoMessage(org.id, provName, 'provider', 'gestionnaire',
+      '&#9989; ' + provName + ' a termine ' + svcLabel + (req.qc_photos ? ' (avec photos QC)' : '') + ' — En attente de votre validation');
+    await sendAutoMessage(org.id, provName, 'provider', 'proprietaire',
+      '&#9989; ' + svcLabel + ' termine pour ' + propName + ' — Validation en cours');
     showProviderMode().then(() => switchProviderNav('prestations'));
-  } catch(e) { console.error('completeServiceRequest error:', e); showToast('Erreur'); showProviderMode(); }
 }
 
 // Provider withdrawal (se désister)
@@ -5255,7 +5378,7 @@ function switchFinanceTab(tab) {
   const btns = document.querySelectorAll('#tabBilling .prestSubTab');
   const idx = { tarifs: 0, revenus: 1, factures: 2 };
   if (btns[idx[tab]]) btns[idx[tab]].classList.add('active');
-  if (tab === 'tarifs') renderPricingTable();
+  if (tab === 'tarifs') { renderPricingTable(); renderDynamicPricing(); }
   if (tab === 'revenus') renderRevenueContent();
   if (tab === 'factures') loadInvoices();
 }
@@ -5332,6 +5455,290 @@ function suggestPrice(serviceId, prop) {
 
 // ── Pricing Table ──
 let _pricingPropertyId = null;
+// ── QC Review & Validation (Admin) ──
+async function showQcReview(requestId) {
+  const { data: req } = await sb.from('service_requests').select('qc_photos,property_name,service_type,assigned_provider').eq('id', requestId).single();
+  if (!req || !req.qc_photos) { showToast('Pas de photos QC'); return; }
+  let html = '<div style="padding:8px;">';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;text-align:center;">&#128247; Controle qualite</div>';
+  html += '<div style="font-size:11px;color:var(--text3);margin-bottom:12px;text-align:center;">' + esc(req.property_name || '') + ' — ' + getServiceLabel(req.service_type) + ' par ' + esc(req.assigned_provider || '') + '</div>';
+  req.qc_photos.forEach((p, i) => {
+    html += '<div style="margin-bottom:12px;">';
+    html += '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">' + (p.icon || '&#128247;') + ' ' + esc(p.room) + '</div>';
+    html += '<img src="' + p.photo + '" style="width:100%;max-height:250px;object-fit:cover;border-radius:10px;border:1px solid var(--border);" onclick="window.open(this.src)">';
+    if (p.timestamp) html += '<div style="font-size:10px;color:var(--text3);margin-top:2px;">' + new Date(p.timestamp).toLocaleString('fr-FR') + '</div>';
+    html += '</div>';
+  });
+  html += '<div style="display:flex;gap:8px;margin-top:12px;">';
+  html += '<button class="btn btnOutline" style="flex:1;padding:12px;" onclick="closeMsg()">Fermer</button>';
+  html += '<button class="btn btnSuccess" style="flex:1;padding:12px;" onclick="closeMsg();adminValidateService(\'' + requestId + '\',\'done\')">&#9989; Valider</button>';
+  html += '<button class="btn btnDanger" style="flex:1;padding:12px;" onclick="closeMsg();adminValidateService(\'' + requestId + '\',\'in_progress\')">&#10060; Refuser</button>';
+  html += '</div></div>';
+  showMsg(html, true);
+}
+
+async function adminValidateService(requestId, newStatus) {
+  try {
+    await sb.from('service_requests').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', requestId);
+    const { data: req } = await sb.from('service_requests').select('*').eq('id', requestId).single();
+    if (req) {
+      const org = API.getOrg();
+      const svcLabel = getServiceLabel(req.service_type);
+      if (newStatus === 'done') {
+        showToast('Prestation validee !');
+        await sendAutoMessage(org.id, 'Gestionnaire', 'admin', req.assigned_provider,
+          '&#9989; ' + svcLabel + ' validee ! Merci pour votre travail.');
+      } else {
+        showToast('Prestation renvoyee au prestataire');
+        await sendAutoMessage(org.id, 'Gestionnaire', 'admin', req.assigned_provider,
+          '&#10060; ' + svcLabel + ' : le controle qualite n\'est pas satisfaisant. Merci de reprendre le travail.');
+      }
+    }
+    loadAdminPrestations(true);
+  } catch(e) { console.error('adminValidateService error:', e); showToast('Erreur'); }
+}
+
+// ── QC Checklist (Photo Quality Control) ──
+const DEFAULT_QC_ROOMS = [
+  { id: 'kitchen', label: 'Cuisine', icon: '&#127859;' },
+  { id: 'living', label: 'Salon', icon: '&#128715;' },
+  { id: 'bedroom', label: 'Chambre', icon: '&#128716;' },
+  { id: 'bathroom', label: 'Salle de bain', icon: '&#128704;' },
+  { id: 'entrance', label: 'Entree', icon: '&#128682;' },
+  { id: 'terrace', label: 'Terrasse/Balcon', icon: '&#127748;' }
+];
+
+function getQcChecklist() {
+  const prop = API.getActiveProperty(fullConfig);
+  return (prop && prop.qc_checklist) || [];
+}
+
+function renderQcChecklist() {
+  const div = document.getElementById('qcChecklistItems');
+  if (!div) return;
+  const items = getQcChecklist();
+  if (items.length === 0) {
+    div.innerHTML = '<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:8px;background:var(--surface2);border-radius:6px;">Aucune piece configuree. Ajoutez des pieces pour activer le controle qualite photo.</div>';
+    return;
+  }
+  let html = '';
+  items.forEach((item, i) => {
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:8px;background:var(--surface2);border-radius:8px;">';
+    html += '<span style="font-size:16px;">' + (item.icon || '&#128247;') + '</span>';
+    html += '<input type="text" value="' + esc(item.label) + '" onchange="updateQcItem(' + i + ',\'label\',this.value)" style="flex:1;padding:6px;background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:12px;">';
+    html += '<label style="font-size:10px;color:var(--text3);display:flex;align-items:center;gap:4px;white-space:nowrap;"><input type="checkbox" ' + (item.required !== false ? 'checked' : '') + ' onchange="updateQcItem(' + i + ',\'required\',this.checked)" style="accent-color:var(--accent);">Requis</label>';
+    html += '<span onclick="removeQcItem(' + i + ')" style="cursor:pointer;color:var(--text3);font-size:14px;">&#10005;</span>';
+    html += '</div>';
+  });
+  div.innerHTML = html;
+}
+
+async function saveQcChecklist(items) {
+  const prop = API.getActiveProperty(fullConfig);
+  if (!prop) return;
+  prop.qc_checklist = items;
+  await sb.from('properties').update({ qc_checklist: items }).eq('id', prop.id);
+}
+
+async function addQcChecklistItem() {
+  const items = getQcChecklist();
+  // Suggest a room not yet added
+  const usedIds = items.map(i => i.id);
+  const suggestion = DEFAULT_QC_ROOMS.find(r => !usedIds.includes(r.id));
+  if (suggestion) {
+    items.push({ ...suggestion, required: true });
+  } else {
+    items.push({ id: 'room_' + Date.now(), label: 'Piece ' + (items.length + 1), icon: '&#128247;', required: true });
+  }
+  await saveQcChecklist(items);
+  renderQcChecklist();
+}
+
+async function updateQcItem(i, field, value) {
+  const items = getQcChecklist();
+  if (!items[i]) return;
+  items[i][field] = value;
+  await saveQcChecklist(items);
+}
+
+async function removeQcItem(i) {
+  const items = getQcChecklist();
+  items.splice(i, 1);
+  await saveQcChecklist(items);
+  renderQcChecklist();
+}
+
+// Render after property details are shown
+function initQcChecklist() { renderQcChecklist(); }
+
+// ── Dynamic Pricing ──
+const DEFAULT_SEASONS = [
+  { name: 'Haute saison', startMonth: 6, endMonth: 8, multiplier: 1.3, color: '#ef4444' },
+  { name: 'Basse saison', startMonth: 11, endMonth: 2, multiplier: 0.85, color: '#3b82f6' }
+];
+const DAY_NAMES_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+
+function getDynamicPricing() {
+  const org = API.getOrg();
+  if (!org || !org.dynamic_pricing) return { seasons: [], days: {}, specials: [] };
+  return org.dynamic_pricing;
+}
+
+function getDynamicMultiplier(dateStr) {
+  const dp = getDynamicPricing();
+  if (!dateStr) return 1;
+  const d = new Date(dateStr);
+  const month = d.getMonth() + 1; // 1-12
+  const dayOfWeek = d.getDay(); // 0=Sun
+  const isoDate = dateStr.substring(0, 10);
+
+  // Check special dates first (highest priority)
+  const special = (dp.specials || []).find(s => s.date === isoDate);
+  if (special) return special.multiplier || 1;
+
+  // Check seasons
+  let mult = 1;
+  for (const s of (dp.seasons || [])) {
+    if (s.startMonth <= s.endMonth) {
+      if (month >= s.startMonth && month <= s.endMonth) { mult = s.multiplier; break; }
+    } else {
+      // Wraps around year (e.g. Nov-Feb)
+      if (month >= s.startMonth || month <= s.endMonth) { mult = s.multiplier; break; }
+    }
+  }
+
+  // Apply day-of-week multiplier on top
+  const dayKey = ['sun','mon','tue','wed','thu','fri','sat'][dayOfWeek];
+  const dayMult = (dp.days || {})[dayKey];
+  if (dayMult && dayMult !== 1) mult *= dayMult;
+
+  return Math.round(mult * 100) / 100;
+}
+
+function renderDynamicPricing() {
+  const dp = getDynamicPricing();
+  const inputStyle = 'width:100%;padding:6px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;box-sizing:border-box;';
+
+  // Seasons
+  const seasonsDiv = document.getElementById('dynamicPricingSeasons');
+  if (seasonsDiv) {
+    let html = '';
+    (dp.seasons || []).forEach((s, i) => {
+      html += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">';
+      html += '<input type="text" value="' + esc(s.name) + '" placeholder="Nom" data-idx="' + i + '" data-field="name" onchange="updateDynamicSeason(this)" style="' + inputStyle + 'width:100px;">';
+      html += '<select data-idx="' + i + '" data-field="startMonth" onchange="updateDynamicSeason(this)" style="' + inputStyle + 'width:70px;">';
+      for (let m = 1; m <= 12; m++) html += '<option value="' + m + '" ' + (s.startMonth === m ? 'selected' : '') + '>' + ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'][m-1] + '</option>';
+      html += '</select><span style="color:var(--text3);font-size:11px;">a</span>';
+      html += '<select data-idx="' + i + '" data-field="endMonth" onchange="updateDynamicSeason(this)" style="' + inputStyle + 'width:70px;">';
+      for (let m = 1; m <= 12; m++) html += '<option value="' + m + '" ' + (s.endMonth === m ? 'selected' : '') + '>' + ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'][m-1] + '</option>';
+      html += '</select>';
+      html += '<span style="font-size:11px;color:var(--text3);">x</span><input type="number" value="' + s.multiplier + '" min="0.5" max="3" step="0.05" data-idx="' + i + '" data-field="multiplier" onchange="updateDynamicSeason(this)" style="' + inputStyle + 'width:55px;text-align:center;">';
+      const pct = Math.round((s.multiplier - 1) * 100);
+      html += '<span style="font-size:11px;font-weight:600;color:' + (pct >= 0 ? '#34d399' : '#3b82f6') + ';">' + (pct >= 0 ? '+' : '') + pct + '%</span>';
+      html += '<span onclick="removeDynamicSeason(' + i + ')" style="cursor:pointer;color:var(--text3);font-size:14px;" title="Supprimer">&#10005;</span>';
+      html += '</div>';
+    });
+    seasonsDiv.innerHTML = html;
+  }
+
+  // Days
+  const daysDiv = document.getElementById('dynamicPricingDays');
+  if (daysDiv) {
+    const days = dp.days || {};
+    const dayKeys = ['mon','tue','wed','thu','fri','sat','sun'];
+    let html = '';
+    dayKeys.forEach((k, i) => {
+      const val = days[k] || 1;
+      html += '<div style="display:flex;align-items:center;gap:4px;">';
+      html += '<span style="font-size:11px;color:var(--text3);width:28px;">' + DAY_NAMES_FR[i] + '</span>';
+      html += '<input type="number" value="' + val + '" min="0.5" max="3" step="0.05" data-day="' + k + '" onchange="updateDynamicDay(this)" style="' + inputStyle + 'width:55px;text-align:center;">';
+      const pct = Math.round((val - 1) * 100);
+      if (pct !== 0) html += '<span style="font-size:10px;color:' + (pct > 0 ? '#f59e0b' : '#3b82f6') + ';">' + (pct > 0 ? '+' : '') + pct + '%</span>';
+      html += '</div>';
+    });
+    daysDiv.innerHTML = html;
+  }
+
+  // Specials
+  const specialDiv = document.getElementById('dynamicPricingSpecial');
+  if (specialDiv) {
+    let html = '';
+    (dp.specials || []).forEach((s, i) => {
+      html += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">';
+      html += '<input type="date" value="' + (s.date || '') + '" data-idx="' + i + '" data-field="date" onchange="updateSpecialDate(this)" style="' + inputStyle + 'width:130px;">';
+      html += '<input type="text" value="' + esc(s.label || '') + '" placeholder="Ex: 14 juillet" data-idx="' + i + '" data-field="label" onchange="updateSpecialDate(this)" style="' + inputStyle + 'width:100px;">';
+      html += '<span style="font-size:11px;color:var(--text3);">x</span><input type="number" value="' + (s.multiplier || 1.5) + '" min="0.5" max="3" step="0.05" data-idx="' + i + '" data-field="multiplier" onchange="updateSpecialDate(this)" style="' + inputStyle + 'width:55px;text-align:center;">';
+      html += '<span onclick="removeSpecialDate(' + i + ')" style="cursor:pointer;color:var(--text3);font-size:14px;">&#10005;</span>';
+      html += '</div>';
+    });
+    specialDiv.innerHTML = html;
+  }
+}
+
+async function saveDynamicPricing(dp) {
+  const org = API.getOrg();
+  if (!org) return;
+  org.dynamic_pricing = dp;
+  await sb.from('organizations').update({ dynamic_pricing: dp }).eq('id', org.id);
+}
+
+async function updateDynamicSeason(el) {
+  const dp = getDynamicPricing();
+  const i = parseInt(el.dataset.idx);
+  const f = el.dataset.field;
+  if (!dp.seasons) dp.seasons = [];
+  if (!dp.seasons[i]) return;
+  dp.seasons[i][f] = f === 'name' ? el.value : parseFloat(el.value) || 1;
+  await saveDynamicPricing(dp);
+  renderDynamicPricing();
+}
+
+async function addDynamicSeason() {
+  const dp = getDynamicPricing();
+  if (!dp.seasons) dp.seasons = [];
+  dp.seasons.push({ name: 'Nouvelle saison', startMonth: 6, endMonth: 8, multiplier: 1.2 });
+  await saveDynamicPricing(dp);
+  renderDynamicPricing();
+}
+
+async function removeDynamicSeason(i) {
+  const dp = getDynamicPricing();
+  dp.seasons.splice(i, 1);
+  await saveDynamicPricing(dp);
+  renderDynamicPricing();
+}
+
+async function updateDynamicDay(el) {
+  const dp = getDynamicPricing();
+  if (!dp.days) dp.days = {};
+  dp.days[el.dataset.day] = parseFloat(el.value) || 1;
+  await saveDynamicPricing(dp);
+}
+
+async function addSpecialDate() {
+  const dp = getDynamicPricing();
+  if (!dp.specials) dp.specials = [];
+  dp.specials.push({ date: new Date().toISOString().substring(0, 10), label: '', multiplier: 1.5 });
+  await saveDynamicPricing(dp);
+  renderDynamicPricing();
+}
+
+async function updateSpecialDate(el) {
+  const dp = getDynamicPricing();
+  const i = parseInt(el.dataset.idx);
+  const f = el.dataset.field;
+  if (!dp.specials || !dp.specials[i]) return;
+  dp.specials[i][f] = f === 'multiplier' ? (parseFloat(el.value) || 1) : el.value;
+  await saveDynamicPricing(dp);
+}
+
+async function removeSpecialDate(i) {
+  const dp = getDynamicPricing();
+  dp.specials.splice(i, 1);
+  await saveDynamicPricing(dp);
+  renderDynamicPricing();
+}
+
 function renderPricingTable() {
   const div = document.getElementById('pricingTable');
   if (!div) return;
@@ -5341,7 +5748,7 @@ function renderPricingTable() {
 
   // Property selector
   let html = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">';
-  html += '<select id="pricingPropSelect" onchange="_pricingPropertyId=this.value||null;renderPricingTable()" style="flex:1;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;">';
+  html += '<select id="pricingPropSelect" onchange="_pricingPropertyId=this.value||null;renderPricingTable();renderDynamicPricing()" style="flex:1;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:12px;">';
   html += '<option value="">&#127970; Tarifs globaux (par defaut)</option>';
   properties.forEach(p => {
     html += '<option value="' + p.id + '"' + (_pricingPropertyId === p.id ? ' selected' : '') + '>&#127968; ' + esc(p.name || 'Sans nom');
@@ -10748,11 +11155,27 @@ async function loadServiceRequests() {
         html += `<button class="btn btnSmall btnDanger" style="padding:4px 10px;font-size:11px;" onclick="updateServiceRequest('${r.id}','refused')">Refuser</button>`;
         html += `</div>`;
       } else if (r.status === 'assigned') {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">`;
         html += `<div style="font-size:11px;color:#8b5cf6;font-style:italic;">⏳ En attente de reponse du prestataire...</div>`;
+        html += `<button class="btn btnSmall" style="padding:3px 10px;font-size:10px;background:rgba(239,68,68,0.15);color:#ef4444;border:none;" onclick="updateServiceRequest('${r.id}','cancelled')">Annuler</button>`;
+        html += `</div>`;
       } else if (r.status === 'accepted') {
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">`;
         html += `<div style="font-size:11px;color:#34d399;font-style:italic;">✅ Prestation acceptee par le prestataire</div>`;
+        html += `<button class="btn btnSmall" style="padding:3px 10px;font-size:10px;background:rgba(239,68,68,0.15);color:#ef4444;border:none;" onclick="updateServiceRequest('${r.id}','cancelled')">Annuler</button>`;
+        html += `</div>`;
       } else if (r.status === 'in_progress') {
         html += `<div style="font-size:11px;color:#3b82f6;font-style:italic;">🔄 Prestation en cours...</div>`;
+      } else if (r.status === 'pending_validation') {
+        html += `<div style="margin-top:6px;padding:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;">`;
+        html += `<div style="font-size:12px;color:#f59e0b;font-weight:600;margin-bottom:8px;">⏳ En attente de votre validation</div>`;
+        if (r.qc_photos && r.qc_photos.length) {
+          html += `<button class="btn btnSmall btnOutline" onclick="showQcReview('${r.id}')" style="padding:4px 10px;font-size:11px;margin-bottom:8px;">📷 Voir les photos QC (${r.qc_photos.length})</button>`;
+        }
+        html += `<div style="display:flex;gap:6px;">`;
+        html += `<button class="btn btnSmall btnSuccess" style="padding:6px 14px;font-size:11px;" onclick="adminValidateService('${r.id}','done')">✅ Valider</button>`;
+        html += `<button class="btn btnSmall btnDanger" style="padding:6px 14px;font-size:11px;" onclick="adminValidateService('${r.id}','in_progress')">❌ Refuser (reprendre)</button>`;
+        html += `</div></div>`;
       } else if (r.status === 'done') {
         html += `<div style="font-size:11px;color:#34d399;font-style:italic;">✅ Prestation terminee</div>`;
       } else if (r.status === 'refused') {
