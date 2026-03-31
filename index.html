@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.55</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.56</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.55</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.56</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1286,6 +1286,36 @@ async function loadPDF() {
 
   <!-- ═══ TAB: BILLING ═══ -->
   <div class="tab-content" id="tabBilling">
+
+  <!-- ═══ SECTION: GRILLE TARIFAIRE ═══ -->
+  <div class="panel" id="panelPricing">
+    <div class="panelHeader" onclick="togglePanel('pricing')">
+      <div class="panelLeft">
+        <div class="stepBadge" style="background:#6c63ff;">💶</div>
+        <div class="panelTitle">Grille tarifaire</div>
+      </div>
+      <span class="panelChevron open" id="chevPricing">&#9660;</span>
+    </div>
+    <div class="panelBody" id="bodyPricing">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Definissez vos prix par service. Le cout prestataire et le tarif proprietaire sont sauvegardes automatiquement.</div>
+      <div id="pricingTable" style="overflow-x:auto;"></div>
+      <div id="pricingMarginSummary" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION: REVENUS & COUTS ═══ -->
+  <div class="panel" id="panelRevenue">
+    <div class="panelHeader" onclick="togglePanel('revenue')">
+      <div class="panelLeft">
+        <div class="stepBadge" style="background:#34d399;">📊</div>
+        <div class="panelTitle">Revenus & Couts</div>
+      </div>
+      <span class="panelChevron" id="chevRevenue">&#9660;</span>
+    </div>
+    <div class="panelBody collapsed" id="bodyRevenue">
+      <div id="revenueContent"></div>
+    </div>
+  </div>
 
   <!-- ═══ SECTION: FACTURATION ═══ -->
   <div class="panel" id="panelBilling">
@@ -1906,19 +1936,20 @@ const COLORS = ['#3fb950','#58a6ff','#d29922','#f85149','#bc8cff','#79c0ff','#f7
 
 // ── Centralized Status Config (single source of truth) ──
 const STATUS_CONFIG = {
-  pending:            { color: '#f59e0b', label: 'En attente' },
-  assigned:           { color: '#8b5cf6', label: 'En attente de reponse' },
-  accepted:           { color: '#34d399', label: 'Accepte' },
-  in_progress:        { color: '#3b82f6', label: 'En cours' },
-  arrived:            { color: '#6c63ff', label: 'Sur place' },
-  departed:           { color: '#34d399', label: 'Parti' },
-  done:               { color: '#34d399', label: 'Termine' },
-  pending_validation: { color: '#f59e0b', label: 'A valider' },
-  sent:               { color: '#888',    label: 'Envoye' },
-  seen:               { color: '#6c63ff', label: 'Lu' },
-  refused:            { color: '#ef4444', label: 'Refuse' },
-  cancelled:          { color: '#ef4444', label: 'Annulee' },
+  pending:            { color: '#f59e0b', label: 'En attente', hint: 'Pas encore assignee a un prestataire' },
+  assigned:           { color: '#8b5cf6', label: 'En attente de reponse', hint: 'Proposee au prestataire, en attente de sa confirmation' },
+  accepted:           { color: '#34d399', label: 'Accepte', hint: 'Le prestataire a confirme qu\'il prend en charge cette prestation' },
+  in_progress:        { color: '#3b82f6', label: 'En cours', hint: 'Le prestataire est sur place et travaille' },
+  arrived:            { color: '#6c63ff', label: 'Sur place', hint: 'Le prestataire est arrive sur le lieu' },
+  departed:           { color: '#34d399', label: 'Parti', hint: 'Le prestataire a quitte les lieux' },
+  done:               { color: '#34d399', label: 'Termine', hint: 'Prestation terminee et validee' },
+  pending_validation: { color: '#f59e0b', label: 'A valider', hint: 'Le prestataire a termine, en attente de validation du gestionnaire' },
+  sent:               { color: '#888',    label: 'Envoye', hint: 'Planning envoye au prestataire' },
+  seen:               { color: '#6c63ff', label: 'Lu', hint: 'Le prestataire a vu le planning' },
+  refused:            { color: '#ef4444', label: 'Refuse', hint: 'Le prestataire a refuse cette mission' },
+  cancelled:          { color: '#ef4444', label: 'Annulee', hint: 'Cette prestation a ete annulee' },
 };
+function getStatusHint(s) { return (STATUS_CONFIG[s] || {}).hint || ''; }
 function getStatusColor(s) { return (STATUS_CONFIG[s] || {}).color || '#666'; }
 function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 
@@ -2637,9 +2668,10 @@ async function loadActiveProperty() {
   }
   // Load service requests + unified prestations
   loadServiceRequests();
-  loadAdminPrestations().then(() => renderDashboardContent());
-  // Load invoices
+  loadAdminPrestations().then(() => { renderDashboardContent(); renderRevenueContent(); });
+  // Load invoices + pricing
   loadInvoices();
+  renderPricingTable();
   } catch(err) { console.error('loadActiveProperty error:', err); showToast('Erreur chargement: ' + (err.message || 'Probleme de connexion')); }
 }
 
@@ -4210,7 +4242,7 @@ async function showOwnerMode() {
       html += '</div>';
       html += '</div>';
       html += '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">';
-      html += '<span class="card-status" style="background:' + color + '18;color:' + color + ';">' + label + '</span>';
+      html += '<span class="card-status" title="' + (getStatusHint(u.status)||'') + '" style="background:' + color + '18;color:' + color + ';cursor:help;">' + label + '</span>';
       if (ownerCanCancel) html += '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + dateStr + '\',\'' + esc(svcName).replace(/'/g,"\\\\'") + '\',0);return false;" style="font-size:10px;color:var(--text3);text-decoration:none;" title="Annuler">&#128465;</a>';
       if ((u.status === 'done' || u.status === 'pending_validation') && u._source === 'service_request' && u.provider) html += '<a href="#" onclick="showRatingModal(\'' + u._id + '\',\'' + esc(u.provider).replace(/'/g,"\\\\'") + '\');return false;" style="font-size:10px;color:#f59e0b;text-decoration:none;" title="Noter">&#11088;</a>';
       html += '</div>';
@@ -5051,6 +5083,160 @@ async function saveInvoice(status, type) {
   closeMsg();
   showToast(status === 'draft' ? 'Brouillon sauvegarde' : 'Facture ' + invoiceNumber + ' creee !');
   loadInvoices();
+}
+
+// ── Pricing Table ──
+function renderPricingTable() {
+  const div = document.getElementById('pricingTable');
+  if (!div) return;
+  const org = API.getOrg();
+  const pricing = (org && org.pricing) || {};
+
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  html += '<thead><tr>';
+  html += '<th style="text-align:left;padding:8px 6px;color:var(--text3);font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border);">Service</th>';
+  html += '<th style="text-align:center;padding:8px 6px;color:var(--text3);font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border);width:100px;">Cout presta.</th>';
+  html += '<th style="text-align:center;padding:8px 6px;color:var(--text3);font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border);width:100px;">Facture proprio</th>';
+  html += '<th style="text-align:center;padding:8px 6px;color:var(--text3);font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border);width:70px;">Marge</th>';
+  html += '</tr></thead><tbody>';
+
+  let totalMargin = 0, serviceCount = 0;
+  SERVICE_CATALOG.forEach(cat => {
+    html += '<tr><td colspan="4" style="padding:10px 6px 4px;font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;">' + cat.label + '</td></tr>';
+    cat.services.forEach(s => {
+      const p = pricing[s.id] || {};
+      const costPresta = p.cost_provider || 0;
+      const priceOwner = p.price_owner || 0;
+      const margin = priceOwner - costPresta;
+      if (costPresta > 0 || priceOwner > 0) { totalMargin += margin; serviceCount++; }
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:8px 6px;">' + s.icon + ' ' + s.label + '</td>';
+      html += '<td style="text-align:center;padding:8px 2px;"><input type="number" value="' + costPresta + '" min="0" step="1" data-svc="' + s.id + '" data-field="cost_provider" onchange="updatePricing(this)" style="width:70px;padding:4px 6px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:12px;text-align:center;">€</td>';
+      html += '<td style="text-align:center;padding:8px 2px;"><input type="number" value="' + priceOwner + '" min="0" step="1" data-svc="' + s.id + '" data-field="price_owner" onchange="updatePricing(this)" style="width:70px;padding:4px 6px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:12px;text-align:center;">€</td>';
+      html += '<td style="text-align:center;padding:8px 6px;font-weight:700;color:' + (margin > 0 ? '#34d399' : margin < 0 ? '#ef4444' : 'var(--text3)') + ';">' + (margin > 0 ? '+' : '') + margin + '€</td>';
+      html += '</tr>';
+    });
+  });
+  html += '</tbody></table>';
+  div.innerHTML = html;
+
+  // Summary
+  const sumDiv = document.getElementById('pricingMarginSummary');
+  if (sumDiv && serviceCount > 0) {
+    sumDiv.innerHTML = '<div style="display:flex;justify-content:space-between;padding:10px 14px;background:' + (totalMargin >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)') + ';border-radius:8px;font-size:12px;">'
+      + '<span style="color:var(--text2);">Marge totale (' + serviceCount + ' services configures)</span>'
+      + '<span style="font-weight:700;color:' + (totalMargin >= 0 ? '#34d399' : '#ef4444') + ';">' + (totalMargin >= 0 ? '+' : '') + totalMargin + '€</span></div>';
+  }
+}
+
+let _pricingSaveTimer = null;
+async function updatePricing(input) {
+  const svc = input.dataset.svc;
+  const field = input.dataset.field;
+  const value = parseFloat(input.value) || 0;
+  const org = API.getOrg();
+  if (!org) return;
+  const pricing = org.pricing || {};
+  if (!pricing[svc]) pricing[svc] = {};
+  pricing[svc][field] = value;
+  org.pricing = pricing;
+  // Debounced save
+  clearTimeout(_pricingSaveTimer);
+  _pricingSaveTimer = setTimeout(async () => {
+    await sb.from('organizations').update({ pricing }).eq('id', org.id);
+    showToast('Tarifs sauvegardes');
+    renderPricingTable(); // Refresh margins
+  }, 800);
+}
+
+// ── Revenue & Costs ──
+function renderRevenueContent() {
+  const div = document.getElementById('revenueContent');
+  if (!div) return;
+  const org = API.getOrg();
+  const pricing = (org && org.pricing) || {};
+  const cache = _adminPrestCache;
+  if (!cache) { div.innerHTML = '<div style="color:var(--text3);font-size:12px;">Chargez les prestations pour voir les revenus.</div>'; return; }
+
+  const today = new Date().toISOString().split('T')[0];
+  const thisMonth = today.substring(0, 7);
+  let revenueThisMonth = 0, costThisMonth = 0, revenueTotal = 0, costTotal = 0;
+  let monthlyData = {};
+
+  // From cleanings
+  (cache.plannings || []).forEach(plan => {
+    const prop = cache.propMap[plan.property_id];
+    if (!plan.cleanings || !prop) return;
+    plan.cleanings.forEach(c => {
+      const d = c.cleaningDate || c.date || '';
+      if (d < today) return;
+      const month = d.substring(0, 7);
+      const svcPricing = pricing['cleaning_standard'] || {};
+      const cost = svcPricing.cost_provider || 0;
+      const revenue = svcPricing.price_owner || 0;
+      if (!monthlyData[month]) monthlyData[month] = { revenue: 0, cost: 0, count: 0 };
+      monthlyData[month].revenue += revenue;
+      monthlyData[month].cost += cost;
+      monthlyData[month].count++;
+      revenueTotal += revenue;
+      costTotal += cost;
+      if (month === thisMonth) { revenueThisMonth += revenue; costThisMonth += cost; }
+    });
+  });
+
+  // From service requests
+  (cache.svcRequests || []).forEach(r => {
+    const d = r.requested_date || r.preferred_date || '';
+    if (d < today || ['cancelled', 'refused'].includes(r.status)) return;
+    const month = d.substring(0, 7);
+    const svcPricing = pricing[r.service_type] || {};
+    const cost = svcPricing.cost_provider || 0;
+    const revenue = svcPricing.price_owner || 0;
+    if (!monthlyData[month]) monthlyData[month] = { revenue: 0, cost: 0, count: 0 };
+    monthlyData[month].revenue += revenue;
+    monthlyData[month].cost += cost;
+    monthlyData[month].count++;
+    revenueTotal += revenue;
+    costTotal += cost;
+    if (month === thisMonth) { revenueThisMonth += revenue; costThisMonth += cost; }
+  });
+
+  const marginTotal = revenueTotal - costTotal;
+  const marginMonth = revenueThisMonth - costThisMonth;
+
+  let html = '';
+  // KPI cards
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">';
+  html += '<div style="background:linear-gradient(135deg,#34d399,#059669);border-radius:12px;padding:14px;text-align:center;"><div style="font-size:20px;font-weight:800;color:#fff;">' + revenueThisMonth + '€</div><div style="font-size:10px;color:rgba(255,255,255,0.8);">CA ce mois</div></div>';
+  html += '<div style="background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:12px;padding:14px;text-align:center;"><div style="font-size:20px;font-weight:800;color:#fff;">' + costThisMonth + '€</div><div style="font-size:10px;color:rgba(255,255,255,0.8);">Couts ce mois</div></div>';
+  html += '<div style="background:linear-gradient(135deg,#6c63ff,#5a54e0);border-radius:12px;padding:14px;text-align:center;"><div style="font-size:20px;font-weight:800;color:#fff;">' + (marginMonth >= 0 ? '+' : '') + marginMonth + '€</div><div style="font-size:10px;color:rgba(255,255,255,0.8);">Marge ce mois</div></div>';
+  html += '<div style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:12px;padding:14px;text-align:center;"><div style="font-size:20px;font-weight:800;color:#fff;">' + revenueTotal + '€</div><div style="font-size:10px;color:rgba(255,255,255,0.8);">CA previsionnel</div></div>';
+  html += '</div>';
+
+  // Monthly breakdown
+  const months = Object.keys(monthlyData).sort();
+  if (months.length > 0) {
+    html += '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;">Detail mensuel</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
+    html += '<tr><th style="text-align:left;padding:6px;color:var(--text3);border-bottom:1px solid var(--border);">Mois</th><th style="text-align:center;padding:6px;color:var(--text3);border-bottom:1px solid var(--border);">Prestas</th><th style="text-align:right;padding:6px;color:var(--text3);border-bottom:1px solid var(--border);">CA</th><th style="text-align:right;padding:6px;color:var(--text3);border-bottom:1px solid var(--border);">Couts</th><th style="text-align:right;padding:6px;color:var(--text3);border-bottom:1px solid var(--border);">Marge</th></tr>';
+    months.forEach(m => {
+      const d = monthlyData[m];
+      const margin = d.revenue - d.cost;
+      const MONTHS = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'];
+      const [y, mo] = m.split('-');
+      const label = MONTHS[parseInt(mo) - 1] + ' ' + y;
+      html += '<tr style="border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:6px;font-weight:600;">' + label + '</td>';
+      html += '<td style="text-align:center;padding:6px;">' + d.count + '</td>';
+      html += '<td style="text-align:right;padding:6px;color:#34d399;font-weight:600;">' + d.revenue + '€</td>';
+      html += '<td style="text-align:right;padding:6px;color:#ef4444;">' + d.cost + '€</td>';
+      html += '<td style="text-align:right;padding:6px;font-weight:700;color:' + (margin >= 0 ? '#34d399' : '#ef4444') + ';">' + (margin >= 0 ? '+' : '') + margin + '€</td>';
+      html += '</tr>';
+    });
+    html += '</table>';
+  }
+
+  div.innerHTML = html;
 }
 
 async function loadInvoices() {
@@ -8752,7 +8938,7 @@ function renderDashboardContent() {
         html += '<div style="flex:1;font-size:13px;font-weight:600;">' + u.label + '</div>';
         html += '<div style="font-size:11px;color:var(--text3);">' + esc(u.provider) + '</div>';
         if (u.priority === 'high') html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#ef444420;color:#ef4444;font-weight:700;animation:pulse 1.5s ease-in-out infinite;">URGENT</span>';
-        html += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + (statusColors[u.status]||'#666') + '22;color:' + (statusColors[u.status]||'#666') + ';font-weight:600;">' + (statusLabels[u.status]||u.status) + '</span>';
+        html += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + (statusColors[u.status]||'#666') + '22;color:' + (statusColors[u.status]||'#666') + ';font-weight:600;cursor:help;" title="' + getStatusHint(u.status) + '">' + (statusLabels[u.status]||u.status) + '</span>';
         html += '</div>';
       });
     }
@@ -8773,7 +8959,7 @@ function renderDashboardContent() {
       html += '<div style="flex:1;font-size:12px;font-weight:600;">' + u.label + '</div>';
       html += '<div style="font-size:11px;color:var(--text3);">' + esc(u.provider) + '</div>';
       if (u.priority === 'high') html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#ef444420;color:#ef4444;font-weight:700;animation:pulse 1.5s ease-in-out infinite;">URGENT</span>';
-      html += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + (statusColors[u.status]||'#666') + '22;color:' + (statusColors[u.status]||'#666') + ';font-weight:600;">' + (statusLabels[u.status]||'') + '</span>';
+      html += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + (statusColors[u.status]||'#666') + '22;color:' + (statusColors[u.status]||'#666') + ';font-weight:600;cursor:help;" title="' + getStatusHint(u.status) + '">' + (statusLabels[u.status]||'') + '</span>';
       html += '</div>';
     });
     if (allUpcoming.filter(u => u.date > todayStr).length > 8) {
@@ -10427,7 +10613,7 @@ async function loadAdminPrestations(forceReload) {
       // Concierge validates the completed prestation
       html += '<button style="padding:4px 12px;font-size:10px;font-weight:700;border:none;border-radius:5px;cursor:pointer;background:rgba(52,211,153,0.2);color:#34d399;" onclick="validatePrestation(\'' + u._id + '\',\'' + esc(u.provider || '').replace(/'/g,"\\'") + '\')">&#10003; Valider</button>';
     } else {
-      html += '<span class="card-status" style="background:' + color + '18;color:' + color + ';">' + label + '</span>';
+      html += '<span class="card-status" title="' + (getStatusHint(u.status)||'') + '" style="background:' + color + '18;color:' + color + ';cursor:help;">' + label + '</span>';
       if (u.status === 'done' && u._source === 'service_request' && u.provider) {
         html += '<a href="#" onclick="showRatingModal(\'' + u._id + '\',\'' + esc(u.provider).replace(/'/g,"\\'") + '\');return false;" style="font-size:10px;color:#f59e0b;text-decoration:none;padding:2px;" title="Noter">&#11088;</a>';
       }
