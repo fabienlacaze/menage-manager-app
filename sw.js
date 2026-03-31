@@ -1,10 +1,28 @@
-const APP_VERSION = '6.31';
+const APP_VERSION = '6.32';
 const CACHE_NAME = 'lokizio-v' + APP_VERSION;
 
-// Only cache static assets, never JS files or API calls
-const CACHEABLE = /\.(png|jpg|jpeg|svg|gif|woff2?|ttf|eot)$/;
+// App shell files to cache for offline support
+const APP_SHELL = [
+  './',
+  './index.html',
+  './supabase_config.js',
+  './i18n.js',
+  './ical_parser.js',
+  './api_bridge.js',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './manifest.json',
+];
 
-self.addEventListener('install', () => self.skipWaiting());
+// Static assets (images, fonts)
+const CACHEABLE_STATIC = /\.(png|jpg|jpeg|svg|gif|woff2?|ttf|eot)$/;
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
+  );
+  self.skipWaiting();
+});
 
 self.addEventListener('activate', event => {
   event.waitUntil(
@@ -19,15 +37,28 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Never cache: JS files, API calls, Supabase, HTML
-  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.html') ||
-      url.hostname.includes('supabase') || url.pathname.startsWith('/rest/') ||
+  // Never cache API calls, Supabase, or Edge Functions
+  if (url.hostname.includes('supabase') || url.pathname.startsWith('/rest/') ||
       url.pathname.startsWith('/auth/') || url.pathname.startsWith('/functions/')) {
     return;
   }
 
-  // Cache static assets only (images, fonts)
-  if (CACHEABLE.test(url.pathname)) {
+  // App shell files: network-first, fallback to cache (stale-while-revalidate)
+  if (url.pathname.endsWith('.html') || url.pathname.endsWith('.js') || url.pathname === '/' || url.pathname.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request).then(resp => {
+        if (resp.ok) {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return resp;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Static assets: cache-first
+  if (CACHEABLE_STATIC.test(url.pathname)) {
     event.respondWith(
       caches.match(event.request).then(cached => {
         if (cached) return cached;
@@ -40,6 +71,7 @@ self.addEventListener('fetch', event => {
         });
       })
     );
+    return;
   }
 });
 
@@ -54,8 +86,8 @@ self.addEventListener('push', event => {
     vibrate: [200, 100, 200],
     data: { url: data.url || '/lokizio/view.html' },
     actions: [
-      { action: 'open', title: 'Voir' },
-      { action: 'dismiss', title: 'Fermer' }
+      { action: 'open', title: data.actionOpen || 'Voir' },
+      { action: 'dismiss', title: data.actionDismiss || 'Fermer' }
     ]
   };
   event.waitUntil(self.registration.showNotification(title, options));

@@ -24,11 +24,11 @@
 <meta name="twitter:title" content="Lokizio">
 <meta name="twitter:description" content="Gestion automatique des menages pour locations Airbnb & Booking.">
 <meta name="google" content="notranslate">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" integrity="sha384-HS/sUFZexXk91zcjy7zGIBg3tNDxgxF8YbcifixByxxtxQoF2o8GBBT9p6DdGlAR" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.101.0/dist/umd/supabase.min.js" integrity="sha384-HS/sUFZexXk91zcjy7zGIBg3tNDxgxF8YbcifixByxxtxQoF2o8GBBT9p6DdGlAR" crossorigin="anonymous"></script>
 <script src="supabase_config.js?v=13"></script>
 <script src="i18n.js?v=28"></script>
 <script src="ical_parser.js?v=14"></script>
-<script src="api_bridge.js?v=25"></script>
+<script src="api_bridge.js?v=26"></script>
 <!-- Lazy-loaded: Leaflet, Chart.js, jsPDF (loaded on demand to improve startup) -->
 <script>
 function lazyLoad(url, type) {
@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.31</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.32</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.31</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.32</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -8537,7 +8537,7 @@ function checkReminders() {
 }
 
 /* ── Main Tab Navigation (bottom nav) ── */
-function switchMainTab(tabId) {
+function switchMainTab(tabId, fromPopState) {
   // Show selected tab first, then hide others (avoids flash)
   const tab = document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
   if (tab) tab.classList.add('active');
@@ -8549,6 +8549,10 @@ function switchMainTab(tabId) {
   if (nav) nav.classList.add('active');
   // Scroll to top
   window.scrollTo(0, 0);
+  // Push to browser history for back button support
+  if (!fromPopState) {
+    try { window.history.pushState({ tab: tabId }, '', '#' + tabId); } catch(e) {}
+  }
   // Refresh content when switching tabs
   if (tabId === 'dashboard') renderDashboardContent();
   if (tabId === 'prestations') { renderTabPropertySelector('prestPropertySelector'); loadAdminPrestations(); }
@@ -8556,6 +8560,16 @@ function switchMainTab(tabId) {
   if (tabId === 'properties') { renderBiensPropertySelector(); inlinePropCheckItems = []; renderPropertyDetailsInline(); }
   if (tabId === 'messages') initFullChat();
 }
+// Handle browser back/forward
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.tab) { switchMainTab(e.state.tab, true); }
+  else {
+    const hash = window.location.hash.replace('#', '');
+    if (hash && document.getElementById('tab' + hash.charAt(0).toUpperCase() + hash.slice(1))) {
+      switchMainTab(hash, true);
+    }
+  }
+});
 
 /* ── Prestations Sub-Tab Switching ── */
 function switchPrestSubTab(tab) {
@@ -9219,7 +9233,40 @@ function showChangelog(){
   document.getElementById('msgBody').innerHTML=html;document.getElementById('overlay').style.display='block';document.getElementById('msgModal').style.display='block';
 }
 function closeHelp(){document.getElementById('overlay').style.display='none';document.getElementById('helpModal').style.display='none';}
-function closeAllModals(){closeMsg();closeVacModal();closeHelp();closePremiumModal();closeAddProviderModal();closeAccountModal();closeMarketplace();document.querySelectorAll('.modal').forEach(m=>m.style.display='none');document.getElementById('overlay').style.display='none';}
+function closeAllModals(){closeMsg();closeVacModal();closeHelp();closePremiumModal();closeAddProviderModal();closeAccountModal();closeMarketplace();document.querySelectorAll('.modal').forEach(m=>m.style.display='none');document.getElementById('overlay').style.display='none';releaseFocusTrap();}
+
+/* ── Focus Trap for Modals ── */
+let _focusTrapEl = null, _focusTrapPrev = null;
+function trapFocus(modalEl) {
+  if (!modalEl) return;
+  _focusTrapPrev = document.activeElement;
+  _focusTrapEl = modalEl;
+  const focusable = modalEl.querySelectorAll('button,input,select,textarea,a[href],[tabindex]:not([tabindex="-1"])');
+  if (focusable.length) focusable[0].focus();
+  modalEl.addEventListener('keydown', _focusTrapHandler);
+}
+function _focusTrapHandler(e) {
+  if (e.key === 'Escape') { closeAllModals(); return; }
+  if (e.key !== 'Tab') return;
+  const focusable = _focusTrapEl.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])');
+  if (!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+function releaseFocusTrap() {
+  if (_focusTrapEl) _focusTrapEl.removeEventListener('keydown', _focusTrapHandler);
+  if (_focusTrapPrev) try { _focusTrapPrev.focus(); } catch(e) {}
+  _focusTrapEl = null; _focusTrapPrev = null;
+}
+// Auto-trap focus when modals open
+new MutationObserver(mutations => {
+  mutations.forEach(m => {
+    if (m.target.classList && m.target.classList.contains('modal') && m.target.style.display === 'block') {
+      trapFocus(m.target);
+    }
+  });
+}).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style'] });
 // ═══ MARKETPLACE / ANNUAIRE ═══
 let _mkAllProfiles = [];
 

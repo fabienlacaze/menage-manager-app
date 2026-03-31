@@ -186,10 +186,12 @@ const API = (function() {
   }
 
   async function savePlanningData(propId, field, value) {
-    await sb.from('plannings').upsert(
-      { property_id: propId, [field]: value, updated_at: new Date().toISOString() },
-      { onConflict: 'property_id' }
-    );
+    const { data: existing } = await sb.from('plannings').select('id').eq('property_id', propId).maybeSingle();
+    if (existing) {
+      await sb.from('plannings').update({ [field]: value, updated_at: new Date().toISOString() }).eq('property_id', propId);
+    } else {
+      await sb.from('plannings').insert({ property_id: propId, [field]: value });
+    }
   }
 
   // ─── LEGACY FALLBACK ───
