@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.89</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.90</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.89</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.90</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2928,7 +2928,7 @@ async function addNewProperty() {
 }
 
 async function removeCurrentProperty() {
-  if (API.getRole() !== 'admin') { showToast('Seul l\'administrateur peut supprimer un bien'); return; }
+  if (API.getRole() !== 'admin' && API.getRole() !== 'manager') { showToast('Seuls les gestionnaires peuvent supprimer un bien'); return; }
   if ((fullConfig.properties || []).length <= 1) {
     showToast('Impossible de supprimer le dernier bien');
     return;
@@ -3488,7 +3488,7 @@ async function showProviderMode() {
   if (providerPrice > 0) {
     html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-around;text-align:center;">
       <div>
-        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:4px;">Tarif/menage</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:4px;">Tarif/prestation</div>
         <div style="font-size:16px;font-weight:700;color:var(--text);">${providerPrice}&#8364;</div>
       </div>
       <div style="border-left:1px solid var(--border);"></div>
@@ -4489,7 +4489,7 @@ async function showOwnerMode() {
   const todayCleaningsOwner = allCleanings.filter(c => (c.cleaningDate || c.date) === today);
   if (todayCleaningsOwner.length > 0) {
     html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
-      <div style="font-weight:700;font-size:14px;margin-bottom:10px;">&#128197; Aujourd'hui — ${todayCleaningsOwner.length} menage(s)</div>`;
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px;">&#128197; Aujourd'hui — ${todayCleaningsOwner.length} prestation(s)</div>`;
     todayCleaningsOwner.forEach(c => {
       const key = c.propertyId + '_' + (c.cleaningDate || c.date) + '_' + (c.provider || '');
       const v = validations[key];
@@ -4506,7 +4506,7 @@ async function showOwnerMode() {
   } else {
     html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
       <div style="font-weight:700;font-size:14px;margin-bottom:6px;">&#128197; Aujourd'hui</div>
-      <div style="color:var(--text3);font-size:13px;">Aucun menage prevu aujourd'hui</div>
+      <div style="color:var(--text3);font-size:13px;">Aucune prestation prevue aujourd'hui</div>
     </div>`;
   }
 
@@ -6733,7 +6733,7 @@ async function inviteTeamMember() {
   const email = document.getElementById('inviteEmail').value.trim();
   const role = document.getElementById('inviteRole').value;
   if (!email) { showMsg(t('team.email_required') || 'Entrez un email.'); return; }
-  if (!API.isAdmin()) { showMsg(t('team.admin_only') || 'Seuls les administrateurs peuvent inviter.'); return; }
+  if (!API.isAdmin()) { showMsg(t('team.admin_only') || 'Seuls les gestionnaires peuvent inviter.'); return; }
 
   const result = await API.inviteMember(email, role);
   if (result) {
@@ -6759,6 +6759,7 @@ async function inviteTeamMember() {
   }
 }
 async function removeTeamMember(memberId) {
+  if (API.getRole() !== 'admin') { showToast('Seul l\'administrateur peut retirer des membres'); return; }
   const ok = await customConfirm(t('team.remove_confirm') || 'Retirer ce membre de l\'equipe ?', t('btn.delete') || 'Retirer');
   if (!ok) return;
   await API.removeMember(memberId);
@@ -10134,7 +10135,7 @@ function buildFinanceHtml() {
   });
   const months = Object.keys(monthCosts).sort();
   let html = '<table class="resultTable" style="font-size:13px;">';
-  html += '<tr><th>Prestataire</th><th>Menages</th><th>Tarif/menage</th><th>Cout total</th></tr>';
+  html += '<tr><th>Prestataire</th><th>Menages</th><th>Tarif/prestation</th><th>Cout total</th></tr>';
   allProvs.forEach((name, i) => {
     html += `<tr><td><span class="provDot" style="background:${allColors[i]}"></span>${esc(name)}</td><td>${counts[i]}</td><td>${prices[i] > 0 ? prices[i].toFixed(0) + ' EUR' : '<span style="color:var(--text3)">non defini</span>'}</td><td style="font-weight:600">${costs[i] > 0 ? costs[i].toFixed(0) + ' EUR' : '-'}</td></tr>`;
   });
