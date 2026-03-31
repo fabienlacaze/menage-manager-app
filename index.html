@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.36</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.37</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.36</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.37</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -10154,31 +10154,30 @@ async function loadAdminPrestations(forceReload) {
       dowStr = days[d.getDay()];
     }
 
-    html += '<div class="adminPrestCard" data-category="' + cat + '" data-status="' + u.status + '"' + (isToday ? ' style="border-color:#e9456040;"' : '') + '>';
-    html += '<div class="card-main">';
-    // Date column
-    html += '<div class="card-date"' + (isToday ? ' style="background:rgba(233,69,96,0.1);"' : '') + '>';
-    html += '<div class="day">' + dayNum + '</div>';
-    html += '<div class="month">' + monthStr + '</div>';
-    html += '<div class="dow">' + dowStr + '</div>';
+    html += '<div class="adminPrestCard" data-category="' + cat + '" data-status="' + u.status + '"' + (isToday ? ' style="border-color:rgba(233,69,96,0.3);"' : '') + '>';
+    // Single row: icon + name + meta + status
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;">';
+    // Service icon
+    html += '<div style="font-size:22px;flex-shrink:0;width:32px;text-align:center;">' + svcIcon + '</div>';
+    // Info
+    html += '<div style="flex:1;min-width:0;">';
+    html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+    html += '<span style="font-size:13px;font-weight:700;color:var(--text);">' + esc(svcName) + '</span>';
+    if (u.source) html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:' + (u.source.toLowerCase().includes('airbnb') ? '#e9456030' : '#2563eb30') + ';color:' + (u.source.toLowerCase().includes('airbnb') ? '#e94560' : '#2563eb') + ';font-weight:700;">' + esc(u.source).toUpperCase() + '</span>';
+    if (u.priority === 'high') html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#ef444420;color:#ef4444;font-weight:700;">URGENT</span>';
     html += '</div>';
-    // Body
-    html += '<div class="card-body">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
-    html += '<div class="card-title">' + svcIcon + ' ' + esc(svcName);
-    if (u.source) html += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:' + (u.source.toLowerCase().includes('airbnb') ? '#e9456030' : '#2563eb30') + ';color:' + (u.source.toLowerCase().includes('airbnb') ? '#e94560' : '#2563eb') + ';font-weight:700;">' + esc(u.source).toUpperCase() + '</span>';
-    if (isToday) html += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#e9456020;color:#e94560;font-weight:700;">AUJOURD\'HUI</span>';
+    // Meta line
+    html += '<div style="font-size:11px;color:var(--text3);margin-top:2px;">';
+    const metaParts = [];
+    if (u.propertyName) metaParts.push('🏠 ' + esc(u.propertyName));
+    if (u.provider) metaParts.push('👤 ' + esc(u.provider));
+    html += metaParts.join(' · ');
     html += '</div>';
-    html += '<span class="card-status" style="background:' + color + '18;color:' + color + ';">' + label + '</span>';
+    if (u.description) html += '<div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(u.description) + '</div>';
     html += '</div>';
-    html += '<div class="card-meta">';
-    if (u.propertyName) html += '<span>🏠 ' + esc(u.propertyName) + '</span>';
-    if (u.provider) html += '<span>👤 ' + esc(u.provider) + '</span>';
-    if (u.priority && u.priority !== 'normal') { const pi = { low: '🟢 Basse', high: '🔴 Urgente' }; html += '<span>' + (pi[u.priority] || '') + '</span>'; }
+    // Status badge
+    html += '<span class="card-status" style="background:' + color + '18;color:' + color + ';flex-shrink:0;">' + label + '</span>';
     html += '</div>';
-    if (u.description) html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(u.description) + '</div>';
-    html += '</div>'; // card-body
-    html += '</div>'; // card-main
 
     // Action footer for service requests
     if (u._source === 'service_request') {
@@ -10188,17 +10187,17 @@ async function loadAdminPrestations(forceReload) {
       if (u.status === 'pending') {
         let allProviders = [];
         props.forEach(p => { (p.providers || []).forEach(pv => { if (!allProviders.find(x => x.name === pv.name)) allProviders.push(pv); }); });
-        html += '<div class="card-actions">';
-        html += '<select id="svcAssign_' + u._id + '" style="flex:1;padding:6px 8px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;min-width:0;">';
+        html += '<div style="display:flex;gap:6px;align-items:center;padding:6px 14px 10px;flex-wrap:wrap;">';
+        html += '<select id="svcAssign_' + u._id + '" style="flex:1;padding:5px 8px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;min-width:100px;">';
         html += '<option value="">Assigner a...</option>';
         const matching = allProviders.filter(p => p.services && p.services.includes(u.type));
         const others = allProviders.filter(p => !p.services || !p.services.includes(u.type));
         if (matching.length) { html += '<optgroup label="Competents">'; matching.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; }); html += '</optgroup>'; }
         if (others.length) { html += '<optgroup label="Autres">'; others.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; }); html += '</optgroup>'; }
         html += '</select>';
-        html += '<button class="btn btnSmall btnSuccess" style="padding:5px 12px;font-size:11px;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcAssign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">Assigner</button>';
-        html += '<button class="btn btnSmall btnDanger" style="padding:5px 12px;font-size:11px;" onclick="updateServiceRequest(\'' + u._id + '\',\'refused\');setTimeout(()=>loadAdminPrestations(true),500)">Refuser</button>';
-        html += '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcName).replace(/'/g,"\\'") + '\',' + cancelPrice + ');return false;" style="font-size:11px;color:#ef4444;text-decoration:none;padding:5px 8px;">Annuler</a>';
+        html += '<button style="padding:4px 10px;font-size:10px;font-weight:600;border:none;border-radius:5px;cursor:pointer;background:rgba(52,211,153,0.15);color:#34d399;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcAssign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">&#10003;</button>';
+        html += '<button style="padding:4px 10px;font-size:10px;font-weight:600;border:none;border-radius:5px;cursor:pointer;background:rgba(239,68,68,0.15);color:#ef4444;" onclick="updateServiceRequest(\'' + u._id + '\',\'refused\');setTimeout(()=>loadAdminPrestations(true),500)">&#10007;</button>';
+        html += '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcName).replace(/'/g,"\\'") + '\',' + cancelPrice + ');return false;" style="font-size:10px;color:var(--text3);text-decoration:none;padding:2px 4px;" title="Annuler">&#128465;</a>';
         html += '</div>';
       } else if (u.status === 'refused') {
         let allProviders = [];
@@ -10211,9 +10210,9 @@ async function loadAdminPrestations(forceReload) {
         html += '<button class="btn btnSmall" style="padding:5px 12px;font-size:11px;background:#8b5cf6;color:#fff;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcReassign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">Reassigner</button>';
         html += '</div>';
       } else if (cancellable && u.status !== 'refused') {
-        // Assigned or accepted — show cancel button
-        html += '<div class="card-actions">';
-        html += '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcName).replace(/'/g,"\\'") + '\',' + cancelPrice + ');return false;" style="font-size:11px;color:#ef4444;text-decoration:none;padding:5px 8px;">&#10006; Annuler</a>';
+        // Assigned or accepted — discreet cancel link
+        html += '<div style="padding:4px 14px 8px;text-align:right;">';
+        html += '<a href="#" onclick="showCancelModal(\'' + u._id + '\',\'' + (u.date || '') + '\',\'' + esc(svcName).replace(/'/g,"\\'") + '\',' + cancelPrice + ');return false;" style="font-size:10px;color:var(--text3);text-decoration:none;" title="Annuler la prestation">&#128465; Annuler</a>';
         html += '</div>';
       } else if (u.status === 'cancelled') {
         html += '<div style="padding:8px 12px;font-size:11px;color:#ef4444;border-top:1px solid var(--border);">';
