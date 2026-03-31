@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.94</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.95</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.94</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.95</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -3217,20 +3217,26 @@ async function publishToMarketplace() {
 }
 
 async function showEditMarketplaceProfile(user, name, email) {
-  const { data: profile } = await sb.from('marketplace_profiles').select('*').eq('user_id', user?.id).single();
+  const { data: profile } = await sb.from('marketplace_profiles').select('*').eq('user_id', user?.id).maybeSingle();
   const member = API.getMember();
   const phone = profile?.phone || member?.phone || '';
   const city = profile?.city || '';
   const desc = profile?.description || '';
+  const displayName = profile?.display_name || name || member?.display_name || '';
+  const displayEmail = email || member?.invited_email || user?.email || '';
   const inputStyle = 'width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:8px;box-sizing:border-box;';
   let html = '<div style="padding:10px;">';
   html += '<div style="font-size:16px;font-weight:700;color:#6c63ff;margin-bottom:12px;text-align:center;">&#128221; Mon profil annuaire</div>';
+  html += '<label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Nom</label>';
+  html += '<input id="mkName" type="text" value="' + esc(displayName) + '" placeholder="Votre nom" onchange="saveMarketplaceProfile()" style="' + inputStyle + '">';
+  html += '<label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Email</label>';
+  html += '<input type="text" value="' + esc(displayEmail) + '" readonly style="' + inputStyle + 'opacity:0.6;">';
   html += '<label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Telephone</label>';
   html += '<input id="mkPhone" type="tel" value="' + esc(phone) + '" placeholder="06 12 34 56 78" onchange="saveMarketplaceProfile()" style="' + inputStyle + '">';
   html += '<label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Ville</label>';
   html += '<input id="mkCity" type="text" value="' + esc(city) + '" placeholder="Ex: Nice, Paris..." onchange="saveMarketplaceProfile()" style="' + inputStyle + '">';
   html += '<label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Description</label>';
-  html += '<textarea id="mkDesc" placeholder="Presentez vos services..." rows="3" onchange="saveMarketplaceProfile()" style="' + inputStyle + 'font-family:Inter,sans-serif;resize:vertical;">' + esc(desc) + '</textarea>';
+  html += '<textarea id="mkDesc" placeholder="Presentez vos services, votre experience..." rows="3" onchange="saveMarketplaceProfile()" style="' + inputStyle + 'font-family:Inter,sans-serif;resize:vertical;">' + esc(desc) + '</textarea>';
   html += '<div style="font-size:10px;color:var(--text3);text-align:center;margin-top:4px;">Sauvegarde automatique</div>';
   html += '<button class="btn btnOutline" style="width:100%;padding:12px;margin-top:8px;" onclick="closeMsg()">Fermer</button>';
   html += '</div>';
@@ -3240,23 +3246,23 @@ async function showEditMarketplaceProfile(user, name, email) {
 async function saveMarketplaceProfile() {
   const user = (await sb.auth.getUser()).data?.user;
   if (!user) return;
+  const name = document.getElementById('mkName')?.value?.trim() || '';
   const city = document.getElementById('mkCity')?.value?.trim() || '';
   const desc = document.getElementById('mkDesc')?.value?.trim() || '';
   const phone = document.getElementById('mkPhone')?.value?.trim() || '';
-  const update = {};
+  const update = { updated_at: new Date().toISOString() };
+  if (name) update.display_name = name;
   if (city) update.city = city;
   if (desc) update.description = desc;
   if (phone) update.phone = phone;
-  const { error } = await sb.from('marketplace_profiles').update(update).eq('user_id', user.id);
-  if (error) {
-    // Fallback: try saving as JSON in existing column
-    const { error: err2 } = await sb.from('marketplace_profiles').update({
-      display_name: API.getMember()?.display_name || '',
-    }).eq('user_id', user.id);
-    if (err2) { showToast('Erreur: ' + err2.message); return; }
+  // Also update member display_name
+  if (name) {
+    const member = API.getMember();
+    if (member) await sb.from('members').update({ display_name: name }).eq('id', member.id);
   }
-  closeMsg();
-  showToast('Profil mis a jour');
+  const { error } = await sb.from('marketplace_profiles').update(update).eq('user_id', user.id);
+  if (error) console.error('saveMarketplaceProfile error:', error);
+  showToast('Profil sauvegarde');
 }
 
 async function shareProviderProfile() {
@@ -10951,7 +10957,6 @@ async function toggleMarketplaceVisibility(visible) {
     const spans = toggle.parentElement.querySelectorAll('span');
     if (spans[0]) spans[0].style.background = visible ? 'var(--success)' : 'var(--border2)';
     if (spans[1]) spans[1].style.left = visible ? '22px' : '2px';
-    // Show/hide extended profile fields
     const fields = document.getElementById('mkProfileFields');
     if (fields) fields.style.display = visible ? 'flex' : 'none';
 
@@ -10961,16 +10966,22 @@ async function toggleMarketplaceVisibility(visible) {
       display_name: user.user_metadata?.display_name || user.email.split('@')[0],
       email: user.email,
       role: API.getRole() || 'admin',
+      org_id: API.getOrg()?.id,
       updated_at: new Date().toISOString()
     };
-    const { error } = await sb
-      .from('marketplace_profiles')
-      .upsert(profileData, { onConflict: 'user_id' });
+    // Try update first, then insert if no rows updated
+    const { data: existing } = await sb.from('marketplace_profiles').select('id').eq('user_id', user.id).maybeSingle();
+    let error;
+    if (existing) {
+      ({ error } = await sb.from('marketplace_profiles').update(profileData).eq('user_id', user.id));
+    } else {
+      ({ error } = await sb.from('marketplace_profiles').insert(profileData));
+    }
     if (error) throw error;
     showToast(visible ? 'Profil visible dans l\'annuaire' : 'Profil masque de l\'annuaire');
   } catch (e) {
     console.error('Marketplace toggle error:', e);
-    showToast('Erreur lors de la mise a jour');
+    showToast('Erreur: ' + (e.message || 'Mise a jour impossible'));
   }
 }
 
@@ -10984,16 +10995,25 @@ async function autoSaveMarketplaceField() {
     const availability = document.getElementById('mkAvailability')?.value || 'available';
     const services = [];
     document.querySelectorAll('.mkServiceCb:checked').forEach(cb => services.push(cb.value));
-    const { error } = await sb.from('marketplace_profiles').upsert({
-      user_id: user.id,
-      display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '',
-      email: user.email,
-      role: API.getRole() || 'provider',
+    const profileData = {
       description, services, experience_years: experienceYears, availability,
       visible: document.getElementById('mkVisibleToggle')?.checked || false,
       updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id' });
+    };
+    const { data: existing } = await sb.from('marketplace_profiles').select('id').eq('user_id', user.id).maybeSingle();
+    let error;
+    if (existing) {
+      ({ error } = await sb.from('marketplace_profiles').update(profileData).eq('user_id', user.id));
+    } else {
+      profileData.user_id = user.id;
+      profileData.display_name = user.user_metadata?.display_name || user.email?.split('@')[0] || '';
+      profileData.email = user.email;
+      profileData.role = API.getRole() || 'provider';
+      profileData.org_id = API.getOrg()?.id;
+      ({ error } = await sb.from('marketplace_profiles').insert(profileData));
+    }
     if (!error) showToast('Profil sauvegarde');
+    else console.error('autoSaveMarketplaceField error:', error);
   } catch(e) { console.error('autoSaveMarketplaceField:', e); }
 }
 
