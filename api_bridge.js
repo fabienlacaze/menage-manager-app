@@ -32,12 +32,20 @@ const API = (function() {
   async function loadOrg() {
     try {
       const userId = await getUserId();
-      const { data: members, error } = await sb
+      let { data: members, error } = await sb
         .from('members')
         .select('*, organizations(*)')
         .eq('user_id', userId);
+      // Retry once if empty (RLS timing issue)
+      if ((!members || !members.length) && !error) {
+        await new Promise(r => setTimeout(r, 500));
+        const retry = await sb.from('members').select('*, organizations(*)').eq('user_id', userId);
+        members = retry.data;
+        error = retry.error;
+        console.log('loadOrg retry:', members?.length, 'members found');
+      }
       if (error || !members || !members.length) {
-        console.log('No org found, creating onboarding...');
+        console.log('No org found, creating onboarding...', error);
         // Auto-create org + member + trial subscription
         const user = (await sb.auth.getUser()).data.user;
         const orgName = user.email ? user.email.split('@')[0] : 'Mon organisation';
