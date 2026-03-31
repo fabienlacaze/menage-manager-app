@@ -12,7 +12,11 @@ const STRIPE_PRICE_ID = STRIPE_PRICE_PRO; // Default
 var sb;
 function initSupabase() {
   if (window.supabase && window.supabase.createClient) {
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Use URL param ?session=X to isolate auth sessions per tab
+    const sessionId = new URLSearchParams(window.location.search).get('session') || 'default';
+    const storageKey = sessionId === 'default' ? undefined : 'sb-' + sessionId + '-auth-token';
+    const opts = storageKey ? { auth: { storageKey } } : {};
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, opts);
     return true;
   }
   return false;
