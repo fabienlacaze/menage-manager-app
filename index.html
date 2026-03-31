@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.54</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.55</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.54</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.55</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2637,7 +2637,7 @@ async function loadActiveProperty() {
   }
   // Load service requests + unified prestations
   loadServiceRequests();
-  loadAdminPrestations();
+  loadAdminPrestations().then(() => renderDashboardContent());
   // Load invoices
   loadInvoices();
   } catch(err) { console.error('loadActiveProperty error:', err); showToast('Erreur chargement: ' + (err.message || 'Probleme de connexion')); }
@@ -8696,19 +8696,42 @@ function renderDashboardContent() {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
-  // Collect all upcoming prestations (cleanings + service requests)
+  // Use unified data from admin prestations cache (same source as Liste tab)
   const allUpcoming = [];
-  (cleanings || []).forEach(c => {
-    const d = c.cleaningDate || c.date || '';
-    if (d >= todayStr) allUpcoming.push({ date: d, type: 'cleaning_standard', label: getServiceLabel('cleaning_standard'), provider: c.provider || '?', source: c.source || '', status: c._status || 'pending', propertyName: '' });
-  });
-  const svcReqs = (_adminPrestCache && _adminPrestCache.svcRequests) || [];
-  svcReqs.forEach(r => {
-    const d = r.requested_date || r.preferred_date || '';
-    if (d >= todayStr && !['cancelled', 'refused'].includes(r.status)) {
-      allUpcoming.push({ date: d, type: r.service_type, label: getServiceLabel(r.service_type), provider: r.assigned_provider || '?', source: '', status: r.status, propertyName: r.property_name || '', priority: r.priority });
-    }
-  });
+  if (_adminPrestCache && _adminPrestCache.svcRequests) {
+    // Service requests (already have correct status)
+    _adminPrestCache.svcRequests.forEach(r => {
+      const d = r.requested_date || r.preferred_date || '';
+      if (d >= todayStr && !['cancelled', 'refused'].includes(r.status)) {
+        allUpcoming.push({ date: d, type: r.service_type, label: getServiceLabel(r.service_type), provider: r.assigned_provider || '?', source: '', status: r.status, propertyName: r.property_name || '', priority: r.priority });
+      }
+    });
+  }
+  // Cleanings with validation status applied
+  if (_adminPrestCache && _adminPrestCache.plannings && _adminPrestCache.propMap) {
+    const validations = _adminPrestCache.validations || {};
+    (_adminPrestCache.plannings || []).forEach(plan => {
+      const prop = _adminPrestCache.propMap[plan.property_id];
+      if (!plan.cleanings || !prop) return;
+      plan.cleanings.forEach(c => {
+        const d = c.cleaningDate || c.date;
+        if (!d || d < todayStr) return;
+        const vKey = prop.id + '_' + d + '_' + (c.provider || '');
+        const v = validations[vKey];
+        const status = v ? v.status : (c._status || 'pending');
+        if (['cancelled', 'refused', 'done', 'departed'].includes(status)) return;
+        allUpcoming.push({ date: d, type: 'cleaning_standard', label: getServiceLabel('cleaning_standard'), provider: c.provider || '?', source: c.source || '', status: status, propertyName: prop.name || '' });
+      });
+    });
+  } else {
+    // Fallback: use raw cleanings if cache not ready
+    (cleanings || []).forEach(c => {
+      const d = c.cleaningDate || c.date || '';
+      if (d >= todayStr && !['cancelled', 'refused', 'done'].includes(c._status)) {
+        allUpcoming.push({ date: d, type: 'cleaning_standard', label: getServiceLabel('cleaning_standard'), provider: c.provider || '?', source: c.source || '', status: c._status || 'pending', propertyName: '' });
+      }
+    });
+  }
   allUpcoming.sort((a, b) => a.date.localeCompare(b.date));
 
   const todayItems = allUpcoming.filter(u => u.date === todayStr);
