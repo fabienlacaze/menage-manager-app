@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.78</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.79</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.78</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.79</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -9288,7 +9288,7 @@ async function generateInvoice() {
 function copyPlanning() { if(!cleanings.length){showMsg('Aucun planning a copier.');return;} const filtered=currentFilter?cleanings.filter(c=>c.provider===currentFilter):cleanings; if(!filtered.length){showMsg(t('export.filter.empty'));return;} let txt=currentFilter?`PLANNING MENAGES - ${currentFilter.toUpperCase()}\n`:'PLANNING MENAGES\n'; txt+='='.repeat(txt.trim().length)+'\n\n'; filtered.forEach(c=>{txt+=`Menage: ${c.cleaningDateFR} (arrivee: ${c.dateFR})`;if(!currentFilter)txt+=` | ${c.provider}`;txt+='\n';}); navigator.clipboard.writeText(txt).then(()=>{showToast(currentFilter?`Liste de ${currentFilter} copiee (${filtered.length})`:`Planning copie (${filtered.length})`);}); }
 
 function getDefaultTemplate() {
-  return 'Bonjour {nom},\n\nVoici votre planning de prestations pour "{propriete}" :\n\n{planning}\n{total} prestation(s) au total.\n\nConsultez votre planning en ligne :\n{lien}\n\n-- Lokizio';
+  return 'Bonjour {nom},\n\nVoici vos prestations pour "{propriete}" :\n\n{planning}\n{total} prestation(s) au total.\n\nConsultez votre planning en ligne :\n{lien}\n\n-- Lokizio';
 }
 
 function resetTemplate() {
@@ -9318,10 +9318,13 @@ function previewTemplate() {
   let exPlan = '';
   const exCleanings = cleanings.filter(c => c.provider === exampleProv).slice(0, 3);
   if (exCleanings.length) {
-    exCleanings.forEach(c => { exPlan += '- ' + c.dayName + ' ' + c.cleaningDateFR + (c.source ? ' (' + c.source + ')' : '') + '\n'; });
+    exCleanings.forEach(c => {
+      const svcLabel = c.service_type ? getServiceLabel(c.service_type) : 'Menage';
+      exPlan += '- ' + c.dayName + ' ' + c.cleaningDateFR + ' — ' + svcLabel + (c.source ? ' (' + c.source + ')' : '') + '\n';
+    });
     if (cleanings.filter(c => c.provider === exampleProv).length > 3) exPlan += '- ...\n';
   } else {
-    exPlan = '- Lun 01/01/2026 (Airbnb)\n- Mer 03/01/2026 (Booking)\n';
+    exPlan = '- Lun 01/01/2026 — Menage standard (Airbnb)\n- Mer 03/01/2026 — Linge (Booking)\n';
   }
   const total = exCleanings.length || 2;
   const link = 'https://fabienlacaze.github.io/lokizio/view.html?provider=abc123';
@@ -9343,9 +9346,29 @@ function buildWhatsAppText(provName) {
   const base = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '');
   const link = (p && p.token) ? base + '/view.html?provider=' + p.token : '';
 
-  // Build planning list
+  // Build planning list with service types
   let planningTxt = '';
-  pc.forEach(c => { planningTxt += '- ' + c.dayName + ' ' + c.cleaningDateFR + (c.source ? ' (' + c.source + ')' : '') + '\n'; });
+  pc.forEach(c => {
+    const svcLabel = c.service_type ? getServiceLabel(c.service_type) : 'Menage';
+    planningTxt += '- ' + c.dayName + ' ' + c.cleaningDateFR + ' — ' + svcLabel + (c.source ? ' (' + c.source + ')' : '') + '\n';
+  });
+
+  // Also include service_requests assigned to this provider
+  const org = API.getOrg();
+  if (org) {
+    // Fetch from cache if available
+    const svcRequests = (window._cachedSvcRequests || []).filter(r =>
+      r.assigned_provider === provName && r.property_id === (prop ? prop.id : '') &&
+      !['done', 'cancelled', 'refused'].includes(r.status)
+    );
+    svcRequests.forEach(r => {
+      const d = r.requested_date ? new Date(r.requested_date) : null;
+      if (!d) return;
+      const dayNames = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+      const dateFR = d.toLocaleDateString('fr-FR');
+      planningTxt += '- ' + dayNames[d.getDay()] + ' ' + dateFR + ' — ' + getServiceLabel(r.service_type) + '\n';
+    });
+  }
 
   // Use custom template or default
   const template = (prop && prop.messageTemplate) || getDefaultTemplate();
