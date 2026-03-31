@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.77</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.78</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.77</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.78</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -4035,12 +4035,11 @@ async function acceptServiceRequest(id) {
       const provName = member?.display_name || member?.invited_email || 'Prestataire';
       const svcLabel = getServiceLabel(req.service_type);
       const dateStr = req.requested_date ? new Date(req.requested_date).toLocaleDateString('fr-FR') : '';
-      // Notify concierge
+      const propName = req.property_name || '';
       await sendAutoMessage(org.id, provName, 'provider', 'gestionnaire',
-        '✅ ' + provName + ' a accepte: ' + svcLabel + ' le ' + dateStr);
-      // Notify owner
+        '&#9989; ' + provName + ' a accepte: ' + svcLabel + (propName ? ' — ' + propName : '') + ' le ' + dateStr);
       await sendAutoMessage(org.id, provName, 'provider', 'proprietaire',
-        '✅ Votre demande de ' + svcLabel + ' a ete acceptee');
+        '&#9989; ' + svcLabel + ' acceptee' + (propName ? ' pour ' + propName : '') + ' le ' + dateStr);
     }
     showProviderMode().then(() => switchProviderNav('prestations'));
   } catch(e) { console.error('acceptServiceRequest error:', e); showToast('Erreur'); showProviderMode(); }
@@ -4056,12 +4055,11 @@ async function refuseServiceRequest(id) {
       const provName = member?.display_name || member?.invited_email || 'Prestataire';
       const svcLabel = getServiceLabel(req.service_type);
       const dateStr = req.requested_date ? new Date(req.requested_date).toLocaleDateString('fr-FR') : '';
-      // Notify concierge
+      const propName = req.property_name || '';
       await sendAutoMessage(org.id, provName, 'provider', 'gestionnaire',
-        '❌ ' + provName + ' a refuse: ' + svcLabel + ' le ' + dateStr);
-      // Notify owner
+        '&#10060; ' + provName + ' a refuse: ' + svcLabel + (propName ? ' — ' + propName : '') + ' le ' + dateStr);
       await sendAutoMessage(org.id, provName, 'provider', 'proprietaire',
-        '❌ Votre demande de ' + svcLabel + ' a ete refusee');
+        '&#10060; ' + svcLabel + ' refusee' + (propName ? ' pour ' + propName : '') + ' — Reassignation en cours');
     }
     showProviderMode().then(() => switchProviderNav('prestations'));
   } catch(e) { console.error('refuseServiceRequest error:', e); showToast('Erreur'); showProviderMode(); }
@@ -11229,25 +11227,31 @@ async function updateServiceRequest(id, status, provider) {
       const svcLabel = getServiceLabel(req.service_type);
       const dateStr = req.requested_date ? new Date(req.requested_date).toLocaleDateString('fr-FR') : '';
       const propName = req.property_name || '';
+      // Build context-rich message based on service type
+      const svcType = req.service_type || '';
+      const timeInfo = req.preferred_time ? ' a ' + req.preferred_time : '';
+      const notesInfo = req.description ? '\n📝 ' + req.description.substring(0, 80) : '';
+      const priceInfo = provider ? (() => { const p = getServicePriceForDate(req.property_id, svcType, 'cost_provider', req.requested_date || ''); return p > 0 ? ' — ' + p + '€' : ''; })() : '';
+
       if (status === 'assigned' && provider) {
-        // Concierge assigns to provider
         await sendAutoMessage(org.id, 'Gestionnaire', 'admin', provider,
-          '📋 Mission assignee: ' + svcLabel + ' pour ' + propName + ' le ' + dateStr);
+          '&#128203; ' + svcLabel + ' — ' + propName + '\n&#128197; ' + dateStr + timeInfo + priceInfo + notesInfo);
       } else if (status === 'accepted' && provider) {
-        // Legacy: concierge accepts with provider
         await sendAutoMessage(org.id, 'Gestionnaire', 'admin', provider,
-          '📋 Mission assignee: ' + svcLabel + ' pour ' + propName + ' le ' + dateStr);
+          '&#128203; ' + svcLabel + ' — ' + propName + '\n&#128197; ' + dateStr + timeInfo + priceInfo + notesInfo);
       } else if (status === 'refused') {
-        // Concierge refuses -> notify owner
         await sendAutoMessage(org.id, 'Gestionnaire', 'admin', 'proprietaire',
-          '❌ Votre demande de ' + svcLabel + ' a ete refusee');
-      } else if (status === 'in_progress') {
-        // nothing extra needed from concierge side
+          '&#10060; Votre demande de ' + svcLabel + ' pour ' + propName + ' le ' + dateStr + ' a ete refusee');
+      } else if (status === 'cancelled') {
+        if (req.assigned_provider) {
+          await sendAutoMessage(org.id, 'Gestionnaire', 'admin', req.assigned_provider,
+            '&#10060; ' + svcLabel + ' pour ' + propName + ' le ' + dateStr + ' a ete annulee');
+        }
+        await sendAutoMessage(org.id, 'Gestionnaire', 'admin', 'proprietaire',
+          '&#10060; ' + svcLabel + ' pour ' + propName + ' le ' + dateStr + ' a ete annulee');
       } else if (status === 'done') {
-        // Concierge marks done -> notify owner
         await sendAutoMessage(org.id, 'Gestionnaire', 'admin', 'proprietaire',
-          '✅ ' + svcLabel + ' termine pour ' + propName);
-        // Show rating modal
+          '&#9989; ' + svcLabel + ' termine pour ' + propName + ' le ' + dateStr);
         const provName = req.assigned_provider || provider || '';
         if (provName) setTimeout(() => showRatingModal(id, provName), 500);
       }

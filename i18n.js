@@ -45,7 +45,7 @@ const I18N = {
 
     // Sections
     'section.property': 'Propriete',
-    'section.team': 'Equipe prestataires',
+    'section.team': 'Equipe active',
     'section.history': 'Historique & Pressing',
 
     // Config panel
@@ -466,7 +466,7 @@ const I18N = {
     // Results panel
     // Sections
     'section.property': 'Property',
-    'section.team': 'Cleaning team',
+    'section.team': 'Active team',
     'section.history': 'History & Linens',
 
     // Communication & Export
