@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.98</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.99</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.98</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.99</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1126,6 +1126,7 @@ async function loadPDF() {
     <button class="btnHelp" onclick="showHelp()" title="Aide" style="display:none;">?</button>
     <button class="btnHelp" onclick="toggleTheme()" title="Theme" id="themeBtn" style="display:none;">&#9788;</button>
     <!-- Visible buttons -->
+    <button class="btnHelp" id="btnConnections" onclick="showConnectionRequests()" title="Demandes de connexion" aria-label="Demandes de connexion" style="font-size:13px;position:relative;">&#128276;<span id="connectionBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e94560;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;">0</span></button>
     <button class="btnHelp" onclick="showInviteModal()" title="Inviter" aria-label="Inviter un membre" style="font-size:13px;">&#128279;</button>
     <button class="btnHelp" onclick="showAccountModal()" title="Mon compte" aria-label="Mon compte" style="font-size:13px;">&#9881;</button>
     <button class="btnHelp" onclick="customConfirm(t('auth.logout.confirm')||'Se deconnecter ?','Deconnexion').then(ok=>{if(ok)authLogout()})" data-i18n-attr="title" data-i18n="header.logout" title="Deconnexion" aria-label="Deconnexion" style="font-size:13px;">&#9211;</button>
@@ -1991,7 +1992,7 @@ async function loadPDF() {
 <div class="statusBar"><span id="statusText">Pret</span></div>
 
 <!-- FAB - Floating Generate Button (mobile) -->
-<button class="fab" id="fabGenerate" onclick="generatePlanning()" title="Generer le planning">&#9654;</button>
+<button class="fab" id="fabGenerate" onclick="generatePlanning()" title="Generer le planning" style="display:none;">&#9654;</button>
 
 <!-- Bottom Navigation Bar (mobile) -->
 <nav class="bottomNav" id="bottomNav" role="navigation" aria-label="Navigation principale">
@@ -3097,6 +3098,13 @@ async function init() {
   loadDashboard();
   loadKpiCards();
   initChatWidget();
+  // Show connection button and check for pending requests
+  const btnConn = document.getElementById('btnConnections');
+  if (btnConn) btnConn.style.display = '';
+  updateConnectionBadge();
+  // Show generate FAB only for admin/manager
+  const fabGen = document.getElementById('fabGenerate');
+  if (fabGen) fabGen.style.display = (role === 'admin' || role === 'manager') ? '' : 'none';
 
   // Auto-refresh iCal planning if last refresh > 2 hours ago
   autoRefreshPlanning();
@@ -3296,6 +3304,7 @@ async function shareProviderProfile() {
 async function showProviderMode() {
   try {
   setupBottomNav('provider');
+  updateConnectionBadge();
   const content = document.querySelector('.content');
   if (!content) return;
 
@@ -4360,6 +4369,7 @@ async function confirmProviderWithdraw(id, penaltyPercent) {
 async function showOwnerMode() {
   try {
   setupBottomNav('owner');
+  updateConnectionBadge();
   const content = document.querySelector('.content');
   if (!content) return;
   content.innerHTML = '';
@@ -10828,6 +10838,132 @@ async function showMarketplace(prefillAddress) {
   }
 }
 
+// ── Connection Requests ──
+async function sendConnectionRequest(targetUserId, targetName, targetRole) {
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const member = API.getMember();
+    const org = API.getOrg();
+    const myName = member?.display_name || user.email.split('@')[0];
+    const myRole = API.getRole();
+
+    // Check if already sent
+    const { data: existing } = await sb.from('connection_requests')
+      .select('id,status')
+      .or(`and(sender_id.eq.${user.id},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${user.id})`)
+      .maybeSingle();
+    if (existing) {
+      if (existing.status === 'pending') { showToast('Demande deja envoyee'); return; }
+      if (existing.status === 'accepted') { showToast('Deja connecte !'); return; }
+    }
+
+    // Determine the role to propose
+    let proposedRole = 'provider';
+    if (myRole === 'admin' || myRole === 'manager') proposedRole = targetRole === 'owner' ? 'owner' : 'provider';
+    else if (myRole === 'owner') proposedRole = 'owner';
+    else if (myRole === 'provider') proposedRole = 'provider';
+
+    const { error } = await sb.from('connection_requests').insert({
+      sender_id: user.id,
+      sender_name: myName,
+      sender_role: myRole,
+      sender_org_id: org?.id,
+      receiver_id: targetUserId,
+      receiver_name: targetName,
+      receiver_role: targetRole,
+      proposed_role: proposedRole,
+      status: 'pending',
+      message: ''
+    });
+    if (error) throw error;
+    showToast('Demande envoyee a ' + targetName + ' !');
+    // Send auto-message notification
+    if (org) {
+      await sendAutoMessage(org.id, myName, myRole, targetName,
+        '&#128279; ' + myName + ' souhaite se connecter avec vous sur Lokizio');
+    }
+  } catch(e) {
+    console.error('sendConnectionRequest error:', e);
+    showToast('Erreur: ' + (e.message || 'Impossible d\'envoyer'));
+  }
+}
+
+async function loadConnectionRequests() {
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return [];
+    const { data } = await sb.from('connection_requests')
+      .select('*')
+      .eq('receiver_id', user.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+    return data || [];
+  } catch(e) { return []; }
+}
+
+async function respondConnectionRequest(requestId, accept) {
+  try {
+    const { data: req } = await sb.from('connection_requests').select('*').eq('id', requestId).single();
+    if (!req) return;
+
+    if (accept) {
+      // Add sender to my org as proposed role
+      const org = API.getOrg();
+      if (org) {
+        await sb.from('members').insert({
+          org_id: org.id,
+          user_id: req.sender_id,
+          role: req.proposed_role || 'provider',
+          display_name: req.sender_name,
+          invited_email: '',
+          accepted: true
+        });
+        await sb.from('connection_requests').update({ status: 'accepted' }).eq('id', requestId);
+        showToast(req.sender_name + ' a rejoint votre equipe !');
+        await sendAutoMessage(org.id, API.getMember()?.display_name || 'Gestionnaire', API.getRole(), req.sender_name,
+          '&#9989; Votre demande de connexion a ete acceptee ! Bienvenue dans l\'equipe.');
+      }
+    } else {
+      await sb.from('connection_requests').update({ status: 'refused' }).eq('id', requestId);
+      showToast('Demande refusee');
+    }
+    closeMsg();
+    // Refresh notifications badge
+    updateConnectionBadge();
+  } catch(e) { console.error('respondConnectionRequest error:', e); showToast('Erreur'); }
+}
+
+async function showConnectionRequests() {
+  const requests = await loadConnectionRequests();
+  if (!requests.length) { showToast('Aucune demande en attente'); return; }
+  let html = '<div style="padding:8px;">';
+  html += '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;text-align:center;">&#128279; Demandes de connexion</div>';
+  requests.forEach(r => {
+    const roleColors = { admin: '#e94560', manager: '#6c63ff', owner: '#f59e0b', provider: '#34d399', concierge: '#6c63ff' };
+    const roleLabels = { admin: 'Admin', manager: 'Conciergerie', owner: 'Proprietaire', provider: 'Prestataire', concierge: 'Conciergerie' };
+    html += '<div style="padding:12px;background:var(--surface2);border-radius:10px;margin-bottom:8px;border-left:3px solid ' + (roleColors[r.sender_role] || '#6c63ff') + ';">';
+    html += '<div style="font-weight:700;font-size:14px;color:var(--text);">' + esc(r.sender_name) + '</div>';
+    html += '<div style="font-size:11px;color:' + (roleColors[r.sender_role] || '#6c63ff') + ';margin-bottom:8px;">' + (roleLabels[r.sender_role] || r.sender_role) + '</div>';
+    if (r.message) html += '<div style="font-size:12px;color:var(--text3);margin-bottom:8px;">' + esc(r.message) + '</div>';
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<button class="btn btnSuccess" style="flex:1;padding:8px;font-size:12px;" onclick="respondConnectionRequest(\'' + r.id + '\',true)">&#10003; Accepter</button>';
+    html += '<button class="btn btnDanger" style="flex:1;padding:8px;font-size:12px;" onclick="respondConnectionRequest(\'' + r.id + '\',false)">&#10007; Refuser</button>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+  showMsg(html, true);
+}
+
+async function updateConnectionBadge() {
+  const requests = await loadConnectionRequests();
+  const badge = document.getElementById('connectionBadge');
+  if (badge) {
+    badge.textContent = requests.length;
+    badge.style.display = requests.length > 0 ? 'flex' : 'none';
+  }
+}
+
 async function loadMarketplaceData() {
   const { data: mkData, error: mkErr } = await sb
     .from('marketplace_profiles')
@@ -10904,7 +11040,13 @@ function _mkIsNew(createdAt) {
   return diff < 7 * 24 * 60 * 60 * 1000;
 }
 
+let _mkMyUserId = null;
+async function _ensureMkUserId() {
+  if (!_mkMyUserId) { const { data: { user } } = await sb.auth.getUser(); _mkMyUserId = user?.id; }
+}
+
 function renderMarketplaceResults(profiles) {
+  _ensureMkUserId();
   const container = document.getElementById('mkResults');
   const myRole = API.getRole();
   if (!profiles.length) {
@@ -10958,8 +11100,8 @@ function renderMarketplaceResults(profiles) {
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             ${p.phone ? `<a href="tel:${_escHtml(p.phone)}" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#34d399;text-decoration:none;padding:5px 10px;background:rgba(52,211,153,0.1);border-radius:8px;border:1px solid rgba(52,211,153,0.2);transition:background 0.2s;" onmouseenter="this.style.background='rgba(52,211,153,0.2)'" onmouseleave="this.style.background='rgba(52,211,153,0.1)'">&#128222; Appeler</a>` : ''}
             ${p.email ? `<a href="mailto:${_escHtml(p.email)}" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent);text-decoration:none;padding:5px 10px;background:rgba(108,99,255,0.1);border-radius:8px;border:1px solid rgba(108,99,255,0.2);transition:background 0.2s;" onmouseenter="this.style.background='rgba(108,99,255,0.2)'" onmouseleave="this.style.background='rgba(108,99,255,0.1)'">&#9993; Email</a>` : ''}
-            ${((p.role === 'admin' || p.role === 'manager') && p.org_id && myRole === 'owner') ? `<button onclick="requestJoinOrg('${p.org_id}','${_escHtml(p.display_name)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">Rejoindre</button>` : ''}
-            ${(p.role === 'provider' && (myRole === 'admin' || myRole === 'manager')) ? `<button onclick="requestHireProvider('${p.user_id}','${_escHtml(p.display_name)}','${_escHtml(p.email)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#34d399,#059669);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">Inviter</button>` : ''}
+            ${p.user_id !== _mkMyUserId && p.org_id !== API.getOrg()?.id ? `<button onclick="sendConnectionRequest('${_escHtml(p.user_id)}','${_escHtml(p.display_name)}','${_escHtml(p.role)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">&#128279; Se connecter</button>` : ''}
+            ${p.org_id === API.getOrg()?.id && p.user_id !== _mkMyUserId ? `<span style="font-size:11px;color:var(--success);margin-left:auto;">&#10003; Deja connecte</span>` : ''}
           </div>
         </div>
       </div>
@@ -11050,7 +11192,7 @@ function renderMkServiceCheckboxes(checkedServices) {
   SERVICE_CATALOG.forEach(cat => {
     cat.services.forEach(s => {
       const isChecked = checked.includes(s.id) ? 'checked' : '';
-      html += `<label style="display:flex;align-items:center;gap:4px;padding:6px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" value="${s.id}" class="mkServiceCb" style="accent-color:#6c63ff;" ${isChecked}> ${s.icon} ${s.label}</label>`;
+      html += `<label style="display:flex;align-items:center;gap:4px;padding:6px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" value="${s.id}" class="mkServiceCb" onchange="autoSaveMarketplaceField()" style="accent-color:#6c63ff;" ${isChecked}> ${s.icon} ${s.label}</label>`;
     });
   });
   container.innerHTML = html;
