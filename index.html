@@ -933,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.67</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.68</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -943,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.67</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.68</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1950,7 +1950,8 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
-  { v: '6.65', changes: ['Changelog dynamique entre versions', 'Marge totale en haut de la grille', 'CA previsionnel annuel'] },
+  { v: '6.68', changes: ['Historique complet des mises a jour (clic sur version)', 'Logique des prix unifiee (property > org > defaut)', 'Prestataire reste sur Prestations apres action'] },
+  { v: '6.66', changes: ['Fix suppression de biens', 'Changelog dynamique', 'CA previsionnel annuel'] },
   { v: '6.62', changes: ['Changelog versionne automatique sur le splash'] },
   { v: '6.61', changes: ['Tarifs pre-remplis pour tous les services (prix marche)', 'Calcul revenus par type de prestation'] },
   { v: '6.60', changes: ['Grille tarifaire par propriete avec suggestions', 'Tarifs suggeres selon surface et pieces'] },
@@ -1988,6 +1989,25 @@ const VERSION_CHANGELOG = [
   el.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-weight:600;margin-bottom:4px;">' + title + '</div>'
     + display.map(s => '&#x2022; ' + s).join('<br>');
 })();
+
+function showFullChangelog() {
+  let html = '<div style="padding:6px;max-height:70vh;overflow-y:auto;">';
+  html += '<div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:14px;text-align:center;">&#128203; Historique des mises a jour</div>';
+  VERSION_CHANGELOG.forEach(entry => {
+    html += '<div style="margin-bottom:14px;">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+    html += '<span style="font-size:12px;font-weight:700;color:#6c63ff;background:rgba(108,99,255,0.15);padding:2px 8px;border-radius:4px;">v' + entry.v + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:var(--text2);line-height:1.7;padding-left:8px;border-left:2px solid var(--border2);">';
+    entry.changes.forEach(c => {
+      html += '&#x2022; ' + c + '<br>';
+    });
+    html += '</div></div>';
+  });
+  html += '<button class="btn btnOutline" style="width:100%;padding:12px;margin-top:8px;" onclick="closeMsg()">Fermer</button>';
+  html += '</div>';
+  showMsg(html, true);
+}
 
 const SERVICE_CATALOG = [
   { cat: 'menage', label: 'Menage', services: [
