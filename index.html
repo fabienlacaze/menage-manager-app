@@ -153,8 +153,22 @@ async function loadPDF() {
     min-width: 16px; height: 16px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
   }
-  .prestFilter { padding:6px 12px; border-radius:8px; font-size:11px; font-weight:600; border:1px solid var(--border2); background:var(--surface2); color:var(--text); cursor:pointer; white-space:nowrap; flex-shrink:0; }
+  .prestFilter { padding:5px 10px; border-radius:20px; font-size:11px; font-weight:600; border:1px solid var(--border2); background:transparent; color:var(--text3); cursor:pointer; white-space:nowrap; flex-shrink:0; transition:all 0.15s; }
+  .prestFilter:hover { color:var(--text); border-color:var(--text3); }
   .prestFilter.active { background:#6c63ff; color:#fff; border-color:#6c63ff; }
+  .adminPrestCard { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:0; margin-bottom:8px; overflow:hidden; transition:border-color 0.15s; }
+  .adminPrestCard:hover { border-color:var(--border2); }
+  .adminPrestCard .card-main { display:flex; align-items:stretch; gap:0; }
+  .adminPrestCard .card-date { min-width:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 6px; border-right:1px solid var(--border); }
+  .adminPrestCard .card-date .day { font-size:18px; font-weight:800; color:var(--text); line-height:1; }
+  .adminPrestCard .card-date .month { font-size:10px; color:var(--text3); text-transform:uppercase; font-weight:600; letter-spacing:0.5px; }
+  .adminPrestCard .card-date .dow { font-size:9px; color:var(--text3); margin-top:2px; }
+  .adminPrestCard .card-body { flex:1; padding:10px 12px; min-width:0; }
+  .adminPrestCard .card-title { font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px; }
+  .adminPrestCard .card-meta { display:flex; gap:10px; font-size:11px; color:var(--text3); margin-top:4px; flex-wrap:wrap; }
+  .adminPrestCard .card-meta span { display:flex; align-items:center; gap:3px; }
+  .adminPrestCard .card-status { padding:3px 8px; border-radius:4px; font-size:10px; font-weight:700; white-space:nowrap; }
+  .adminPrestCard .card-actions { padding:8px 12px; border-top:1px solid var(--border); display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
   .header-left { display: flex; align-items: center; gap: 12px; }
@@ -919,7 +933,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.27</div>
+<div id="versionBadge" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;pointer-events:none;">v6.28</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -929,7 +943,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.27</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.28</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -9905,29 +9919,28 @@ async function loadAdminPrestations(forceReload) {
 
   // Render filters
   if (filtersEl) {
-    // Row 1: Category filters
-    let fHtml = '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px;-webkit-overflow-scrolling:touch;">';
-    fHtml += '<button class="prestFilter active" data-filter-type="cat" onclick="filterAdminPrest(\'all\',this)">Tout (' + counts.all + ')</button>';
+    const statusDefs = [
+      { id: 'pending', label: 'Attente', color: '#f59e0b' },
+      { id: 'assigned', label: 'Assigne', color: '#8b5cf6' },
+      { id: 'accepted', label: 'Accepte', color: '#34d399' },
+      { id: 'in_progress', label: 'En cours', color: '#3b82f6' },
+      { id: 'done', label: 'Termine', color: '#059669' },
+      { id: 'refused', label: 'Refuse', color: '#ef4444' },
+    ];
+    let fHtml = '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px;-webkit-overflow-scrolling:touch;align-items:center;">';
+    // Category pills
+    fHtml += '<button class="prestFilter active" data-filter-type="cat" onclick="filterAdminPrest(\'all\',this)">Tout ' + counts.all + '</button>';
     SERVICE_CATALOG.forEach(cat => {
       if (counts[cat.cat]) {
-        fHtml += '<button class="prestFilter" data-filter-type="cat" onclick="filterAdminPrest(\'' + cat.cat + '\',this)">' + cat.services[0].icon + ' ' + cat.label + ' (' + counts[cat.cat] + ')</button>';
+        fHtml += '<button class="prestFilter" data-filter-type="cat" onclick="filterAdminPrest(\'' + cat.cat + '\',this)">' + cat.services[0].icon + ' ' + counts[cat.cat] + '</button>';
       }
     });
-    fHtml += '</div>';
-    // Row 2: Status filters
-    const statusDefs = [
-      { id: 'pending', label: 'En attente', color: '#f59e0b', icon: '⏳' },
-      { id: 'assigned', label: 'Assigne', color: '#8b5cf6', icon: '📨' },
-      { id: 'accepted', label: 'Accepte', color: '#34d399', icon: '✅' },
-      { id: 'in_progress', label: 'En cours', color: '#3b82f6', icon: '🔄' },
-      { id: 'done', label: 'Termine', color: '#059669', icon: '✓' },
-      { id: 'refused', label: 'Refuse', color: '#ef4444', icon: '❌' },
-    ];
-    fHtml += '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;-webkit-overflow-scrolling:touch;">';
-    fHtml += '<button class="prestFilter active" data-filter-type="status" onclick="filterAdminPrestStatus(\'all\',this)" style="font-size:10px;padding:4px 10px;">Tous statuts</button>';
+    // Separator
+    fHtml += '<span style="width:1px;height:20px;background:var(--border2);flex-shrink:0;margin:0 4px;"></span>';
+    // Status pills
     statusDefs.forEach(s => {
       if (statusCounts[s.id]) {
-        fHtml += '<button class="prestFilter" data-filter-type="status" onclick="filterAdminPrestStatus(\'' + s.id + '\',this)" style="font-size:10px;padding:4px 10px;border-color:' + s.color + '30;">' + s.icon + ' ' + s.label + ' (' + statusCounts[s.id] + ')</button>';
+        fHtml += '<button class="prestFilter" data-filter-type="status" onclick="filterAdminPrestStatus(\'' + s.id + '\',this)" style="border-color:' + s.color + '40;color:' + s.color + ';">' + s.label + ' ' + statusCounts[s.id] + '</button>';
       }
     });
     fHtml += '</div>';
@@ -9953,70 +9966,82 @@ async function loadAdminPrestations(forceReload) {
   const statusLabels = { pending: 'En attente', assigned: 'Assigne', accepted: 'Accepte', in_progress: 'En cours', done: 'Termine', refused: 'Refuse', sent: 'Envoye', seen: 'Lu', arrived: 'Sur place', departed: 'Parti' };
 
   let html = '';
+  const months = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'];
+  const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
   unified.forEach(u => {
     const catObj = SERVICE_CATALOG.find(c => c.services.some(s => s.id === u.type));
     const cat = catObj ? catObj.cat : 'autre';
     const color = statusColors[u.status] || '#888';
     const label = statusLabels[u.status] || u.status;
+    const svcObj = (catObj ? catObj.services : []).find(s => s.id === u.type);
     const svcLabel = getServiceLabel(u.type);
-    const dateStr = u.date ? fmtDate(u.date) : '';
+    const svcIcon = svcObj ? svcObj.icon : (catObj ? catObj.services[0].icon : '📋');
     const isToday = u.date === today;
 
-    html += '<div class="adminPrestCard" data-category="' + cat + '" data-status="' + u.status + '" style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ' + color + ';border-radius:10px;padding:12px;margin-bottom:8px;' + (isToday ? 'border-left-color:#e94560;' : '') + '">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
-    html += '<div><span style="font-size:14px;font-weight:600;">' + svcLabel + '</span>';
-    if (u.source) html += ' <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:' + (u.source.toLowerCase().includes('airbnb') ? '#e94560' : '#2563eb') + ';color:#fff;font-weight:600;">' + esc(u.source).toUpperCase() + '</span>';
-    if (isToday) html += ' <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:#e94560;color:#fff;">AUJOURD\'HUI</span>';
+    // Parse date for calendar block
+    let dayNum = '', monthStr = '', dowStr = '';
+    if (u.date) {
+      const d = new Date(u.date + 'T12:00:00');
+      dayNum = d.getDate();
+      monthStr = months[d.getMonth()];
+      dowStr = days[d.getDay()];
+    }
+
+    html += '<div class="adminPrestCard" data-category="' + cat + '" data-status="' + u.status + '"' + (isToday ? ' style="border-color:#e9456040;"' : '') + '>';
+    html += '<div class="card-main">';
+    // Date column
+    html += '<div class="card-date"' + (isToday ? ' style="background:rgba(233,69,96,0.1);"' : '') + '>';
+    html += '<div class="day">' + dayNum + '</div>';
+    html += '<div class="month">' + monthStr + '</div>';
+    html += '<div class="dow">' + dowStr + '</div>';
     html += '</div>';
-    html += '<span style="font-size:11px;padding:2px 8px;background:' + color + '20;color:' + color + ';border-radius:4px;font-weight:600;">' + label + '</span>';
+    // Body
+    html += '<div class="card-body">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
+    html += '<div class="card-title">' + svcIcon + ' ' + svcLabel;
+    if (u.source) html += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:' + (u.source.toLowerCase().includes('airbnb') ? '#e9456030' : '#2563eb30') + ';color:' + (u.source.toLowerCase().includes('airbnb') ? '#e94560' : '#2563eb') + ';font-weight:700;">' + esc(u.source).toUpperCase() + '</span>';
+    if (isToday) html += ' <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#e9456020;color:#e94560;font-weight:700;">AUJOURD\'HUI</span>';
     html += '</div>';
-    html += '<div style="display:flex;gap:12px;font-size:12px;color:var(--text3);">';
-    if (dateStr) html += '<span>📅 ' + dateStr + '</span>';
+    html += '<span class="card-status" style="background:' + color + '18;color:' + color + ';">' + label + '</span>';
+    html += '</div>';
+    html += '<div class="card-meta">';
     if (u.propertyName) html += '<span>🏠 ' + esc(u.propertyName) + '</span>';
     if (u.provider) html += '<span>👤 ' + esc(u.provider) + '</span>';
-    if (u.priority) { const pi = { low: '🟢', normal: '🟡', high: '🔴' }; html += '<span>' + (pi[u.priority] || '') + '</span>'; }
+    if (u.priority && u.priority !== 'normal') { const pi = { low: '🟢 Basse', high: '🔴 Urgente' }; html += '<span>' + (pi[u.priority] || '') + '</span>'; }
     html += '</div>';
-    if (u.description) html += '<div style="font-size:12px;color:var(--text2);margin-top:6px;">' + esc(u.description) + '</div>';
+    if (u.description) html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(u.description) + '</div>';
+    html += '</div>'; // card-body
+    html += '</div>'; // card-main
 
-    // Action buttons for service requests
+    // Action footer for service requests
     if (u._source === 'service_request') {
       if (u.status === 'pending') {
-        // Load all providers from all properties for assignment
         let allProviders = [];
         props.forEach(p => { (p.providers || []).forEach(pv => { if (!allProviders.find(x => x.name === pv.name)) allProviders.push(pv); }); });
-        html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">';
-        html += '<select id="svcAssign_' + u._id + '" style="padding:6px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;">';
+        html += '<div class="card-actions">';
+        html += '<select id="svcAssign_' + u._id + '" style="flex:1;padding:6px 8px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;min-width:0;">';
         html += '<option value="">Assigner a...</option>';
         const matching = allProviders.filter(p => p.services && p.services.includes(u.type));
         const others = allProviders.filter(p => !p.services || !p.services.includes(u.type));
-        if (matching.length) { html += '<optgroup label="Competents">'; matching.forEach(p => { html += '<option value="' + esc(p.name) + '">⭐ ' + esc(p.name) + '</option>'; }); html += '</optgroup>'; }
+        if (matching.length) { html += '<optgroup label="Competents">'; matching.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; }); html += '</optgroup>'; }
         if (others.length) { html += '<optgroup label="Autres">'; others.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; }); html += '</optgroup>'; }
         html += '</select>';
-        html += '<button class="btn btnSmall btnSuccess" style="padding:4px 10px;font-size:11px;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcAssign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">Assigner</button>';
-        html += '<button class="btn btnSmall btnDanger" style="padding:4px 10px;font-size:11px;" onclick="updateServiceRequest(\'' + u._id + '\',\'refused\');setTimeout(()=>loadAdminPrestations(true),500)">Refuser</button>';
+        html += '<button class="btn btnSmall btnSuccess" style="padding:5px 12px;font-size:11px;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcAssign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">Assigner</button>';
+        html += '<button class="btn btnSmall btnDanger" style="padding:5px 12px;font-size:11px;" onclick="updateServiceRequest(\'' + u._id + '\',\'refused\');setTimeout(()=>loadAdminPrestations(true),500)">Refuser</button>';
         html += '</div>';
-      } else if (u.status === 'assigned') {
-        html += '<div style="margin-top:8px;font-size:11px;color:#8b5cf6;font-style:italic;">⏳ En attente de reponse du prestataire...</div>';
-      } else if (u.status === 'accepted') {
-        html += '<div style="margin-top:8px;font-size:11px;color:#34d399;font-style:italic;">✅ Prestation acceptee par le prestataire</div>';
-      } else if (u.status === 'in_progress') {
-        html += '<div style="margin-top:8px;font-size:11px;color:#3b82f6;font-style:italic;">🔄 Prestation en cours...</div>';
-      } else if (u.status === 'done') {
-        html += '<div style="margin-top:8px;font-size:11px;color:#34d399;font-style:italic;">✅ Prestation terminee</div>';
       } else if (u.status === 'refused') {
-        // Reassign option when provider refused
         let allProviders = [];
         props.forEach(p => { (p.providers || []).forEach(pv => { if (!allProviders.find(x => x.name === pv.name)) allProviders.push(pv); }); });
-        html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">';
-        html += '<select id="svcReassign_' + u._id + '" style="padding:6px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;">';
+        html += '<div class="card-actions">';
+        html += '<select id="svcReassign_' + u._id + '" style="flex:1;padding:6px 8px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:11px;min-width:0;">';
         html += '<option value="">Reassigner a...</option>';
         allProviders.forEach(p => { html += '<option value="' + esc(p.name) + '">' + esc(p.name) + '</option>'; });
         html += '</select>';
-        html += '<button class="btn btnSmall" style="padding:4px 10px;font-size:11px;background:#8b5cf6;color:#fff;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcReassign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">Reassigner</button>';
+        html += '<button class="btn btnSmall" style="padding:5px 12px;font-size:11px;background:#8b5cf6;color:#fff;" onclick="updateServiceRequest(\'' + u._id + '\',\'assigned\',document.getElementById(\'svcReassign_' + u._id + '\').value);setTimeout(()=>loadAdminPrestations(true),500)">Reassigner</button>';
         html += '</div>';
       }
     }
-    html += '</div>';
+    html += '</div>'; // adminPrestCard
   });
   listEl.innerHTML = html;
   } catch(err) { console.error('loadAdminPrestations error:', err); showToast('Erreur chargement prestations: ' + (err.message || 'Probleme de connexion')); }
