@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.88</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v6.89</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.88</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v6.89</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -3181,6 +3181,56 @@ function appendRoleBadge(h1) {
 }
 
 /* ── Provider Mode ── */
+async function publishToMarketplace() {
+  try {
+    const member = API.getMember();
+    const user = sb.auth.getUser ? (await sb.auth.getUser()).data?.user : null;
+    const email = user?.email || member?.invited_email || '';
+    const name = member?.display_name || email.split('@')[0];
+    // Check if already published
+    const { data: existing } = await sb.from('marketplace_profiles').select('id').eq('user_id', user?.id).single();
+    if (existing) {
+      showToast('Vous etes deja inscrit sur l\'annuaire !');
+      return;
+    }
+    // Create marketplace profile
+    const { error } = await sb.from('marketplace_profiles').insert({
+      user_id: user?.id,
+      display_name: name,
+      email: email,
+      role: 'provider',
+      org_id: API.getOrg()?.id,
+      visible: true,
+      services: [],
+      description: '',
+      city: ''
+    });
+    if (error) { showToast('Erreur: ' + error.message); return; }
+    showToast('Profil publie sur l\'annuaire !');
+    // Show edit modal
+    let html = '<div style="padding:10px;text-align:center;">';
+    html += '<div style="font-size:20px;margin-bottom:8px;">&#9989;</div>';
+    html += '<div style="font-size:16px;font-weight:700;color:#34d399;margin-bottom:8px;">Inscrit sur l\'annuaire !</div>';
+    html += '<div style="font-size:13px;color:var(--text3);margin-bottom:16px;">Les conciergeries peuvent maintenant vous trouver et vous inviter.</div>';
+    html += '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Completez votre profil pour etre mieux reference :</div>';
+    html += '<input id="mkCity" type="text" placeholder="Ville (ex: Nice, Paris...)" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">';
+    html += '<textarea id="mkDesc" placeholder="Description de vos services..." rows="3" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;font-family:Inter,sans-serif;resize:vertical;"></textarea>';
+    html += '<button class="btn btnPrimary" style="width:100%;padding:12px;" onclick="saveMarketplaceProfile()">Enregistrer</button>';
+    html += '</div>';
+    showMsg(html, true);
+  } catch(e) { console.error('publishToMarketplace error:', e); showToast('Erreur'); }
+}
+
+async function saveMarketplaceProfile() {
+  const user = (await sb.auth.getUser()).data?.user;
+  if (!user) return;
+  const city = document.getElementById('mkCity')?.value?.trim() || '';
+  const desc = document.getElementById('mkDesc')?.value?.trim() || '';
+  await sb.from('marketplace_profiles').update({ city, description: desc }).eq('user_id', user.id);
+  closeMsg();
+  showToast('Profil mis a jour');
+}
+
 async function shareProviderProfile() {
   const member = API.getMember();
   const user = sb.auth.getUser ? (await sb.auth.getUser()).data?.user : null;
@@ -3264,8 +3314,11 @@ async function showProviderMode() {
         <b>Votre email :</b> ${esc(providerEmail)}<br>
         Communiquez-le a votre gestionnaire pour qu'il vous ajoute.
       </div>
-      <button onclick="shareProviderProfile()" style="margin-top:24px;padding:16px 32px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;width:100%;max-width:320px;box-shadow:0 4px 16px rgba(108,99,255,0.4);">&#128228; Partager mon profil</button>
-      <div style="font-size:11px;color:var(--text3);margin-top:8px;">Envoyez votre profil a une conciergerie pour etre ajoute</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:24px;width:100%;max-width:320px;">
+        <button onclick="shareProviderProfile()" style="padding:16px 32px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 16px rgba(108,99,255,0.4);">&#128228; Partager mon profil</button>
+        <button onclick="publishToMarketplace()" style="padding:14px 32px;background:linear-gradient(135deg,#34d399,#059669);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 16px rgba(52,211,153,0.3);">&#127970; M'inscrire sur l'annuaire</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;">Les conciergeries pourront vous trouver et vous inviter</div>
     </div>`;
     return;
   }
@@ -3841,6 +3894,8 @@ async function renderOwnerPropertyDetails() {
   const member = API.getMember();
   const { data: allProps } = await sb.from('properties').select('*').eq('org_id', org.id);
   let properties = (allProps || []).filter(p => p.owner_member_id === member.id || !p.owner_member_id);
+  // If no properties assigned, show all org properties (owner can see everything in their org)
+  if (!properties.length && allProps && allProps.length) properties = allProps;
 
   // Render selector
   const selContainer = document.getElementById('ownerBiensSelector');
