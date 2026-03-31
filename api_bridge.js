@@ -36,13 +36,19 @@ const API = (function() {
         .from('members')
         .select('*, organizations(*)')
         .eq('user_id', userId);
-      // Retry once if empty (RLS timing issue)
+      // Fallback: if join fails, try without join then load org separately
       if ((!members || !members.length) && !error) {
-        await new Promise(r => setTimeout(r, 500));
-        const retry = await sb.from('members').select('*, organizations(*)').eq('user_id', userId);
-        members = retry.data;
-        error = retry.error;
-        console.log('loadOrg retry:', members?.length, 'members found');
+        console.log('loadOrg: join query empty, trying without join...');
+        const { data: rawMembers } = await sb.from('members').select('*').eq('user_id', userId);
+        if (rawMembers && rawMembers.length) {
+          // Load org separately
+          for (const m of rawMembers) {
+            const { data: org } = await sb.from('organizations').select('*').eq('id', m.org_id).single();
+            m.organizations = org;
+          }
+          members = rawMembers;
+          console.log('loadOrg: fallback found', members.length, 'members, role:', members[0]?.role);
+        }
       }
       if (error || !members || !members.length) {
         console.log('No org found, creating onboarding...', error);
