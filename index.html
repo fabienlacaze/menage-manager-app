@@ -1051,7 +1051,7 @@ async function loadPDF() {
 </script>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.24</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.25</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -1061,7 +1061,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.24</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.25</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2271,6 +2271,7 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
+  { v: '7.25', changes: ['Fix nav prestataire en mode attente (tous onglets accessibles)', 'Annuaire et Chat disponibles meme sans mission assignee'] },
   { v: '7.24', changes: ['Prestataire multi-conciergerie (switcher d\'org)', 'Badge "X equipes" si multi-org', 'Rechargement memberships apres connexion acceptee'] },
   { v: '7.23', changes: ['Animations CSS globales (fade, slide, bounce, scale)', 'Particules flottantes en arriere-plan', 'KPI cards en cascade animee', 'Boutons avec effet rebond', 'SQL RLS complet pour toutes les tables'] },
   { v: '7.22', changes: ['Fix cache busters synchro scripts', 'Proprio ne voit que SES factures', 'Alerte prix 0 dans auto-facturation'] },
@@ -3664,6 +3665,16 @@ async function shareProviderProfile() {
   }
 }
 
+function _appendProviderExtraTabs(content) {
+  // Append hidden tab containers so nav switching works even in "waiting" mode
+  let extra = '';
+  extra += '<div id="provContentPrestations" style="display:none;"><div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">Aucune prestation pour le moment</div></div>';
+  extra += '<div id="provContentBilling" style="display:none;"><div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">Aucun revenu pour le moment</div></div>';
+  extra += '<div id="provContentAnnuaire" style="display:none;"><div id="provAnnuaireContent"></div></div>';
+  extra += '<div id="provContentChat" style="display:none;"><div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">Aucun message</div></div>';
+  content.insertAdjacentHTML('beforeend', extra);
+}
+
 async function showProviderMode() {
   try {
   setupBottomNav('provider');
@@ -3682,7 +3693,7 @@ async function showProviderMode() {
   const org = API.getOrg();
   if (!org) {
     const { data: { user: u2 } } = await sb.auth.getUser();
-    content.innerHTML = `<div style="text-align:center;padding:60px 20px;">
+    content.innerHTML = `<div id="provContentOverview"><div style="text-align:center;padding:60px 20px;">
       <div style="font-size:48px;margin-bottom:16px;animation:spin 2s ease-in-out infinite;">&#9203;</div>
       <div style="font-size:18px;font-weight:700;color:#6c63ff;margin-bottom:8px;">En attente d'invitation</div>
       <div style="font-size:13px;color:var(--text3);line-height:1.6;">
@@ -3692,14 +3703,16 @@ async function showProviderMode() {
           Votre email : <b style="color:var(--text);font-size:15px;">${esc(u2 ? u2.email : '')}</b>
         </div>
       </div>
-    </div>`;
+    </div></div>`;
+    _appendProviderExtraTabs(content);
     return;
   }
 
   // Load all properties
   const { data: properties } = await sb.from('properties').select('*').eq('org_id', org.id);
   if (!properties || !properties.length) {
-    content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);">Aucune propriete trouvee.</div>';
+    content.innerHTML = '<div id="provContentOverview"><div style="text-align:center;padding:40px;color:var(--text3);">Aucune propriete trouvee.</div></div>';
+    _appendProviderExtraTabs(content);
     return;
   }
 
@@ -3711,7 +3724,7 @@ async function showProviderMode() {
     if (match) { providerName = match.name; break; }
   }
   if (!providerName) {
-    content.innerHTML = `<div style="text-align:center;padding:60px 20px;">
+    content.innerHTML = `<div id="provContentOverview"><div style="text-align:center;padding:60px 20px;">
       <div style="font-size:48px;margin-bottom:16px;animation:spin 2s ease-in-out infinite;">&#9203;</div>
       <div style="font-size:18px;font-weight:700;color:var(--accent);margin-bottom:8px;">En attente</div>
       <div style="font-size:13px;color:var(--text3);line-height:1.6;">
@@ -3725,7 +3738,7 @@ async function showProviderMode() {
         <button id="mkPublishBtn" onclick="publishToMarketplace()" style="padding:14px 32px;background:linear-gradient(135deg,#34d399,#059669);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 16px rgba(52,211,153,0.3);">&#127970; M'inscrire sur l'annuaire</button>
       </div>
       <div style="font-size:11px;color:var(--text3);margin-top:8px;">Les conciergeries pourront vous trouver et vous inviter</div>
-    </div>`;
+    </div></div>`;
     // Check if already on marketplace and update button
     try {
       const { data: { user: _u } } = await sb.auth.getUser();
@@ -3737,6 +3750,8 @@ async function showProviderMode() {
         }
       }
     } catch(e) {}
+    // Still create other tab containers so nav works
+    _appendProviderExtraTabs(content);
     return;
   }
 
