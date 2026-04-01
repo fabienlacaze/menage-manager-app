@@ -53,10 +53,10 @@
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.101.0/dist/umd/supabase.min.js" integrity="sha384-HS/sUFZexXk91zcjy7zGIBg3tNDxgxF8YbcifixByxxtxQoF2o8GBBT9p6DdGlAR" crossorigin="anonymous"></script>
-<script src="supabase_config.js?v=721"></script>
-<script src="i18n.js?v=721"></script>
-<script src="ical_parser.js?v=721"></script>
-<script src="api_bridge.js?v=721"></script>
+<script src="supabase_config.js?v=726"></script>
+<script src="i18n.js?v=726"></script>
+<script src="ical_parser.js?v=726"></script>
+<script src="api_bridge.js?v=726"></script>
 <!-- Lazy-loaded: Leaflet, Chart.js, jsPDF (loaded on demand to improve startup) -->
 <script>
 function lazyLoad(url, type) {
@@ -1051,7 +1051,7 @@ async function loadPDF() {
 </script>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.25</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.26</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -1061,7 +1061,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.25</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.26</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2271,6 +2271,7 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
+  { v: '7.26', changes: ['Fix fuites memoire (3 setIntervals nettoyes)', 'Try/catch onboarding creation bien', 'Changelog complet (v7.01, v7.02, v7.09 ajoutes)'] },
   { v: '7.25', changes: ['Fix nav prestataire en mode attente (tous onglets accessibles)', 'Annuaire et Chat disponibles meme sans mission assignee'] },
   { v: '7.24', changes: ['Prestataire multi-conciergerie (switcher d\'org)', 'Badge "X equipes" si multi-org', 'Rechargement memberships apres connexion acceptee'] },
   { v: '7.23', changes: ['Animations CSS globales (fade, slide, bounce, scale)', 'Particules flottantes en arriere-plan', 'KPI cards en cascade animee', 'Boutons avec effet rebond', 'SQL RLS complet pour toutes les tables'] },
@@ -2287,12 +2288,15 @@ const VERSION_CHANGELOG = [
   { v: '7.12', changes: ['Fix bouton connexion dans modal marketplace', 'Badge "En attente" pour demandes en cours', 'Boutons corrects dans les 2 vues (annuaire + modal)'] },
   { v: '7.11', changes: ['Badge "Connecte" sur profils deja lies', 'Bouton "Retirer" pour se deconnecter', 'Clic "Se connecter" sur profil deja lie propose la deconnexion'] },
   { v: '7.10', changes: ['Nouveau design des cartes prestations', 'Mini-calendrier avec jour/mois sur chaque carte', 'Bordure coloree par statut', 'Icones plus grandes, meilleure lisibilite'] },
+  { v: '7.09', changes: ['Mise a jour changelog splash (v6.99-v7.08)'] },
   { v: '7.08', changes: ['Securite: verification identite prestataire', 'Facturation: exclut prestations non validees', 'Facturation: inclut prestations a la demande', 'Photos: chemins aleatoires anti-enumeration'] },
   { v: '7.07', changes: ['Photos via Supabase Storage (compression client)', 'Fin du stockage base64 en DB', 'Upload max 10MB avec compression auto'] },
   { v: '7.06', changes: ['Barre de completude sur chaque bien (8 criteres)'] },
   { v: '7.05', changes: ['Systeme de contestation (proprio peut contester)', 'Formulaire litige avec motif + photos', 'Gestion litiges cote concierge', 'Securite: proprio ne voit que ses biens'] },
   { v: '7.04', changes: ['Profil annuaire: ajout nom, ville, telephone', 'Photo propriete auto-sauvegardee', 'Fix checklist entre proprietes'] },
   { v: '7.03', changes: ['Onglet Annuaire dans la navigation (3 roles)', 'Annuaire accessible en mode gratuit', 'Filtres par services (chips cliquables)', 'Barre de completude du profil annuaire'] },
+  { v: '7.02', changes: ['Auto-refresh badge connexion toutes les 30s'] },
+  { v: '7.01', changes: ['Onglet Equipe pour provider/owner', 'Fix bouton Se connecter marketplace'] },
   { v: '7.00', changes: ['Demandes de connexion (cloche dans le header)', 'Badge notifications temps reel (30s)', 'Bouton Se connecter sur le marketplace'] },
   { v: '6.99', changes: ['Systeme de connexion entre utilisateurs', 'Table connection_requests + RLS', 'Auto-refresh marketplace (15s)'] },
   { v: '6.75', changes: ['Pricing dynamique (saisons, jours, dates speciales)', 'Checklist photos QC pour prestataires', 'Validation QC par le concierge avec galerie', 'Auto-refresh iCal gratuit (Supabase Edge Function)', 'Bouton annuler sur prestations en attente', 'Ma conciergerie dans la vue proprietaire', 'Export CSV comptable'] },
@@ -8874,31 +8878,34 @@ function wizardStep_PropertyName() {
 }
 
 async function wizardSaveProperty() {
+  try {
   const name = document.getElementById('wizPropName').value.trim() || 'Mon logement';
   const address = document.getElementById('wizPropAddress').value.trim();
   wizardData.propName = name;
   wizardData.propAddress = address;
 
-  // Find or create property
   const orgId = wizardData.orgId || API.getOrg()?.id;
-  if (!orgId) { console.error('No orgId for wizard'); return; }
-  const { data: props } = await sb.from('properties').select('id').eq('org_id', orgId).limit(1);
+  if (!orgId) { showToast('Erreur: organisation introuvable'); return; }
+  const { data: props, error: propsErr } = await sb.from('properties').select('id').eq('org_id', orgId).limit(1);
+  if (propsErr) { showToast('Erreur reseau. Reessayez.'); return; }
   if (props && props.length) {
     wizardData.propId = props[0].id;
     const updateData = { name, address };
     if (wizardData.prop_lat) updateData.lat = wizardData.prop_lat;
     if (wizardData.prop_lng) updateData.lng = wizardData.prop_lng;
-    await sb.from('properties').update(updateData).eq('id', props[0].id);
+    const { error: upErr } = await sb.from('properties').update(updateData).eq('id', props[0].id);
+    if (upErr) { showToast('Erreur sauvegarde. Reessayez.'); return; }
   } else {
-    // No property exists yet — create one
     const memberId = wizardData.memberId || API.getMember()?.id;
     const insertData = { org_id: orgId, owner_member_id: memberId, name, address };
     if (wizardData.prop_lat) insertData.lat = wizardData.prop_lat;
     if (wizardData.prop_lng) insertData.lng = wizardData.prop_lng;
-    const { data: newProp } = await sb.from('properties').insert(insertData).select().single();
+    const { data: newProp, error: insErr } = await sb.from('properties').insert(insertData).select().single();
+    if (insErr) { showToast('Erreur creation du bien. Reessayez.'); return; }
     if (newProp) wizardData.propId = newProp.id;
   }
   wizardStep_PropertyDetails();
+  } catch(e) { console.error('wizardSaveProperty error:', e); showToast('Erreur: ' + (e.message || 'Verifiez votre connexion')); }
 }
 
 // ── Wizard: Property Details (type, rooms, m², tarif, duration, check-in/out, code, consignes) ──
@@ -13856,8 +13863,9 @@ async function updateUnreadBadge() {
 }
 
 // Check unread after app loads
+let _unreadBadgeInterval = null;
 setTimeout(updateUnreadBadge, 5000);
-setInterval(updateUnreadBadge, 30000);
+if (!_unreadBadgeInterval) _unreadBadgeInterval = setInterval(updateUnreadBadge, 30000);
 
 // ── Concierge Validation ──
 // validatePrestation removed — use adminValidateService(id, 'done') instead
@@ -14015,14 +14023,21 @@ async function _checkUpdate() {
   } catch(e) {}
 }
 setTimeout(_checkUpdate, 5000);
-setInterval(_checkUpdate, 30000);
+let _checkUpdateInterval = setInterval(_checkUpdate, 30000);
 // Also check when user returns to tab
 document.addEventListener('visibilitychange', () => { if (!document.hidden) _checkUpdate(); });
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  if (_unreadBadgeInterval) clearInterval(_unreadBadgeInterval);
+  if (_checkUpdateInterval) clearInterval(_checkUpdateInterval);
+  if (_connectionBadgeInterval) clearInterval(_connectionBadgeInterval);
+});
 
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').then(reg => {
     // Check for SW updates every 5 minutes
-    setInterval(() => reg.update(), 5 * 60 * 1000);
+    const _swInterval = setInterval(() => reg.update(), 5 * 60 * 1000);
+    window.addEventListener('beforeunload', () => clearInterval(_swInterval));
     reg.addEventListener('updatefound', () => {
       const newWorker = reg.installing;
       if (!newWorker) return;
