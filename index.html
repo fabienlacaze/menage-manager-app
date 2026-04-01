@@ -1051,7 +1051,7 @@ async function loadPDF() {
 </script>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.27</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.28</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -1061,7 +1061,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.27</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.28</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2271,6 +2271,7 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
+  { v: '7.28', changes: ['Notification quand un membre est retire', 'Notification quand une demande est refusee', 'Rafraichissement immediat apres retrait'] },
   { v: '7.27', changes: ['Reassignation auto apres refus prestataire', 'Validation proprio: verification statut obligatoire', 'finalizeServiceCompletion: gestion erreur complete', 'Catch vides critiques corriges'] },
   { v: '7.26', changes: ['Fix fuites memoire (3 setIntervals nettoyes)', 'Try/catch onboarding creation bien', 'Changelog complet (v7.01, v7.02, v7.09 ajoutes)'] },
   { v: '7.25', changes: ['Fix nav prestataire en mode attente (tous onglets accessibles)', 'Annuaire et Chat disponibles meme sans mission assignee'] },
@@ -12078,11 +12079,18 @@ async function disconnectUser(targetUserId, targetName) {
         .or('and(sender_id.eq.' + user.id + ',receiver_id.eq.' + targetUserId + '),and(sender_id.eq.' + targetUserId + ',receiver_id.eq.' + user.id + ')');
     }
     showToast(targetName + ' retire de votre equipe');
+    // Send notification to disconnected user
+    if (org) {
+      const member = API.getMember();
+      const myName = member?.display_name || 'Gestionnaire';
+      await sendAutoMessage(org.id, myName, API.getRole(), targetName,
+        '&#128279; ' + myName + ' vous a retire de l\'equipe ' + (org.name || '') + '.');
+    }
     // Refresh both views
-    renderAnnuaireTab();
+    await renderAnnuaireTab();
     // Also refresh marketplace modal if open
     if (document.getElementById('marketplaceModal')?.style.display === 'block') {
-      try { await loadMarketplaceData(); } catch(e) {}
+      try { await loadMarketplaceData(); } catch(e) { console.error('Marketplace refresh:', e); }
     }
   } catch(e) { console.error('disconnectUser error:', e); showToast('Erreur'); }
 }
@@ -12181,6 +12189,12 @@ async function respondConnectionRequest(requestId, accept) {
     } else {
       await sb.from('connection_requests').update({ status: 'refused' }).eq('id', requestId);
       showToast('Demande refusee');
+      // Notify sender that request was refused
+      const org = API.getOrg();
+      if (org) {
+        await sendAutoMessage(org.id, API.getMember()?.display_name || 'Gestionnaire', API.getRole(), req.sender_name,
+          '&#10060; Votre demande de connexion a ete refusee.');
+      }
     }
     closeMsg();
     // Refresh notifications badge
