@@ -53,10 +53,10 @@
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.101.0/dist/umd/supabase.min.js" integrity="sha384-HS/sUFZexXk91zcjy7zGIBg3tNDxgxF8YbcifixByxxtxQoF2o8GBBT9p6DdGlAR" crossorigin="anonymous"></script>
-<script src="supabase_config.js?v=14"></script>
-<script src="i18n.js?v=29"></script>
-<script src="ical_parser.js?v=14"></script>
-<script src="api_bridge.js?v=32"></script>
+<script src="supabase_config.js?v=721"></script>
+<script src="i18n.js?v=721"></script>
+<script src="ical_parser.js?v=721"></script>
+<script src="api_bridge.js?v=721"></script>
 <!-- Lazy-loaded: Leaflet, Chart.js, jsPDF (loaded on demand to improve startup) -->
 <script>
 function lazyLoad(url, type) {
@@ -967,7 +967,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.21</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.22</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -977,7 +977,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.21</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.22</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2187,6 +2187,7 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
+  { v: '7.22', changes: ['Fix cache busters synchro scripts', 'Proprio ne voit que SES factures', 'Alerte prix 0 dans auto-facturation'] },
   { v: '7.21', changes: ['Landing page complete (hero, temoignages, FAQ, 3 etapes)', 'Onboarding: barre de progression 3 etapes', 'Onboarding: etapes visuelles avec icones par role', 'CTA "Commencer gratuitement" en bas de page'] },
   { v: '7.20', changes: ['Notifications email reelles (Edge Function Resend)', 'Notifications push (VAPID subscribe)', 'Dashboard analytics concierge (CA, tendance, litiges)', 'Historique depenses proprio (graphique mensuel)', 'Export PDF releve prestataire'] },
   { v: '7.19', changes: ['Popup envoi factures en debut de mois', 'Alerte factures en retard (>7 jours)', 'Proprio voit ses factures + bouton Payer (Stripe)', 'Envoi groupé des brouillons en 1 clic'] },
@@ -5144,10 +5145,23 @@ async function loadOwnerInvoices() {
   try {
     const org = API.getOrg();
     if (!org) return;
-    const { data: invoices } = await sb.from('invoices').select('*')
+    // Filter invoices: only show those addressed to this owner (by property or client name)
+    const member = API.getMember();
+    const { data: { user } } = await sb.auth.getUser();
+    const ownerName = member?.display_name || user?.email?.split('@')[0] || '';
+    let query = sb.from('invoices').select('*')
       .eq('org_id', org.id).eq('type', 'concierge_to_owner')
       .in('status', ['sent', 'paid'])
       .order('created_at', { ascending: false }).limit(20);
+    const { data: allInvoices } = await query;
+    // Client-side filter: match owner by client_name or property ownership
+    const { data: myProps } = await sb.from('properties').select('name').eq('org_id', org.id).or('owner_member_id.eq.' + (member?.id || '') + ',owner_email.eq.' + (user?.email || ''));
+    const myPropNames = (myProps || []).map(p => p.name);
+    const invoices = (allInvoices || []).filter(inv => {
+      if (inv.client_name && inv.client_name.toLowerCase().includes(ownerName.toLowerCase())) return true;
+      if (inv.property_name && myPropNames.includes(inv.property_name)) return true;
+      return false;
+    });
     if (!invoices || !invoices.length) {
       container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;">Aucune facture recue</div>';
       return;
@@ -6208,6 +6222,9 @@ async function autoInvoiceOnDone(req) {
     };
 
     // 1. Invoice proprio (concierge_to_owner) — find or create draft
+    if (ownerPrice <= 0) {
+      console.warn('autoInvoiceOnDone: ownerPrice=0 for', svcLabel, '- skipping owner invoice. Configure pricing in Tarifs tab.');
+    }
     if (ownerPrice > 0) {
       const { data: existingOwner } = await sb.from('invoices').select('*')
         .eq('org_id', org.id).eq('type', 'concierge_to_owner').eq('status', 'draft')
