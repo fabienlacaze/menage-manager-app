@@ -967,7 +967,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.10</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.11</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -977,7 +977,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.10</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.11</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2098,6 +2098,7 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
+  { v: '7.11', changes: ['Badge "Connecte" sur profils deja lies', 'Bouton "Retirer" pour se deconnecter', 'Clic "Se connecter" sur profil deja lie propose la deconnexion'] },
   { v: '7.10', changes: ['Nouveau design des cartes prestations', 'Mini-calendrier avec jour/mois sur chaque carte', 'Bordure coloree par statut', 'Icones plus grandes, meilleure lisibilite'] },
   { v: '7.08', changes: ['Securite: verification identite prestataire', 'Facturation: exclut prestations non validees', 'Facturation: inclut prestations a la demande', 'Photos: chemins aleatoires anti-enumeration'] },
   { v: '7.07', changes: ['Photos via Supabase Storage (compression client)', 'Fin du stockage base64 en DB', 'Upload max 10MB avec compression auto'] },
@@ -11204,6 +11205,27 @@ async function showMarketplace(prefillAddress) {
 }
 
 // ── Connection Requests ──
+async function disconnectUser(targetUserId, targetName) {
+  const ok = await customConfirm('Retirer ' + targetName + ' de votre equipe ?', 'Retirer');
+  if (!ok) return;
+  try {
+    const org = API.getOrg();
+    if (org) {
+      // Remove from members
+      await sb.from('members').delete().eq('org_id', org.id).eq('user_id', targetUserId);
+    }
+    // Update connection_request to refused
+    const { data: { user } } = await sb.auth.getUser();
+    if (user) {
+      await sb.from('connection_requests').update({ status: 'refused' })
+        .or('and(sender_id.eq.' + user.id + ',receiver_id.eq.' + targetUserId + '),and(sender_id.eq.' + targetUserId + ',receiver_id.eq.' + user.id + ')');
+    }
+    showToast(targetName + ' retire de votre equipe');
+    // Refresh annuaire
+    renderAnnuaireTab();
+  } catch(e) { console.error('disconnectUser error:', e); showToast('Erreur'); }
+}
+
 async function sendConnectionRequest(targetUserId, targetName, targetRole) {
   try {
     const { data: { user } } = await sb.auth.getUser();
@@ -11220,7 +11242,11 @@ async function sendConnectionRequest(targetUserId, targetName, targetRole) {
       .maybeSingle();
     if (existing) {
       if (existing.status === 'pending') { showToast('Demande deja envoyee'); return; }
-      if (existing.status === 'accepted') { showToast('Deja connecte !'); return; }
+      if (existing.status === 'accepted') {
+        const wantDisconnect = await customConfirm('Vous etes deja connecte avec ' + targetName + '. Voulez-vous vous deconnecter ?', 'Se deconnecter');
+        if (wantDisconnect) await disconnectUser(targetUserId, targetName);
+        return;
+      }
     }
 
     // Determine the role to propose
@@ -11548,6 +11574,22 @@ async function renderAnnuaireResults(profiles) {
   const container = document.getElementById('annuaireResults');
   if (!container) return;
   const isPrem = API.isPremium();
+  // Load existing connections to show correct button
+  let connectedUserIds = new Set();
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (user) {
+      // Accepted connection requests
+      const { data: conns } = await sb.from('connection_requests').select('sender_id,receiver_id').eq('status', 'accepted').or('sender_id.eq.' + user.id + ',receiver_id.eq.' + user.id);
+      if (conns) conns.forEach(c => { connectedUserIds.add(c.sender_id); connectedUserIds.add(c.receiver_id); });
+      // Members of same org
+      const org = API.getOrg();
+      if (org) {
+        const { data: members } = await sb.from('members').select('user_id').eq('org_id', org.id);
+        if (members) members.forEach(m => { if (m.user_id) connectedUserIds.add(m.user_id); });
+      }
+    }
+  } catch(e) {}
   const roleColors = { provider: '#34d399', owner: '#f59e0b', admin: '#e94560', manager: '#6c63ff', concierge: '#6c63ff' };
   const roleLabels = { provider: 'Prestataire', owner: 'Proprietaire', admin: 'Conciergerie', manager: 'Conciergerie', concierge: 'Conciergerie' };
   const availLabels = { available: '&#128994; Disponible', full: '&#128308; Complet', vacation: '&#127796; En vacances' };
@@ -11599,7 +11641,11 @@ async function renderAnnuaireResults(profiles) {
     if (p.phone) html += '<a href="tel:' + _escHtml(p.phone) + '" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:#34d399;text-decoration:none;padding:4px 8px;background:rgba(52,211,153,0.1);border-radius:6px;">&#128222; Appeler</a>';
     if (p.email) html += '<a href="mailto:' + _escHtml(p.email) + '" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--accent);text-decoration:none;padding:4px 8px;background:rgba(108,99,255,0.1);border-radius:6px;">&#9993; Email</a>';
     if (p.user_id !== _mkMyUserId) {
-      if (isPrem) {
+      const isConnected = connectedUserIds.has(p.user_id);
+      if (isConnected) {
+        html += '<span style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:8px;font-size:11px;color:#34d399;font-weight:600;">&#10003; Connecte</span>';
+        html += '<button onclick="disconnectUser(\'' + _escHtml(p.user_id) + '\',\'' + _escHtml(p.display_name || '') + '\')" style="padding:6px 10px;background:none;color:var(--text3);border:1px solid var(--border2);border-radius:8px;font-size:10px;cursor:pointer;" title="Se deconnecter">&#128279;&#65039; Retirer</button>';
+      } else if (isPrem) {
         html += '<button onclick="sendConnectionRequest(\'' + _escHtml(p.user_id) + '\',\'' + _escHtml(p.display_name || '') + '\',\'' + _escHtml(p.role) + '\')" style="margin-left:auto;padding:6px 14px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">&#128279; Se connecter</button>';
       } else {
         html += '<button onclick="showPremiumModal(\'Passez Premium pour vous connecter avec d\\\'autres professionnels.\')" style="margin-left:auto;padding:6px 14px;background:var(--surface);color:var(--text3);border:1px solid var(--border2);border-radius:8px;font-size:11px;cursor:pointer;">&#128274; Premium</button>';
