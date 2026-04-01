@@ -967,7 +967,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.15</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.16</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -977,7 +977,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.15</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.16</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2098,6 +2098,7 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
+  { v: '7.16', changes: ['Fix "Marquer payee" avec gestion erreur', 'Fix nom facture "undefined"'] },
   { v: '7.15', changes: ['Onglets Finances reordonnes : Revenus > Factures > Tarifs', 'Revenus affiche par defaut'] },
   { v: '7.14', changes: ['Ajout changelog manquant pour v7.13'] },
   { v: '7.13', changes: ['Fix rafraichissement apres deconnexion dans modal marketplace'] },
@@ -6532,7 +6533,7 @@ async function loadInvoices() {
 
     html += '<div onclick="showInvoiceDetail(\'' + inv.id + '\')" style="background:var(--surface2);border:1px solid var(--border2);border-left:3px solid ' + color + ';border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor=\'' + color + '\'" onmouseout="this.style.borderColor=\'var(--border2)\'">';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
-    html += '<div><span style="font-weight:700;font-size:13px;">' + inv.invoice_number + '</span> <span style="font-size:11px;color:var(--text3);">' + typeIcon + ' ' + typeLabel + '</span></div>';
+    html += '<div><span style="font-weight:700;font-size:13px;">' + (inv.invoice_number || 'Facture') + '</span> <span style="font-size:11px;color:var(--text3);">' + typeIcon + ' ' + typeLabel + '</span></div>';
     html += '<span style="font-size:11px;padding:2px 8px;background:' + color + '20;color:' + color + ';border-radius:4px;font-weight:600;">' + label + '</span>';
     html += '</div>';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
@@ -6715,11 +6716,13 @@ async function exportComptableCSV() {
 }
 
 async function updateInvoiceStatus(id, status) {
-  const update = { status };
-  if (status === 'paid') update.paid_at = new Date().toISOString();
-  await sb.from('invoices').update(update).eq('id', id);
-  showToast('Facture mise a jour');
-  loadInvoices();
+  try {
+    const update = { status };
+    const { error } = await sb.from('invoices').update(update).eq('id', id);
+    if (error) { console.error('updateInvoiceStatus error:', error); showToast('Erreur: ' + (error.message || 'Mise a jour impossible')); return; }
+    showToast('Facture mise a jour');
+    loadInvoices();
+  } catch(e) { console.error('updateInvoiceStatus:', e); showToast('Erreur: ' + e.message); }
 }
 
 async function deleteInvoice(id) {
