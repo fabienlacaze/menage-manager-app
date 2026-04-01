@@ -1051,7 +1051,7 @@ async function loadPDF() {
 </script>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.23</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.24</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -1061,7 +1061,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.23</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.24</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2271,6 +2271,7 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
+  { v: '7.24', changes: ['Prestataire multi-conciergerie (switcher d\'org)', 'Badge "X equipes" si multi-org', 'Rechargement memberships apres connexion acceptee'] },
   { v: '7.23', changes: ['Animations CSS globales (fade, slide, bounce, scale)', 'Particules flottantes en arriere-plan', 'KPI cards en cascade animee', 'Boutons avec effet rebond', 'SQL RLS complet pour toutes les tables'] },
   { v: '7.22', changes: ['Fix cache busters synchro scripts', 'Proprio ne voit que SES factures', 'Alerte prix 0 dans auto-facturation'] },
   { v: '7.21', changes: ['Landing page complete (hero, temoignages, FAQ, 3 etapes)', 'Onboarding: barre de progression 3 etapes', 'Onboarding: etapes visuelles avec icones par role', 'CTA "Commencer gratuitement" en bas de page'] },
@@ -3881,6 +3882,22 @@ async function showProviderMode() {
 
   // ═══ TAB 1: Apercu (Overview) ═══
   html += '<div id="provContentOverview">';
+
+  // Org switcher (if provider belongs to multiple orgs)
+  const provMemberships = API.getAllMemberships();
+  if (provMemberships.length > 1) {
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">';
+    html += '<span style="font-size:12px;color:var(--text3);">Conciergerie :</span>';
+    html += '<select onchange="switchProviderOrg(this.value)" style="flex:1;padding:8px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-size:13px;font-weight:600;">';
+    provMemberships.forEach(m => {
+      const orgName = m.organizations?.name || 'Organisation';
+      const selected = m.org_id === org.id ? ' selected' : '';
+      html += '<option value="' + m.org_id + '"' + selected + '>' + esc(orgName) + '</option>';
+    });
+    html += '</select>';
+    html += '<span style="font-size:10px;padding:3px 8px;background:rgba(52,211,153,0.15);color:#34d399;border-radius:6px;font-weight:600;">' + provMemberships.length + ' equipes</span>';
+    html += '</div>';
+  }
 
   // Stats bar - with press effect
   const totalPrestations = unified.length;
@@ -11744,6 +11761,12 @@ async function requestHireProvider(userId, provName, provEmail) {
   }
 }
 
+async function switchProviderOrg(orgId) {
+  API.switchOrg(orgId);
+  await API.load_plan();
+  showProviderMode();
+}
+
 async function switchOwnerOrg(orgId) {
   API.switchOrg(orgId);
   await API.load_plan();
@@ -12102,6 +12125,8 @@ async function respondConnectionRequest(requestId, accept) {
         showToast(req.sender_name + ' a rejoint votre equipe !');
         await sendAutoMessage(org.id, API.getMember()?.display_name || 'Gestionnaire', API.getRole(), req.sender_name,
           '&#9989; Votre demande de connexion a ete acceptee ! Bienvenue dans l\'equipe.');
+        // Reload memberships so the new member sees updated org list
+        await API.loadOrganization();
       }
     } else {
       await sb.from('connection_requests').update({ status: 'refused' }).eq('id', requestId);
