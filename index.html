@@ -961,7 +961,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.07</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.08</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -971,7 +971,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.07</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.08</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2247,11 +2247,14 @@ async function uploadToStorage(bucket, filePath, blob) {
   }
 }
 
+function _randomId() { return Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10); }
+
 async function uploadPhoto(file, folder, filename) {
   const maxKB = folder === 'properties' ? 150 : 100;
   const maxWidth = folder === 'properties' ? 1400 : 1000;
   const { blob } = await compressImage(file, maxWidth, maxKB);
-  const path = folder + '/' + filename + '_' + Date.now() + '.jpg';
+  // Use random ID to prevent enumeration attacks
+  const path = folder + '/' + _randomId() + '_' + Date.now() + '.jpg';
   const url = await uploadToStorage('lokizio-photos', path, blob);
   return url;
 }
@@ -4331,8 +4334,12 @@ async function sendAutoMessage(orgId, senderName, senderRole, recipientName, bod
 
 async function acceptServiceRequest(id) {
   try {
-    // Fetch request details for auto-message
     const { data: req } = await sb.from('service_requests').select('*').eq('id', id).single();
+    // Security: verify this provider is assigned
+    const member = API.getMember();
+    if (req && req.assigned_provider && member?.display_name && req.assigned_provider !== member.display_name && API.getRole() === 'provider') {
+      showToast('Cette prestation ne vous est pas assignee'); return;
+    }
     await sb.from('service_requests').update({ status: 'accepted' }).eq('id', id);
     showToast('Demande acceptee !');
     if (req) {
@@ -4938,6 +4945,14 @@ async function providerValidate(propId, date, provName, status, btn) {
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
   try {
     const { data: { user } } = await sb.auth.getUser();
+    // Security: verify this provider matches the current user
+    const member = API.getMember();
+    const myName = member?.display_name || user.email?.split('@')[0] || '';
+    if (provName !== myName && API.getRole() !== 'admin' && API.getRole() !== 'manager') {
+      showToast('Vous ne pouvez modifier que vos propres prestations');
+      if (btn) { btn.disabled = false; }
+      return;
+    }
     await sb.from('cleaning_validations').upsert({
       property_id: propId,
       cleaning_date: date,
@@ -5592,35 +5607,70 @@ function updateInvoiceTotals() {
   div.innerHTML = html;
 }
 
-function autoFillInvoiceItems(type) {
+async function autoFillInvoiceItems(type) {
   const start = document.getElementById('invPeriodStart').value;
   const end = document.getElementById('invPeriodEnd').value;
   if (!start || !end) return showToast('Definissez la periode');
   const prop = API.getActiveProperty(fullConfig);
-  const excludedStatuses = ['disputed', 'refused', 'cancelled', 'pending', 'assigned'];
-  const filtered = (cleanings || []).filter(c => {
+  const org = API.getOrg();
+
+  // 1. Cleanings from planning (iCal ménages)
+  const excludedStatuses = ['disputed', 'refused', 'cancelled', 'pending', 'assigned', 'pending_validation'];
+  const filteredCleanings = (cleanings || []).filter(c => {
     const d = c.date || c.cleaningDate;
     if (d < start || d > end) return false;
     if (c._status && excludedStatuses.includes(c._status)) return false;
     return true;
   });
-  if (!filtered.length) return showToast('Aucun menage facturable sur cette periode');
+
+  // 2. Service requests (prestations à la demande) - only 'done'
+  let filteredServices = [];
+  if (org && prop) {
+    try {
+      const { data: svcReqs } = await sb.from('service_requests').select('*')
+        .eq('org_id', org.id).eq('property_id', prop.id).eq('status', 'done')
+        .gte('requested_date', start).lte('requested_date', end);
+      filteredServices = svcReqs || [];
+    } catch(e) { console.error('Load service requests for invoice:', e); }
+  }
+
+  if (!filteredCleanings.length && !filteredServices.length) return showToast('Aucune prestation facturable sur cette periode');
 
   if (type === 'concierge_to_owner') {
-    const price = getServicePrice(prop?.id || '', 'cleaning_standard', 'price_owner');
-    window._invoiceItems = [{
-      description: 'Menages - ' + (prop?.name || 'Propriete') + ' (' + filtered.length + ' interventions)',
-      quantity: filtered.length,
-      unit_price: price
-    }];
+    window._invoiceItems = [];
+    // Ménages réguliers
+    if (filteredCleanings.length) {
+      const price = getServicePrice(prop?.id || '', 'cleaning_standard', 'price_owner');
+      window._invoiceItems.push({
+        description: 'Menages reguliers - ' + (prop?.name || 'Propriete') + ' (' + filteredCleanings.length + ')',
+        quantity: filteredCleanings.length,
+        unit_price: price
+      });
+    }
+    // Prestations à la demande
+    filteredServices.forEach(sr => {
+      const svcLabel = getServiceLabel(sr.service_type);
+      const svcPrice = getServicePrice(prop?.id || '', sr.service_type, 'price_owner');
+      window._invoiceItems.push({
+        description: svcLabel + (sr.requested_date ? ' (' + sr.requested_date + ')' : ''),
+        quantity: 1,
+        unit_price: svcPrice
+      });
+    });
   } else {
     const byProvider = {};
-    filtered.forEach(c => {
+    filteredCleanings.forEach(c => {
       const p = c.provider || 'Non assigne';
       if (!byProvider[p]) byProvider[p] = { count: 0, price: 0 };
       byProvider[p].count++;
       const provObj = (prop?.providers || []).find(pr => pr.name === p);
       byProvider[p].price = provObj?.price || 0;
+    });
+    filteredServices.forEach(sr => {
+      const p = sr.assigned_provider || 'Non assigne';
+      if (!byProvider[p]) byProvider[p] = { count: 0, price: 0 };
+      byProvider[p].count++;
+      byProvider[p].price = byProvider[p].price || getServicePrice(prop?.id || '', sr.service_type, 'cost_provider');
     });
     window._invoiceItems = Object.entries(byProvider).map(([name, data]) => ({
       description: 'Prestations de ' + name + ' - ' + (prop?.name || ''),
