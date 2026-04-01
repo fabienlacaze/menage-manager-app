@@ -967,7 +967,7 @@ async function loadPDF() {
 <body>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.11</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v7.12</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -977,7 +977,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.11</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v7.12</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -2098,6 +2098,7 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
+  { v: '7.12', changes: ['Fix bouton connexion dans modal marketplace', 'Badge "En attente" pour demandes en cours', 'Boutons corrects dans les 2 vues (annuaire + modal)'] },
   { v: '7.11', changes: ['Badge "Connecte" sur profils deja lies', 'Bouton "Retirer" pour se deconnecter', 'Clic "Se connecter" sur profil deja lie propose la deconnexion'] },
   { v: '7.10', changes: ['Nouveau design des cartes prestations', 'Mini-calendrier avec jour/mois sur chaque carte', 'Bordure coloree par statut', 'Icones plus grandes, meilleure lisibilite'] },
   { v: '7.08', changes: ['Securite: verification identite prestataire', 'Facturation: exclut prestations non validees', 'Facturation: inclut prestations a la demande', 'Photos: chemins aleatoires anti-enumeration'] },
@@ -11576,12 +11577,16 @@ async function renderAnnuaireResults(profiles) {
   const isPrem = API.isPremium();
   // Load existing connections to show correct button
   let connectedUserIds = new Set();
+  let pendingUserIds = new Set();
   try {
     const { data: { user } } = await sb.auth.getUser();
     if (user) {
-      // Accepted connection requests
-      const { data: conns } = await sb.from('connection_requests').select('sender_id,receiver_id').eq('status', 'accepted').or('sender_id.eq.' + user.id + ',receiver_id.eq.' + user.id);
-      if (conns) conns.forEach(c => { connectedUserIds.add(c.sender_id); connectedUserIds.add(c.receiver_id); });
+      const { data: conns } = await sb.from('connection_requests').select('sender_id,receiver_id,status').or('sender_id.eq.' + user.id + ',receiver_id.eq.' + user.id);
+      if (conns) conns.forEach(c => {
+        const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+        if (c.status === 'accepted') connectedUserIds.add(otherId);
+        if (c.status === 'pending') pendingUserIds.add(otherId);
+      });
       // Members of same org
       const org = API.getOrg();
       if (org) {
@@ -11642,9 +11647,12 @@ async function renderAnnuaireResults(profiles) {
     if (p.email) html += '<a href="mailto:' + _escHtml(p.email) + '" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--accent);text-decoration:none;padding:4px 8px;background:rgba(108,99,255,0.1);border-radius:6px;">&#9993; Email</a>';
     if (p.user_id !== _mkMyUserId) {
       const isConnected = connectedUserIds.has(p.user_id);
+      const isPending = pendingUserIds.has(p.user_id);
       if (isConnected) {
         html += '<span style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:8px;font-size:11px;color:#34d399;font-weight:600;">&#10003; Connecte</span>';
-        html += '<button onclick="disconnectUser(\'' + _escHtml(p.user_id) + '\',\'' + _escHtml(p.display_name || '') + '\')" style="padding:6px 10px;background:none;color:var(--text3);border:1px solid var(--border2);border-radius:8px;font-size:10px;cursor:pointer;" title="Se deconnecter">&#128279;&#65039; Retirer</button>';
+        html += '<button onclick="disconnectUser(\'' + _escHtml(p.user_id) + '\',\'' + _escHtml(p.display_name || '') + '\')" style="padding:6px 10px;background:none;color:var(--text3);border:1px solid var(--border2);border-radius:8px;font-size:10px;cursor:pointer;" title="Se deconnecter">Retirer</button>';
+      } else if (isPending) {
+        html += '<span style="margin-left:auto;padding:6px 14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;font-size:11px;color:#f59e0b;font-weight:600;">&#9203; En attente</span>';
       } else if (isPrem) {
         html += '<button onclick="sendConnectionRequest(\'' + _escHtml(p.user_id) + '\',\'' + _escHtml(p.display_name || '') + '\',\'' + _escHtml(p.role) + '\')" style="margin-left:auto;padding:6px 14px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">&#128279; Se connecter</button>';
       } else {
@@ -11761,6 +11769,25 @@ async function renderMarketplaceResults(profiles) {
   await _ensureMkUserId();
   const container = document.getElementById('mkResults');
   const myRole = API.getRole();
+  // Load connection status for all profiles
+  let _mkConnected = new Set();
+  let _mkPending = new Set();
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (user) {
+      const { data: conns } = await sb.from('connection_requests').select('sender_id,receiver_id,status').or('sender_id.eq.' + user.id + ',receiver_id.eq.' + user.id);
+      if (conns) conns.forEach(c => {
+        const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+        if (c.status === 'accepted') _mkConnected.add(otherId);
+        if (c.status === 'pending') _mkPending.add(otherId);
+      });
+      const org = API.getOrg();
+      if (org) {
+        const { data: members } = await sb.from('members').select('user_id').eq('org_id', org.id);
+        if (members) members.forEach(m => { if (m.user_id) _mkConnected.add(m.user_id); });
+      }
+    }
+  } catch(e) {}
   if (!profiles.length) {
     container.innerHTML = `<div style="text-align:center;padding:40px 20px;">
       <div style="font-size:48px;margin-bottom:12px;opacity:0.4;">&#128269;</div>
@@ -11812,7 +11839,7 @@ async function renderMarketplaceResults(profiles) {
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             ${p.phone ? `<a href="tel:${_escHtml(p.phone)}" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#34d399;text-decoration:none;padding:5px 10px;background:rgba(52,211,153,0.1);border-radius:8px;border:1px solid rgba(52,211,153,0.2);transition:background 0.2s;" onmouseenter="this.style.background='rgba(52,211,153,0.2)'" onmouseleave="this.style.background='rgba(52,211,153,0.1)'">&#128222; Appeler</a>` : ''}
             ${p.email ? `<a href="mailto:${_escHtml(p.email)}" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--accent);text-decoration:none;padding:5px 10px;background:rgba(108,99,255,0.1);border-radius:8px;border:1px solid rgba(108,99,255,0.2);transition:background 0.2s;" onmouseenter="this.style.background='rgba(108,99,255,0.2)'" onmouseleave="this.style.background='rgba(108,99,255,0.1)'">&#9993; Email</a>` : ''}
-            ${p.user_id !== _mkMyUserId ? (API.isPremium() ? `<button onclick="sendConnectionRequest('${_escHtml(p.user_id)}','${_escHtml(p.display_name)}','${_escHtml(p.role)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">&#128279; Se connecter</button>` : `<button onclick="showPremiumModal('Passez Premium pour vous connecter.')" style="margin-left:auto;padding:7px 16px;background:var(--surface);color:var(--text3);border:1px solid var(--border2);border-radius:8px;font-size:11px;cursor:pointer;">&#128274; Premium</button>`) : ''}
+            ${p.user_id !== _mkMyUserId ? (_mkConnected.has(p.user_id) ? `<span style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:8px;font-size:11px;color:#34d399;font-weight:600;">&#10003; Connecte</span><button onclick="disconnectUser('${_escHtml(p.user_id)}','${_escHtml(p.display_name)}')" style="padding:6px 10px;background:none;color:var(--text3);border:1px solid var(--border2);border-radius:8px;font-size:10px;cursor:pointer;">Retirer</button>` : _mkPending.has(p.user_id) ? `<span style="margin-left:auto;padding:6px 14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;font-size:11px;color:#f59e0b;font-weight:600;">&#9203; En attente</span>` : API.isPremium() ? `<button onclick="sendConnectionRequest('${_escHtml(p.user_id)}','${_escHtml(p.display_name)}','${_escHtml(p.role)}')" style="margin-left:auto;padding:7px 16px;background:linear-gradient(135deg,#6c63ff,#5a54e0);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">&#128279; Se connecter</button>` : `<button onclick="showPremiumModal('Passez Premium pour vous connecter.')" style="margin-left:auto;padding:7px 16px;background:var(--surface);color:var(--text3);border:1px solid var(--border2);border-radius:8px;font-size:11px;cursor:pointer;">&#128274; Premium</button>`) : ''}
           </div>
         </div>
       </div>
