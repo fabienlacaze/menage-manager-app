@@ -8,8 +8,13 @@ window.sentryOnLoad = function () {
     release: 'lokizio@' + (window.APP_VERSION || 'unknown'),
     sendDefaultPii: false,
     tracesSampleRate: 0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1,
+    // v9.105 RGPD (audit commercialisation): Session Replay DESACTIVE. Il
+    // enregistrait l'ecran/les interactions sans consentement prealable (traceur
+    // non essentiel -> art. 82 LIL). On ne garde que la capture d'ERREURS
+    // (securite/bon fonctionnement, interet legitime), sans replay ni cookie
+    // publicitaire. A ne re-activer QUE derriere un consentement opt-in explicite.
+    replaysSessionSampleRate: 0,
+    replaysOnErrorSampleRate: 0,
     beforeSend: function (event) {
       try {
         // Build a single string that covers message + exception value to filter on
