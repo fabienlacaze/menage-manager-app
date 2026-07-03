@@ -99,6 +99,18 @@
     text-shadow:0 1px 2px rgba(0,0,0,0.4);
   }
   .prestAssignSeg-arr { font-weight:900; }
+  /* v9.106 a11y (WCAG 2.3.3 Animation from Interactions): respecter le reglage
+     systeme "reduire les animations". Neutralise les animations (dont les 12
+     infinies: pulse, shimmer, criticalBlink/Glow, glow, cridalBlink...) et
+     raccourcit les transitions pour les utilisateurs sensibles au mouvement. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
   /* Ecran etroit (mobile): masquer le libelle texte, garder l'icone alerte + le CTA
      compact. Au-dessus de 480px (tablette/desktop), le libelle complet s'affiche. */
   @media (max-width:480px) {

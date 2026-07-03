@@ -351,9 +351,22 @@ async function saveInvoice(status, type, isQuote) {
 
   const year = new Date().getFullYear();
   const prefix = isQuote ? 'DEV' : 'FAC';
-  const { count } = await sb.from('invoices').select('*', { count: 'exact', head: true })
-    .eq('org_id', org.id).eq('is_quote', isQuote);
-  const num = String((count || 0) + 1).padStart(4, '0');
+  // v9.106 (audit commercialisation): numerotation ATOMIQUE via RPC (compteur par
+  // org, cote serveur) au lieu de count(*)+1 qui pouvait produire des doublons ou
+  // des trous (2 factures simultanees, ou apres suppression) — non conforme a la
+  // sequentialite exigee. Fallback sur l'ancienne methode si le RPC echoue, pour
+  // ne jamais bloquer la facturation.
+  let num;
+  try {
+    const { data: nextNum, error: numErr } = await sb.rpc('next_invoice_number', { p_org_id: org.id, p_is_quote: isQuote });
+    if (numErr || nextNum == null) throw (numErr || new Error('numero facture indisponible'));
+    num = String(nextNum).padStart(4, '0');
+  } catch (e) {
+    console.warn('next_invoice_number RPC KO, fallback count(*):', e);
+    const { count } = await sb.from('invoices').select('*', { count: 'exact', head: true })
+      .eq('org_id', org.id).eq('is_quote', isQuote);
+    num = String((count || 0) + 1).padStart(4, '0');
+  }
   const invoiceNumber = prefix + '-' + year + '-' + num;
 
   const invoice = {

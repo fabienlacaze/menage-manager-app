@@ -24,6 +24,7 @@
     "build:check": "node scripts/build.js --check",
     "bump": "node scripts/bump-cache-busters.js",
     "bump:check": "node scripts/bump-cache-busters.js --check",
+    "legal:check": "node scripts/check-legal-placeholders.js",
     "serve": "npx --yes http-server . -p 8000 -c-1 --cors",
     "sentry": "node scripts/fetch-sentry-issues.js",
     "loadtest": "node scripts/load-test.js"
