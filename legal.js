@@ -63,12 +63,22 @@ async function exportMyData() {
     const orgId = org?.id;
     const dataset = { exported_at: new Date().toISOString(), user_id: user.id, email: user.email };
 
-    const tables = ['members','marketplace_profiles','provider_profiles','organizations','properties','invoices','billing_settings','billing_runs','service_requests','plannings','cleaning_validations','connection_requests','messages','push_subscriptions','email_log','subscriptions','user_data','profiles','provider_reviews'];
+    // Toutes les tables susceptibles de contenir des donnees personnelles du sujet.
+    // NB: chaque SELECT reste borne par la RLS Postgres (l'utilisateur ne voit que ses lignes).
+    // Les consentements (photo_consents, rgpd_consents) sont inclus — art. 15 (acces complet).
+    const tables = ['members','marketplace_profiles','organizations','properties','invoices','billing_settings','billing_runs','service_requests','plannings','cleaning_validations','connection_requests','messages','push_subscriptions','email_log','subscriptions','user_data','profiles','reviews','user_feedback','photo_consents','rgpd_consents','provider_charter_signatures','provider_kyc_documents'];
+    const incompleteSections = [];
     for (const t of tables) {
       try {
-        const { data, error } = await sb.from(t).select('*').limit(2000);
-        dataset[t] = error ? { error: error.message } : (data || []);
-      } catch(e) { dataset[t] = { error: String(e.message || e) }; }
+        const { data, error } = await sb.from(t).select('*').limit(5000);
+        if (error) { dataset[t] = { error: error.message }; incompleteSections.push(t); }
+        else { dataset[t] = data || []; }
+      } catch(e) { dataset[t] = { error: String(e.message || e) }; incompleteSections.push(t); }
+    }
+    // Signaler explicitement a l'utilisateur toute section non exportee (art. 15 : export exact).
+    if (incompleteSections.length) {
+      dataset._sections_incompletes = incompleteSections;
+      dataset._avertissement = 'Certaines sections n\'ont pas pu etre exportees (droits d\'acces / RLS). Pour un export exhaustif garanti, contactez l\'editeur via la politique de confidentialite.';
     }
 
     const blob = new Blob([JSON.stringify(dataset, null, 2)], { type: 'application/json' });
@@ -80,7 +90,9 @@ async function exportMyData() {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    showToast('Export telecharge');
+    showToast(incompleteSections.length
+      ? ('Export telecharge (' + incompleteSections.length + ' section(s) incomplete(s) — voir _avertissement dans le fichier)')
+      : 'Export telecharge');
   } catch(e) { console.error('exportMyData:', e); showToast('Erreur: ' + (e.message || String(e))); }
 }
 

@@ -35,12 +35,15 @@
 </table>
 
 <h2>4. Hébergement et sous-traitants</h2>
+<p>Nous faisons appel aux sous-traitants suivants, chacun lié par un accord de traitement des données (DPA) :</p>
 <ul>
-  <li><strong>Hébergement données</strong> : Supabase (Frankfurt, Allemagne – UE) – conforme RGPD</li>
-  <li><strong>Hébergement app</strong> : GitHub Pages (Microsoft, US – certifié Data Privacy Framework)</li>
-  <li><strong>Envoi d'emails</strong> : Resend (US – certifié Data Privacy Framework)</li>
-  <li><strong>Paiements</strong> : Stripe (IE – conforme RGPD, PCI-DSS) — activé uniquement pour le plan Premium</li>
+  <li><strong>Base de données &amp; authentification</strong> : Supabase — projet hébergé en région Union européenne (Francfort) <em>[localisation à confirmer par l'éditeur selon la région réelle du projet Supabase]</em>. Supabase Inc. étant une société américaine, un accès de support depuis les États-Unis reste possible ; ce transfert est encadré par les Clauses Contractuelles Types (CCT) de l'UE et le DPA Supabase.</li>
+  <li><strong>Hébergement de l'application (fichiers statiques)</strong> : GitHub Pages — GitHub, Inc. / Microsoft Corporation (États-Unis).</li>
+  <li><strong>Envoi d'emails transactionnels</strong> : Resend, Inc. (États-Unis).</li>
+  <li><strong>Paiements</strong> : Stripe — facturation par Stripe Payments Europe, Ltd. (Irlande) ; certains traitements peuvent avoir lieu aux États-Unis. Activé uniquement pour les fonctionnalités payantes / la mise en relation marketplace.</li>
+  <li><strong>Supervision des erreurs</strong> : Sentry — Functional Software, Inc. (États-Unis), au titre de l'intérêt légitime (sécurité et bon fonctionnement du service), sans enregistrement de session (« session replay »).</li>
 </ul>
+<p>La liste à jour des sous-traitants, leur localisation et les DPA signés sont tenus à disposition sur demande via le contact RGPD ci-dessous. <em>[À valider par l'éditeur : conservation des DPA de chaque sous-traitant.]</em></p>
 
 <h2>5. Vos droits (RGPD)</h2>
 <p>Conformément aux articles 15 à 22 du RGPD, vous disposez des droits suivants :</p>
@@ -68,7 +71,12 @@
 <p>L'Application utilise des <strong>traceurs strictement techniques</strong> indispensables au fonctionnement (session d'authentification), ainsi qu'un outil de <strong>supervision des erreurs</strong> (Sentry) au titre de l'<strong>intérêt légitime</strong> (sécurité et bon fonctionnement du service), configuré <strong>sans enregistrement de session (« session replay »)</strong> ni cookie publicitaire ou de tracking marketing. <strong>Aucun traceur non essentiel n'est activé sans votre consentement préalable.</strong> Les traceurs strictement nécessaires et de sécurité sont exemptés de consentement (art. 82 loi Informatique et Libertés).</p>
 
 <h2>8. Transferts hors UE</h2>
-<p>Certains prestataires (GitHub, Resend, Stripe) sont situés aux États-Unis. Ils sont certifiés au <em>EU-US Data Privacy Framework</em>, garantissant un niveau de protection équivalent à l'UE.</p>
+<p>Certains sous-traitants (GitHub/Microsoft, Resend, Sentry, et selon le cas Supabase et Stripe) peuvent traiter des données aux États-Unis. Chaque transfert est encadré par un mécanisme conforme au chapitre V du RGPD :</p>
+<ul>
+  <li>soit l'<em>EU-US Data Privacy Framework</em> lorsque le sous-traitant figure effectivement sur la liste active du DPF (<a href="https://www.dataprivacyframework.gov/list" target="_blank" rel="noopener">dataprivacyframework.gov</a>) — <em>[certification à vérifier individuellement par l'éditeur, sous-traitant par sous-traitant]</em> ;</li>
+  <li>soit, à défaut, les Clauses Contractuelles Types (CCT) de la Commission européenne complétées de mesures supplémentaires, prévues par le DPA du sous-traitant.</li>
+</ul>
+<p>La base de transfert applicable à chaque sous-traitant est documentée dans le registre des traitements (art. 30) et vérifiée lors de la signature du DPA. Aucune allégation de certification n'est faite ici sans vérification préalable de l'éditeur.</p>
 
 <h2>9. Modifications</h2>
 <p>Cette politique peut être modifiée. En cas de modification substantielle, vous serez notifié par email.</p>
