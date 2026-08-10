@@ -9,7 +9,7 @@
   window.__isPasswordRecovery = h.indexOf('type=recovery') !== -1;
   window.__recoveryHash = h;
 })();
-window.APP_VERSION = '9.107';
+window.APP_VERSION = '9.108';
 // v9.90 fix: rendre les badges de version DYNAMIQUES depuis window.APP_VERSION
 // pour ne plus jamais avoir le bug "popup version persistante" quand j'oublie
 // de bumper les badges hardcodes en HTML (workflow wp5sc40pn). Si tout vient
@@ -31,7 +31,7 @@ window.addEventListener('DOMContentLoaded', function() {
 ></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://js.stripe.com https://connect-js.stripe.com https://unpkg.com https://js-de.sentry-cdn.com https://browser.sentry-cdn.com https://www.clarity.ms https://eu.posthog.com; connect-src 'self' https://cdn.jsdelivr.net https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://connect-js.stripe.com https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://www.clarity.ms https://*.clarity.ms https://eu.posthog.com https://eu-assets.posthog.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; frame-src https://js.stripe.com https://hooks.stripe.com https://connect-js.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://js.stripe.com https://connect-js.stripe.com https://unpkg.com https://js-de.sentry-cdn.com https://browser.sentry-cdn.com https://www.clarity.ms https://eu.posthog.com; connect-src 'self' https://cdn.jsdelivr.net https://browser.sentry-cdn.com https://js-de.sentry-cdn.com https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://connect-js.stripe.com https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://www.clarity.ms https://*.clarity.ms https://eu.posthog.com https://eu-assets.posthog.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; frame-src https://js.stripe.com https://hooks.stripe.com https://connect-js.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;">
 <meta name="theme-color" content="#1a1a2e">
 <!-- v9.100 perf: ouvrir DNS + handshake TLS vers Supabase DES le parsing du head,
      EN PARALLELE du telechargement du SDK supabase + app.bundle ci-dessous, pour
@@ -154,7 +154,7 @@ async function loadPDF() {
 </script>
 
 <!-- Version badge (always visible) -->
-<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v9.107</div>
+<div id="versionBadge" onclick="showFullChangelog()" style="position:fixed;bottom:8px;right:12px;font-size:10px;color:rgba(255,255,255,0.3);z-index:99998;cursor:pointer;">v9.108</div>
 
 <!-- Splash Screen -->
 <div id="splashScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f0f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;">
@@ -164,7 +164,7 @@ async function loadPDF() {
     <!-- Broom that sweeps -->
     <div id="splashBroom" style="position:absolute;top:50%;left:-60px;font-size:48px;transform:translateY(-50%) rotate(-30deg);opacity:0;transition:all 0.8s cubic-bezier(0.25,0.46,0.45,0.94);">✨</div>
   </div>
-  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span id="splashVersion" style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v9.107</span></div>
+  <div style="font-size:22px;font-weight:800;color:#f0f0f5;letter-spacing:1px;">Lokizio <span id="splashVersion" style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">v9.108</span></div>
   <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;">Services et conciergerie pour locations</div>
   <div style="position:fixed;bottom:16px;right:20px;font-size:10px;color:rgba(255,255,255,0.25);">Made with &#10084; by Fabidou</div>
   <!-- Loading bar -->
@@ -1711,6 +1711,9 @@ function getStatusLabel(s) { return (STATUS_CONFIG[s] || {}).label || s || ''; }
 // ── Splash Changelog (update this with each significant version) ──
 // Full versioned changelog — add new entries at TOP
 const VERSION_CHANGELOG = [
+  { v: '9.108', changes: [
+    'CORRECTIF CRITIQUE ecran noir : depuis la v9.104, deux caracteres invisibles (U+2028 / U+2029, des sauts de ligne Unicode) s etaient glisses dans une expression reguliere. Le navigateur refusait de lire tout le script principal — l application ne s affichait plus du tout. Corrige. Ajout d un garde-fou qui verifie desormais que chaque script est lisible avant toute mise en ligne (npm run syntax:check), plus 7 tests automatises. La console est aussi nettoyee d une alerte de securite liee a Sentry.',
+  ] },
   { v: '9.107', changes: [
     'RGPD (audit, agent dedie): retrait du consentement photos + ecran Mes consentements ; export de donnees complete (inclut les consentements) avec signalement d incompletude ; politique de confidentialite corrigee (sous-traitants reels, transferts hors UE encadres CCT/DPF) ; table de preuve de consentement rgpd_consents creee ; registre des traitements art.30 retire de la lecture publique.',
   ] },
@@ -9969,7 +9972,7 @@ function _jsAttr(s) {
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/[\r\n  ]+/g, ' ');
+    .replace(/[\r\n\u2028\u2029]+/g, ' ');
 }
 
 async function toggleMarketplaceVisibility(visible) {

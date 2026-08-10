@@ -25,6 +25,7 @@ import { checkCoverage } from './audit/coverage.js';
 import { checkE2E } from './audit/e2e.js';
 import { checkIntegration } from './audit/integration.js';
 import { checkLint } from './audit/lint.js';
+import { checkSyntax } from './audit/syntax.js';
 import { checkSecrets } from './audit/secrets.js';
 import { checkBundle } from './audit/bundle.js';
 import { checkAccessibility } from './audit/accessibility.js';
@@ -67,6 +68,9 @@ const icon = (status) => {
 // Checkers registry
 // ─────────────────────────────────────────────────
 const CHECKERS = [
+  // SYNTAX en premier : un script qui ne parse pas = ecran noir en prod, et
+  // ca ne coute qu'une seconde a detecter (cf. v9.104 -> 9.107).
+  { id: 'syntax',   label: 'SYNTAX',   fn: checkSyntax,        always: true },
   { id: 'unit',     label: 'UNIT',     fn: checkUnitTests,     always: true },
   { id: 'coverage', label: 'COVERAGE', fn: checkCoverage,      always: true },
   { id: 'e2e',         label: 'E2E',         fn: checkE2E,         skipOnQuick: true },
